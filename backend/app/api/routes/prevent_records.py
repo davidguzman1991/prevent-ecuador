@@ -15,11 +15,13 @@ from app.schemas.prevent_record import (
     PreventRecordListResponse,
 )
 from app.services.prevent_records import (
+    archive_prevent_record,
     create_prevent_record,
     export_prevent_records_csv,
     export_prevent_records_xlsx,
     get_prevent_record_detail,
     list_prevent_records,
+    restore_prevent_record,
 )
 
 
@@ -38,6 +40,7 @@ def list_prevent_records_endpoint(
     diabetes: bool | None = Query(default=None),
     smoker: bool | None = Query(default=None),
     model_variant: str | None = Query(default=None),
+    record_status: str = Query(default="active", pattern="^(active|archived|all)$"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -49,6 +52,7 @@ def list_prevent_records_endpoint(
         diabetes=diabetes,
         smoker=smoker,
         model_variant=model_variant,
+        record_status=record_status,
         page=page,
         page_size=page_size,
     )
@@ -63,6 +67,7 @@ def export_prevent_records_endpoint(
     diabetes: bool | None = Query(default=None),
     smoker: bool | None = Query(default=None),
     model_variant: str | None = Query(default=None),
+    record_status: str = Query(default="active", pattern="^(active|archived|all)$"),
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
     filters = PreventRecordListFilters(
@@ -72,6 +77,7 @@ def export_prevent_records_endpoint(
         diabetes=diabetes,
         smoker=smoker,
         model_variant=model_variant,
+        record_status=record_status,
     )
     csv_content = export_prevent_records_csv(db=db, filters=filters)
     filename = "prevent_records_export.csv"
@@ -90,6 +96,7 @@ def export_prevent_records_xlsx_endpoint(
     diabetes: bool | None = Query(default=None),
     smoker: bool | None = Query(default=None),
     model_variant: str | None = Query(default=None),
+    record_status: str = Query(default="active", pattern="^(active|archived|all)$"),
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
     filters = PreventRecordListFilters(
@@ -99,6 +106,7 @@ def export_prevent_records_xlsx_endpoint(
         diabetes=diabetes,
         smoker=smoker,
         model_variant=model_variant,
+        record_status=record_status,
     )
     xlsx_content = export_prevent_records_xlsx(db=db, filters=filters)
     filename = "prevent_records_export.xlsx"
@@ -107,6 +115,54 @@ def export_prevent_records_xlsx_endpoint(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.patch(
+    "/{record_id}/archive",
+    response_model=PreventRecordDetailResponse,
+    dependencies=[Depends(require_admin_api_key)],
+)
+def archive_prevent_record_endpoint(
+    record_id: UUID,
+    db: Session = Depends(get_db),
+) -> PreventRecordDetailResponse:
+    record = archive_prevent_record(db=db, record_id=record_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prevent record not found",
+        )
+    detail = get_prevent_record_detail(db=db, record_id=record_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prevent record not found",
+        )
+    return detail
+
+
+@router.patch(
+    "/{record_id}/restore",
+    response_model=PreventRecordDetailResponse,
+    dependencies=[Depends(require_admin_api_key)],
+)
+def restore_prevent_record_endpoint(
+    record_id: UUID,
+    db: Session = Depends(get_db),
+) -> PreventRecordDetailResponse:
+    record = restore_prevent_record(db=db, record_id=record_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prevent record not found",
+        )
+    detail = get_prevent_record_detail(db=db, record_id=record_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prevent record not found",
+        )
+    return detail
 
 
 @router.post(

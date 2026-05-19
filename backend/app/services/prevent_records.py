@@ -1,6 +1,7 @@
 import csv
 import io
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import func
@@ -224,6 +225,8 @@ def _extract_record_results(record: PreventRecord) -> dict[str, float | str | No
 def _build_prevent_records_query(
     db: Session,
     filters: PreventRecordListFilters,
+    *,
+    apply_status_filter: bool = True,
 ):
     query = db.query(PreventRecord)
 
@@ -243,6 +246,11 @@ def _build_prevent_records_query(
         query = query.filter(
             PreventRecord.input_payload_json["model_variant"].astext == filters.model_variant,
         )
+    if apply_status_filter:
+        if filters.record_status == "active":
+            query = query.filter(PreventRecord.is_deleted.is_(False))
+        elif filters.record_status == "archived":
+            query = query.filter(PreventRecord.is_deleted.is_(True))
 
     return query
 
@@ -449,6 +457,32 @@ def get_prevent_record(db: Session, record_id: UUID) -> PreventRecord | None:
     return db.get(PreventRecord, record_id)
 
 
+def archive_prevent_record(db: Session, record_id: UUID) -> PreventRecord | None:
+    record = get_prevent_record(db, record_id)
+    if record is None:
+        return None
+
+    if not record.is_deleted:
+        record.is_deleted = True
+        record.deleted_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(record)
+    return record
+
+
+def restore_prevent_record(db: Session, record_id: UUID) -> PreventRecord | None:
+    record = get_prevent_record(db, record_id)
+    if record is None:
+        return None
+
+    if record.is_deleted:
+        record.is_deleted = False
+        record.deleted_at = None
+        db.commit()
+        db.refresh(record)
+    return record
+
+
 def list_prevent_records(
     db: Session,
     filters: PreventRecordListFilters,
@@ -456,7 +490,14 @@ def list_prevent_records(
     page = max(filters.page, 1)
     page_size = min(max(filters.page_size, 1), 100)
     query = _build_prevent_records_query(db, filters)
+    all_status_query = _build_prevent_records_query(
+        db,
+        filters,
+        apply_status_filter=False,
+    )
     total = query.count()
+    active_total = all_status_query.filter(PreventRecord.is_deleted.is_(False)).count()
+    archived_total = all_status_query.filter(PreventRecord.is_deleted.is_(True)).count()
     records = (
         query.order_by(PreventRecord.created_at.desc())
         .offset((page - 1) * page_size)
@@ -471,6 +512,8 @@ def list_prevent_records(
             PreventRecordListItem(
                 id=record.id,
                 created_at=record.created_at,
+                is_deleted=record.is_deleted,
+                deleted_at=record.deleted_at,
                 patient_age=record.patient_age,
                 patient_sex=record.patient_sex,
                 physician_name=record.physician_name,
@@ -484,6 +527,8 @@ def list_prevent_records(
     return PreventRecordListResponse(
         items=items,
         total=total,
+        active_total=active_total,
+        archived_total=archived_total,
         page=page,
         page_size=page_size,
     )
@@ -502,6 +547,8 @@ def get_prevent_record_detail(
         id=record.id,
         created_at=record.created_at,
         updated_at=record.updated_at,
+        is_deleted=record.is_deleted,
+        deleted_at=record.deleted_at,
         patient_age=record.patient_age,
         patient_sex=record.patient_sex,
         patient_country=record.patient_country,

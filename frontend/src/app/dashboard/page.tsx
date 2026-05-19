@@ -30,6 +30,8 @@ const UNAUTHORIZED_MESSAGE =
 type DashboardListItem = {
   id: string;
   created_at: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
   patient_age: number;
   patient_sex: string;
   physician_name: string;
@@ -42,6 +44,8 @@ type DashboardListItem = {
 type DashboardListResponse = {
   items: DashboardListItem[];
   total: number;
+  active_total: number;
+  archived_total: number;
   page: number;
   page_size: number;
 };
@@ -50,6 +54,8 @@ type DashboardDetail = {
   id: string;
   created_at: string;
   updated_at: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
   patient_age: number;
   patient_sex: string;
   patient_country: string;
@@ -90,6 +96,7 @@ type DashboardFilters = {
   diabetes: "all" | "true" | "false";
   smoker: "all" | "true" | "false";
   model_variant: "all" | "base" | "uacr" | "hba1c" | "sdi" | "full";
+  record_status: "active" | "archived" | "all";
 };
 
 const initialFilters: DashboardFilters = {
@@ -99,6 +106,7 @@ const initialFilters: DashboardFilters = {
   diabetes: "all",
   smoker: "all",
   model_variant: "all",
+  record_status: "active",
 };
 
 function buildQueryString(
@@ -117,6 +125,7 @@ function buildQueryString(
   if (filters.model_variant !== "all") {
     params.set("model_variant", filters.model_variant);
   }
+  params.set("record_status", filters.record_status);
   params.set("page", String(page));
   params.set("page_size", String(pageSize));
   return params.toString();
@@ -158,9 +167,13 @@ export default function DashboardPage() {
   const [exportingFormat, setExportingFormat] = useState<"csv" | "xlsx" | null>(null);
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
+  const [archiveDialog, setArchiveDialog] = useState<"archive" | "restore" | null>(null);
+  const [isArchiveUpdating, setIsArchiveUpdating] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [total, setTotal] = useState(0);
+  const [activeTotal, setActiveTotal] = useState(0);
+  const [archivedTotal, setArchivedTotal] = useState(0);
 
   const totalPages = useMemo(
     () => Math.max(Math.ceil(total / pageSize), 1),
@@ -204,6 +217,8 @@ export default function DashboardPage() {
       const data = (await response.json()) as DashboardListResponse;
       setRecords(data.items);
       setTotal(data.total);
+      setActiveTotal(data.active_total);
+      setArchivedTotal(data.archived_total);
       setPage(data.page);
     } catch (loadError) {
       setError(
@@ -266,6 +281,8 @@ export default function DashboardPage() {
       const data = (await response.json()) as DashboardListResponse;
       setRecords(data.items);
       setTotal(data.total);
+      setActiveTotal(data.active_total);
+      setArchivedTotal(data.archived_total);
       setPage(data.page);
     } catch (resetError) {
       setError(
@@ -342,6 +359,48 @@ export default function DashboardPage() {
       );
     } finally {
       setExportingFormat(null);
+    }
+  };
+
+  const handleArchiveStateChange = async () => {
+    if (!selectedRecord || !archiveDialog) {
+      return;
+    }
+
+    setIsArchiveUpdating(true);
+    setDetailError("");
+
+    try {
+      const response = await fetch(
+        `${getApiBaseUrl()}/api/prevent-records/${selectedRecord.id}/${archiveDialog}`,
+        {
+          method: "PATCH",
+          headers: getAdminHeaders(),
+        },
+      );
+      if (response.status === 401) {
+        handleUnauthorized(setDetailError);
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(
+          archiveDialog === "archive"
+            ? "No se pudo archivar el registro."
+            : "No se pudo restaurar el registro.",
+        );
+      }
+      const data = (await response.json()) as DashboardDetail;
+      setSelectedRecord(data);
+      setArchiveDialog(null);
+      await loadRecords(page);
+    } catch (archiveError) {
+      setDetailError(
+        archiveError instanceof Error
+          ? archiveError.message
+          : "No se pudo actualizar el estado del registro.",
+      );
+    } finally {
+      setIsArchiveUpdating(false);
     }
   };
 
@@ -452,6 +511,17 @@ export default function DashboardPage() {
                   { label: "FULL", value: "full" },
                 ]}
               />
+              <SelectField
+                label="Estado"
+                name="record_status"
+                value={filters.record_status}
+                onChange={handleFilterChange}
+                options={[
+                  { label: "Activos", value: "active" },
+                  { label: "Archivados", value: "archived" },
+                  { label: "Todos", value: "all" },
+                ]}
+              />
             </div>
 
             <div className="dashboard-actions">
@@ -484,6 +554,8 @@ export default function DashboardPage() {
 
           <div className="dashboard-summary">
             <span>{total} registros</span>
+            <span>{activeTotal} activos</span>
+            <span>{archivedTotal} archivados</span>
             <span>Página {page} de {totalPages}</span>
           </div>
 
@@ -495,6 +567,7 @@ export default function DashboardPage() {
                   <th>Edad</th>
                   <th>Sexo</th>
                   <th>Médico</th>
+                  <th>Estado</th>
                   <th>Riesgo CVD</th>
                   <th>Riesgo ASCVD</th>
                   <th>Riesgo HF</th>
@@ -504,7 +577,7 @@ export default function DashboardPage() {
               <tbody>
                 {records.length === 0 && !isLoading ? (
                   <tr>
-                    <td colSpan={8} className="dashboard-empty">
+                    <td colSpan={9} className="dashboard-empty">
                       No hay registros para los filtros seleccionados.
                     </td>
                   </tr>
@@ -519,6 +592,7 @@ export default function DashboardPage() {
                     <td>{record.patient_age}</td>
                     <td>{translateSex(record.patient_sex)}</td>
                     <td>{record.physician_name}</td>
+                    <td><ArchiveBadge isDeleted={record.is_deleted} /></td>
                     <td><RiskCell risk={record.cvd_risk} /></td>
                     <td><RiskCell risk={record.ascvd_risk} /></td>
                     <td><RiskCell risk={record.hf_risk} /></td>
@@ -603,6 +677,14 @@ export default function DashboardPage() {
                   <DetailItem label="Médico" value={selectedRecord.physician_name} />
                   <DetailItem label="Especialidad" value={selectedRecord.physician_specialty} />
                   <DetailItem label="Sexo" value={translateSex(selectedRecord.patient_sex)} />
+                  <DetailItem
+                    label="Estado"
+                    value={
+                      selectedRecord.is_deleted
+                        ? `Archivado${selectedRecord.deleted_at ? ` (${formatDate(selectedRecord.deleted_at)})` : ""}`
+                        : "Activo"
+                    }
+                  />
                   <DetailItem label="Edad" value={String(selectedRecord.patient_age)} />
                   <DetailItem label="Modelo" value={translateVariant(selectedRecord.model_variant)} />
                   <DetailItem label="CVD" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
@@ -625,6 +707,76 @@ export default function DashboardPage() {
                     value={selectedRecord.smoker ? "Sí" : "No"}
                   />
                 </div>
+
+                <div className="dashboard-record-actions">
+                  <div>
+                    <h4>Gestión del registro</h4>
+                    <p>
+                      Archivar oculta el registro del panel principal sin eliminarlo
+                      de la base de datos.
+                    </p>
+                  </div>
+                  <div className="dashboard-record-action-buttons">
+                    {selectedRecord.is_deleted ? (
+                      <button
+                        className="dashboard-button dashboard-button-primary"
+                        type="button"
+                        onClick={() => setArchiveDialog("restore")}
+                      >
+                        Restaurar
+                      </button>
+                    ) : (
+                      <button
+                        className="dashboard-button dashboard-button-secondary"
+                        type="button"
+                        onClick={() => setArchiveDialog("archive")}
+                      >
+                        Archivar
+                      </button>
+                    )}
+                    <button
+                      className="dashboard-button dashboard-button-secondary"
+                      type="button"
+                      disabled
+                      title="Acción reservada para administración avanzada futura."
+                    >
+                      Eliminar permanentemente
+                    </button>
+                  </div>
+                </div>
+
+                {archiveDialog ? (
+                  <div className="dashboard-confirm-card">
+                    <strong>
+                      {archiveDialog === "archive"
+                        ? "Archivar registro"
+                        : "Restaurar registro"}
+                    </strong>
+                    <p>
+                      {archiveDialog === "archive"
+                        ? "Esta acción ocultará el registro del panel principal. Podrá restaurarse posteriormente."
+                        : "Esta acción devolverá el registro al panel principal de registros activos."}
+                    </p>
+                    <div className="dashboard-record-action-buttons">
+                      <button
+                        className="dashboard-button dashboard-button-primary"
+                        type="button"
+                        onClick={() => void handleArchiveStateChange()}
+                        disabled={isArchiveUpdating}
+                      >
+                        {isArchiveUpdating ? "Procesando..." : "Confirmar"}
+                      </button>
+                      <button
+                        className="dashboard-button dashboard-button-secondary"
+                        type="button"
+                        onClick={() => setArchiveDialog(null)}
+                        disabled={isArchiveUpdating}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="dashboard-research-panel">
                   <div>
@@ -765,6 +917,14 @@ function RiskCell({ risk }: { risk: number | null }) {
     <span className="dashboard-risk-cell">
       <strong>{formatClinicalRisk(risk)}</strong>
       <small>{formatResearchRisk(risk)}</small>
+    </span>
+  );
+}
+
+function ArchiveBadge({ isDeleted }: { isDeleted: boolean }) {
+  return (
+    <span className={`dashboard-archive-badge ${isDeleted ? "is-archived" : "is-active"}`}>
+      {isDeleted ? "Archivado" : "Activo"}
     </span>
   );
 }

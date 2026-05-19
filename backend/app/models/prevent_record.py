@@ -32,6 +32,16 @@ class PreventRecord(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=text("false"),
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     patient_age: Mapped[int] = mapped_column(Integer, nullable=False)
     patient_sex: Mapped[str] = mapped_column(String(20), nullable=False)

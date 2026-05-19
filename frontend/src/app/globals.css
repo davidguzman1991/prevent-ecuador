@@ -2114,6 +2114,27 @@ button {
   line-height: 1.2;
 }
 
+.dashboard-archive-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.dashboard-archive-badge.is-active {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.dashboard-archive-badge.is-archived {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .dashboard-row {
   cursor: pointer;
   transition: background 0.18s ease;
@@ -2253,6 +2274,42 @@ button {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.dashboard-record-actions,
+.dashboard-confirm-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.dashboard-record-actions h4,
+.dashboard-confirm-card strong {
+  margin: 0;
+  color: #12324a;
+  font-size: 1rem;
+}
+
+.dashboard-record-actions p,
+.dashboard-confirm-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.dashboard-record-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dashboard-confirm-card {
+  border-color: rgba(183, 121, 31, 0.22);
+  background: var(--warning-soft);
 }
 
 .print-report-technical-section {
@@ -2553,7 +2610,8 @@ button {
   .dashboard-summary,
   .dashboard-actions,
   .dashboard-pagination,
-  .dashboard-modal-header {
+  .dashboard-modal-header,
+  .dashboard-record-action-buttons {
     flex-direction: column;
     align-items: stretch;
   }

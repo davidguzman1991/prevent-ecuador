@@ -72,6 +72,8 @@ class PreventRecordResponse(PreventRecordBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    is_deleted: bool = False
+    deleted_at: datetime | None = None
     model_variant_used: str | None = None
     cvd_risk_10y: float | None = None
     ascvd_risk_10y: float | None = None
@@ -118,6 +120,8 @@ class PreventRecordCreateResponse(BaseModel):
 class PreventRecordListItem(BaseModel):
     id: UUID
     created_at: datetime
+    is_deleted: bool = False
+    deleted_at: datetime | None = None
     patient_age: int
     patient_sex: str
     physician_name: str
@@ -130,6 +134,8 @@ class PreventRecordListItem(BaseModel):
 class PreventRecordListResponse(BaseModel):
     items: list[PreventRecordListItem]
     total: int
+    active_total: int
+    archived_total: int
     page: int
     page_size: int
 
@@ -138,6 +144,8 @@ class PreventRecordDetailResponse(BaseModel):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    is_deleted: bool
+    deleted_at: datetime | None
     patient_age: int
     patient_sex: str
     patient_country: str
@@ -186,5 +194,6 @@ class PreventRecordListFilters(BaseModel):
     diabetes: bool | None = None
     smoker: bool | None = None
     model_variant: Literal["base", "uacr", "hba1c", "sdi", "full"] | None = None
+    record_status: Literal["active", "archived", "all"] = "active"
     page: int = 1
     page_size: int = 20
