@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent, ReactNode, useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ValidationInfoCard } from "@/components/ValidationInfoCard";
+import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 
 const getApiBaseUrl = () => {
   const apiBaseUrl =
@@ -231,10 +232,6 @@ function extractErrorMessage(errorBody: unknown): string {
   return "No se pudo calcular el riesgo PREVENT. Verifica los datos e intenta nuevamente.";
 }
 
-function getRiskPercentage(risk: number): number {
-  return risk;
-}
-
 function parseClinicalNumber(value: string): number {
   return Number(value.trim().replace(",", "."));
 }
@@ -310,7 +307,7 @@ function formatRiskValue(risk: number | null, riskType: RiskType): string {
       : "Datos insuficientes";
   }
 
-  return `${getRiskPercentage(risk).toFixed(1)}%`;
+  return formatClinicalRisk(risk);
 }
 
 function translateRiskCategory(category: string): string {
@@ -359,7 +356,7 @@ function getClinicalInsight(result: PreventResult): string | null {
 
   if (
     result.ascvd_risk !== null &&
-    getRiskPercentage(result.ascvd_risk) >= 20
+    result.ascvd_risk >= 20
   ) {
     return "Alto riesgo aterosclerótico: considerar intensificación del manejo lipídico.";
   }
@@ -396,10 +393,10 @@ function getRecommendationText(
   if (risk === null) {
     return "Puede completar o ajustar las variables clínicas para habilitar una estimación válida.";
   }
-  if (category === "high" || getRiskPercentage(risk) >= 20) {
+  if (category === "high" || risk >= 20) {
     return "Sugerencia clínica: considerar evaluación clínica más detallada y manejo de factores de riesgo.";
   }
-  if (category === "intermediate" || getRiskPercentage(risk) >= 7.5) {
+  if (category === "intermediate" || risk >= 7.5) {
     return "Sugerencia clínica: considerar intervención individualizada y seguimiento de evolución clínica.";
   }
   return "Sugerencia clínica: considerar revisión de estilo de vida y monitoreo periódico.";
@@ -421,8 +418,7 @@ export default function HomePage() {
         ? result.ascvd_risk
         : result.hf_risk
     : null;
-  const selectedRiskPercentage =
-    selectedRisk !== null ? getRiskPercentage(selectedRisk) : null;
+  const selectedRiskPercentage = selectedRisk;
   const selectedCategory = result
     ? riskType === "cvd"
       ? result.cvd_category
@@ -1078,6 +1074,13 @@ export default function HomePage() {
             </section>
           ) : null}
 
+          <section className="print-report-section print-report-technical-section">
+            <h2>Valores técnicos calculados</h2>
+            <p>CVD exacto: {formatResearchRisk(result.cvd_risk)}</p>
+            <p>ASCVD exacto: {formatResearchRisk(result.ascvd_risk)}</p>
+            <p>HF exacto: {formatResearchRisk(result.hf_risk)}</p>
+          </section>
+
           <footer className="print-clinical-footer">
             <p>
               PREVENT Ecuador es una implementación clínica independiente basada en las
@@ -1152,7 +1155,7 @@ function RiskGauge({
         </svg>
       </div>
       <div className="prevent-gauge-readout">
-        <strong>{percentage !== null ? `${percentage.toFixed(1)}%` : "--"}</strong>
+        <strong>{percentage !== null ? formatClinicalRisk(percentage) : "--"}</strong>
         <span>Probabilidad estimada a 10 años</span>
       </div>
     </div>

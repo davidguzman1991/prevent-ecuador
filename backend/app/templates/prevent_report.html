@@ -150,6 +150,18 @@
         font-size: 10.5px;
         color: var(--muted);
       }
+
+      .technical-section {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        background: #fbfdff;
+        color: var(--muted);
+        font-size: 10.5px;
+      }
+
+      .technical-section p {
+        margin: 2px 0;
+      }
     </style>
   </head>
   <body>
@@ -353,6 +365,19 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="section technical-section">
+      <h3 class="section-title">Valores técnicos calculados</h3>
+      <p>CVD exacto:
+        {% if exact_risks.cvd is not none %}{{ "%.6f"|format(exact_risks.cvd) }} %{% else %}No disponible{% endif %}
+      </p>
+      <p>ASCVD exacto:
+        {% if exact_risks.ascvd is not none %}{{ "%.6f"|format(exact_risks.ascvd) }} %{% else %}No disponible{% endif %}
+      </p>
+      <p>HF exacto:
+        {% if exact_risks.hf is not none %}{{ "%.6f"|format(exact_risks.hf) }} %{% else %}No disponible{% endif %}
+      </p>
     </section>
 
     <section class="section">

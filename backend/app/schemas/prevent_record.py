@@ -79,7 +79,7 @@ class PreventRecordResponse(PreventRecordBase):
     cvd_category: str | None = None
     ascvd_category: str | None = None
     hf_category: str | None = None
-    prevent_age: int | None = None
+    prevent_age: float | None = None
 
 
 class PreventWarning(BaseModel):
@@ -164,7 +164,7 @@ class PreventRecordDetailResponse(BaseModel):
     cvd_category: str | None
     ascvd_category: str | None
     hf_category: str | None
-    prevent_age: int | None
+    prevent_age: float | None
     engine_version: str
     source_org: str
     initiative_name: str

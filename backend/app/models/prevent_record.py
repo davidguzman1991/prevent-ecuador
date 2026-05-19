@@ -90,7 +90,7 @@ class PreventRecord(Base):
     cvd_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     ascvd_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     hf_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    prevent_age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    prevent_age: Mapped[float | None] = mapped_column(Float, nullable=True)
     engine_version: Mapped[str] = mapped_column(
         String(100),
         nullable=False,

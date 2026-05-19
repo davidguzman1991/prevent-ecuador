@@ -10,6 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { PinGate } from "@/components/PinGate";
+import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 
 const getApiBaseUrl = () => {
   const apiBaseUrl =
@@ -119,14 +120,6 @@ function buildQueryString(
   params.set("page", String(page));
   params.set("page_size", String(pageSize));
   return params.toString();
-}
-
-function normalizeRisk(risk: number | null): string {
-  if (risk === null) {
-    return "No calculado";
-  }
-
-  return `${risk.toFixed(1)}%`;
 }
 
 function formatDate(value: string): string {
@@ -517,9 +510,9 @@ export default function DashboardPage() {
                     <td>{record.patient_age}</td>
                     <td>{translateSex(record.patient_sex)}</td>
                     <td>{record.physician_name}</td>
-                    <td>{normalizeRisk(record.cvd_risk)}</td>
-                    <td>{normalizeRisk(record.ascvd_risk)}</td>
-                    <td>{normalizeRisk(record.hf_risk)}</td>
+                    <td><RiskCell risk={record.cvd_risk} /></td>
+                    <td><RiskCell risk={record.ascvd_risk} /></td>
+                    <td><RiskCell risk={record.hf_risk} /></td>
                     <td>{translateVariant(record.model_variant)}</td>
                   </tr>
                 ))}
@@ -603,9 +596,9 @@ export default function DashboardPage() {
                   <DetailItem label="Sexo" value={translateSex(selectedRecord.patient_sex)} />
                   <DetailItem label="Edad" value={String(selectedRecord.patient_age)} />
                   <DetailItem label="Modelo" value={translateVariant(selectedRecord.model_variant)} />
-                  <DetailItem label="CVD" value={normalizeRisk(selectedRecord.cvd_risk)} />
-                  <DetailItem label="ASCVD" value={normalizeRisk(selectedRecord.ascvd_risk)} />
-                  <DetailItem label="HF" value={normalizeRisk(selectedRecord.hf_risk)} />
+                  <DetailItem label="CVD" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
+                  <DetailItem label="ASCVD" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
+                  <DetailItem label="HF" value={formatClinicalRisk(selectedRecord.hf_risk)} />
                   <DetailItem
                     label="Edad cardiovascular"
                     value={
@@ -622,6 +615,22 @@ export default function DashboardPage() {
                     label="Tabaquismo"
                     value={selectedRecord.smoker ? "Sí" : "No"}
                   />
+                </div>
+
+                <div className="dashboard-research-panel">
+                  <div>
+                    <span className="prevent-panel-badge">Investigación</span>
+                    <h4>Valores exactos calculados</h4>
+                    <p>
+                      Riesgos conservados con precisión completa para auditoría,
+                      exportación y análisis estadístico.
+                    </p>
+                  </div>
+                  <div className="dashboard-research-grid">
+                    <DetailItem label="CVD exacto" value={formatResearchRisk(selectedRecord.cvd_risk)} />
+                    <DetailItem label="ASCVD exacto" value={formatResearchRisk(selectedRecord.ascvd_risk)} />
+                    <DetailItem label="HF exacto" value={formatResearchRisk(selectedRecord.hf_risk)} />
+                  </div>
                 </div>
 
                 <div className="dashboard-json-panel">
@@ -694,9 +703,15 @@ export default function DashboardPage() {
                           : "No calculada"
                       }
                     />
-                    <ReportItem label="Riesgo global" value={normalizeRisk(selectedRecord.cvd_risk)} />
-                    <ReportItem label="ASCVD" value={normalizeRisk(selectedRecord.ascvd_risk)} />
-                    <ReportItem label="HF" value={normalizeRisk(selectedRecord.hf_risk)} />
+                    <ReportItem label="Riesgo global" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
+                    <ReportItem label="ASCVD" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
+                    <ReportItem label="HF" value={formatClinicalRisk(selectedRecord.hf_risk)} />
+                  </div>
+                  <div className="print-report-section print-report-technical-section">
+                    <h2>Valores técnicos calculados</h2>
+                    <p>CVD exacto: {formatResearchRisk(selectedRecord.cvd_risk)}</p>
+                    <p>ASCVD exacto: {formatResearchRisk(selectedRecord.ascvd_risk)}</p>
+                    <p>HF exacto: {formatResearchRisk(selectedRecord.hf_risk)}</p>
                   </div>
                   <p className="print-disclaimer">
                     Herramienta de apoyo a la decisión clínica. No reemplaza la valoración médica integral ni el juicio clínico profesional.
@@ -733,6 +748,15 @@ function Field({ label, name, type, value, onChange, placeholder }: FieldProps) 
         placeholder={placeholder}
       />
     </label>
+  );
+}
+
+function RiskCell({ risk }: { risk: number | null }) {
+  return (
+    <span className="dashboard-risk-cell">
+      <strong>{formatClinicalRisk(risk)}</strong>
+      <small>{formatResearchRisk(risk)}</small>
+    </span>
   );
 }
 

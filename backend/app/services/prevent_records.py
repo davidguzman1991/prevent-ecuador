@@ -85,10 +85,10 @@ def _column_or_payload(record: PreventRecord, column_value, payload_key: str):
     return column_value if column_value is not None else _payload_value(record, payload_key)
 
 
-def _format_risk_for_csv(value) -> float | None:
+def _format_exact_risk_for_csv(value) -> float | None:
     if value is None:
         return None
-    return round(float(value), 2)
+    return float(value)
 
 
 def _extract_record_results(record: PreventRecord) -> dict[str, float | str | None]:
@@ -271,7 +271,7 @@ def create_prevent_record(
         cvd_category=cvd_category,
         ascvd_category=ascvd_category,
         hf_category=hf_category,
-        prevent_age=round(prevent_age) if prevent_age is not None else None,
+        prevent_age=prevent_age,
         input_payload_json={
             **engine_input,
             "model_variant": model_variant,
@@ -521,16 +521,16 @@ def export_prevent_records_csv(
                 uacr,
                 hba1c,
                 sdi,
-                _format_risk_for_csv(
+                _format_exact_risk_for_csv(
                     cvd_risk if cvd_risk is not None else extracted["cvd_risk"],
                 ),
-                _format_risk_for_csv(
+                _format_exact_risk_for_csv(
                     ascvd_risk if ascvd_risk is not None else extracted["ascvd_risk"],
                 ),
-                _format_risk_for_csv(
+                _format_exact_risk_for_csv(
                     hf_risk if hf_risk is not None else extracted["hf_risk"],
                 ),
-                round(float(prevent_age), 2) if prevent_age is not None else None,
+                float(prevent_age) if prevent_age is not None else None,
                 model_variant or extracted["model_variant"],
             ],
         )

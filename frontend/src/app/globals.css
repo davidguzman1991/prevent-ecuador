@@ -2094,6 +2094,26 @@ button {
   font-size: 0.95rem;
 }
 
+.dashboard-risk-cell {
+  display: grid;
+  gap: 3px;
+  min-width: 7rem;
+}
+
+.dashboard-risk-cell strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.dashboard-risk-cell small {
+  color: var(--muted-2);
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
 .dashboard-row {
   cursor: pointer;
   transition: background 0.18s ease;
@@ -2205,6 +2225,51 @@ button {
   font-family: "Cascadia Code", "Consolas", monospace;
   font-size: 0.84rem;
   line-height: 1.6;
+}
+
+.dashboard-research-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(46, 139, 192, 0.16);
+  border-radius: 18px;
+  background: #fbfdff;
+}
+
+.dashboard-research-panel h4 {
+  margin: 10px 0 4px;
+  color: #12324a;
+  font-size: 1rem;
+}
+
+.dashboard-research-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.dashboard-research-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.print-report-technical-section {
+  color: #52606d;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.print-report-technical-section h2 {
+  margin: 0 0 4px;
+  color: #1e293b;
+  font-size: 0.86rem;
+}
+
+.print-report-technical-section p {
+  margin: 2px 0;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .pin-gate-backdrop {
@@ -2498,7 +2563,8 @@ button {
   }
 
   .dashboard-filter-grid,
-  .dashboard-detail-grid {
+  .dashboard-detail-grid,
+  .dashboard-research-grid {
     grid-template-columns: 1fr;
   }
 

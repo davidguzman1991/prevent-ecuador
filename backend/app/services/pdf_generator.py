@@ -70,12 +70,20 @@ def generate_prevent_report_pdf(record: PreventRecord) -> bytes:
     result_payload = input_payload.get("results", {}) if isinstance(input_payload, dict) else {}
     model_variant = input_payload.get("model_variant") if isinstance(input_payload, dict) else None
     template = jinja_env.get_template("prevent_report.html")
+    risk_percentage = (record.risk_10y * 100) if record.risk_10y is not None else None
+    ascvd_percentage = result_payload.get("ascvd_10y")
+    hf_percentage = result_payload.get("hf_10y")
     html = template.render(
         record=record,
         generated_at=datetime.now(),
-        risk_percentage=(record.risk_10y * 100) if record.risk_10y is not None else None,
-        ascvd_percentage=result_payload.get("ascvd_10y"),
-        hf_percentage=result_payload.get("hf_10y"),
+        risk_percentage=risk_percentage,
+        ascvd_percentage=ascvd_percentage,
+        hf_percentage=hf_percentage,
+        exact_risks={
+            "cvd": risk_percentage,
+            "ascvd": ascvd_percentage,
+            "hf": hf_percentage,
+        },
         prevent_age=result_payload.get("prevent_age"),
         model_variant_label=_get_variant_label(model_variant),
         model_variant=model_variant or "base",
