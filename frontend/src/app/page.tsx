@@ -3,8 +3,17 @@
 import Link from "next/link";
 import { ChangeEvent, FormEvent, ReactNode, useState } from "react";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const getApiBaseUrl = () => {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    (process.env.NODE_ENV !== "production" ? "http://127.0.0.1:8000" : "");
+
+  if (!apiBaseUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+  }
+
+  return apiBaseUrl;
+};
 type RiskType = "cvd" | "ascvd" | "hf";
 type ModelVariant = "auto" | "base" | "uacr" | "hba1c" | "sdi" | "full";
 type ValidatedFieldName = "age" | "total_cholesterol" | "hdl" | "sbp" | "egfr" | "bmi";
@@ -491,7 +500,7 @@ export default function HomePage() {
     console.debug("PREVENT payload sent to backend", payload);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prevent-records/`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/prevent-records/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

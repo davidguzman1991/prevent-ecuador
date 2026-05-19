@@ -11,8 +11,17 @@ import { useRouter } from "next/navigation";
 
 import { PinGate } from "@/components/PinGate";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const getApiBaseUrl = () => {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    (process.env.NODE_ENV !== "production" ? "http://127.0.0.1:8000" : "");
+
+  if (!apiBaseUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+  }
+
+  return apiBaseUrl;
+};
 const DASHBOARD_ACCESS_KEY = "prevent_admin_api_key";
 const UNAUTHORIZED_MESSAGE =
   "Acceso no autorizado. Verifique la clave administrativa.";
@@ -187,7 +196,7 @@ export default function DashboardPage() {
       }
       const query = buildQueryString(filters, nextPage, pageSize);
       const response = await fetch(
-        `${API_BASE_URL}/api/prevent-records/list?${query}`,
+        `${getApiBaseUrl()}/api/prevent-records/list?${query}`,
         { headers: getAdminHeaders() },
       );
 
@@ -252,7 +261,7 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       const response = await fetch(
-        `${API_BASE_URL}/api/prevent-records/list?page=1&page_size=${pageSize}`,
+        `${getApiBaseUrl()}/api/prevent-records/list?page=1&page_size=${pageSize}`,
         { headers: getAdminHeaders() },
       );
       if (response.status === 401) {
@@ -282,7 +291,7 @@ export default function DashboardPage() {
     setDetailError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prevent-records/${recordId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/prevent-records/${recordId}`, {
         headers: getAdminHeaders(),
       });
       if (response.status === 401) {
@@ -312,7 +321,7 @@ export default function DashboardPage() {
     try {
       const query = buildQueryString(filters, page, pageSize);
       const response = await fetch(
-        `${API_BASE_URL}/api/prevent-records/export?${query}`,
+        `${getApiBaseUrl()}/api/prevent-records/export?${query}`,
         { headers: getAdminHeaders() },
       );
       if (response.status === 401) {
