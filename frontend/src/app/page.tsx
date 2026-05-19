@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent, ReactNode, useState } from "react";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 type RiskType = "cvd" | "ascvd" | "hf";
 type ModelVariant = "auto" | "base" | "uacr" | "hba1c" | "sdi" | "full";
 type ValidatedFieldName = "age" | "total_cholesterol" | "hdl" | "sbp" | "egfr" | "bmi";

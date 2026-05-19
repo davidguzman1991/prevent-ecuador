@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { PinGate } from "@/components/PinGate";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 const DASHBOARD_ACCESS_KEY = "prevent_admin_api_key";
 const UNAUTHORIZED_MESSAGE =
   "Acceso no autorizado. Verifique la clave administrativa.";
