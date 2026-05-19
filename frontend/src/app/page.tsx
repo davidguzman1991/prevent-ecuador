@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, ReactNode, useState } from "react";
+import { SiteFooter } from "@/components/SiteFooter";
+import { ValidationInfoCard } from "@/components/ValidationInfoCard";
 
 const getApiBaseUrl = () => {
   const apiBaseUrl =
@@ -147,9 +149,9 @@ type FieldValidationRule = {
   outcomes: RiskType[];
 };
 
-const VALIDATION_BADGE_TEXT = "Motor en validación";
+const VALIDATION_BADGE_TEXT = "Validación técnica";
 const DEFAULT_METHOD_NOTE =
-  "Estimación basada en el marco PREVENT; validación interna en curso.";
+  "Implementación independiente contrastada con el paquete oficial R PREVENT-AHA y la calculadora web PREVENT.";
 
 const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = {
   age: {
@@ -574,9 +576,14 @@ export default function HomePage() {
               Validación
             </a>
           </nav>
-          <Link className="prevent-dashboard-link" href="/dashboard">
-            Panel clínico
-          </Link>
+          <div className="prevent-sidebar-actions">
+            <Link className="prevent-dashboard-link" href="/dashboard">
+              Panel clínico
+            </Link>
+            <Link className="prevent-dashboard-link prevent-secondary-link" href="/metodologia">
+              Metodología
+            </Link>
+          </div>
         </aside>
 
         <section className="prevent-main-column" id="ingreso">
@@ -1013,36 +1020,7 @@ export default function HomePage() {
               <span>Imprimir / Guardar como PDF</span>
             </button>
 
-            <div className="prevent-validator-card" id="validacion">
-              <div className="prevent-validator-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M7.5 4.5h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2Z"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.7"
-                  />
-                  <path
-                    d="M12 8v6M9 11h6"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.7"
-                  />
-                </svg>
-              </div>
-              <div className="prevent-validator-copy">
-                <strong>Validado por: Dr. David Guzmán</strong>
-                <span className="prevent-validator-role">
-                  Médico, Investigador y Desarrollador
-                </span>
-                <div className="prevent-validator-divider" aria-hidden="true" />
-                <p className="prevent-validator-support">
-                  Desarrollado de forma independiente basado en las ecuaciones PREVENT (AHA). Para sugerencias o soporte: davidguzman.med@gmail.com
-                </p>
-              </div>
-            </div>
+            <ValidationInfoCard />
 
             {showValidationBadge ? (
               <p className="prevent-method-note">
@@ -1102,18 +1080,19 @@ export default function HomePage() {
 
           <footer className="print-clinical-footer">
             <p>
-              Creado a partir del cálculo oficial de la calculadora de riesgo cardiovascular PREVENT de la American Heart Association (AHA).
+              PREVENT Ecuador es una implementación clínica independiente basada en las
+              ecuaciones PREVENT publicadas por la American Heart Association (AHA).
             </p>
-            <p>Desarrollado por Dr. David Guzmán — ANOVA Medical Research.</p>
-            <p>Sistema de apoyo a la decisión clínica. No reemplaza el juicio clínico individual.</p>
+            <p>
+              Validación técnica contrastada con el paquete oficial R PREVENT-AHA y la
+              calculadora web PREVENT.
+            </p>
+            <p>Desarrollado por Dr. David Guzmán — ANOVA Research Group.</p>
+            <p>Herramienta de apoyo a la decisión clínica. No reemplaza el juicio médico profesional.</p>
           </footer>
         </div>
       ) : null}
-      <footer className="prevent-footer">
-        <p>
-          Desarrollado por ANOVA Research Group. Estimación clínica basada en ecuaciones PREVENT AHA mediante implementación independiente.
-        </p>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
