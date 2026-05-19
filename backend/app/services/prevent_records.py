@@ -1,0 +1,538 @@
+import csv
+import io
+import logging
+from uuid import UUID
+
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.models.prevent_record import PreventRecord
+from app.schemas.prevent_record import (
+    PreventRecordCreate,
+    PreventRecordCreateResponse,
+    PreventRecordDetailResponse,
+    PreventRecordListFilters,
+    PreventRecordListItem,
+    PreventRecordListResponse,
+)
+from app.services.clinical_recommendations import build_clinical_interpretation
+from app.services.prevent_engine import (
+    calculate_prevent_age,
+    classify_risk,
+    compute_prevent_10y,
+)
+from app.services.prevent_validation import invalid_outcomes_from_warnings, validate_prevent_inputs
+from app.services.prevent_coefficients import PREVENT_ENGINE_STATUS, PREVENT_METHOD_NOTE
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_payload_for_log(payload: dict[str, object]) -> dict[str, object]:
+    return {
+        key: value
+        for key, value in payload.items()
+        if key not in {"physician_name", "physician_specialty", "notes"}
+    }
+
+
+def _payload_value(record: PreventRecord, key: str):
+    payload = record.input_payload_json or {}
+    return payload.get(key)
+
+
+def _result_payload_value(record: PreventRecord, key: str):
+    payload = record.input_payload_json or {}
+    results = payload.get("results") or {}
+    return results.get(key)
+
+
+def _clinical_interpretation_from_record(record: PreventRecord) -> dict[str, object] | None:
+    payload = record.input_payload_json or {}
+    stored_interpretation = payload.get("clinical_interpretation")
+    if isinstance(stored_interpretation, dict):
+        return stored_interpretation
+
+    extracted = _extract_record_results(record)
+    engine_input = {
+        **payload,
+        "age": record.patient_age,
+        "sex": record.patient_sex,
+        "total_cholesterol": record.total_cholesterol,
+        "hdl": record.hdl_cholesterol,
+        "sbp": record.systolic_bp,
+        "egfr": record.egfr,
+        "bmi": record.bmi,
+        "diabetes": record.diabetes,
+        "smoker": record.smoker,
+        "statin_use": record.statin_use,
+        "antihypertensive_use": record.antihypertensive_use,
+    }
+    warnings = payload.get("warnings") if isinstance(payload.get("warnings"), list) else None
+    return build_clinical_interpretation(
+        prevent_result={
+            "cvd_risk": extracted["cvd_risk"],
+            "ascvd_risk": extracted["ascvd_risk"],
+            "hf_risk": extracted["hf_risk"],
+            "prevent_age": extracted["prevent_age"],
+            "model_variant": extracted["model_variant"],
+        },
+        input_payload=engine_input,
+        warnings=warnings,
+    )
+
+
+def _column_or_payload(record: PreventRecord, column_value, payload_key: str):
+    return column_value if column_value is not None else _payload_value(record, payload_key)
+
+
+def _format_risk_for_csv(value) -> float | None:
+    if value is None:
+        return None
+    return round(float(value), 2)
+
+
+def _extract_record_results(record: PreventRecord) -> dict[str, float | str | None]:
+    payload = record.input_payload_json or {}
+    results = payload.get("results") or {}
+    cvd_risk = record.cvd_risk_10y
+    if cvd_risk is None and record.risk_10y is not None:
+        cvd_risk = record.risk_10y * 100
+    if cvd_risk is None:
+        cvd_risk = results.get("cvd_10y")
+
+    return {
+        "cvd_risk": cvd_risk,
+        "ascvd_risk": record.ascvd_risk_10y
+        if record.ascvd_risk_10y is not None
+        else results.get("ascvd_10y"),
+        "hf_risk": record.hf_risk_10y
+        if record.hf_risk_10y is not None
+        else results.get("hf_10y"),
+        "prevent_age": record.prevent_age
+        if record.prevent_age is not None
+        else results.get("prevent_age"),
+        "model_variant": record.model_variant_used or payload.get("model_variant"),
+    }
+
+
+def _build_prevent_records_query(
+    db: Session,
+    filters: PreventRecordListFilters,
+):
+    query = db.query(PreventRecord)
+
+    if filters.date_from is not None:
+        query = query.filter(func.date(PreventRecord.created_at) >= filters.date_from)
+    if filters.date_to is not None:
+        query = query.filter(func.date(PreventRecord.created_at) <= filters.date_to)
+    if filters.physician_name:
+        query = query.filter(
+            PreventRecord.physician_name.ilike(f"%{filters.physician_name.strip()}%"),
+        )
+    if filters.diabetes is not None:
+        query = query.filter(PreventRecord.diabetes == filters.diabetes)
+    if filters.smoker is not None:
+        query = query.filter(PreventRecord.smoker == filters.smoker)
+    if filters.model_variant is not None:
+        query = query.filter(
+            PreventRecord.input_payload_json["model_variant"].astext == filters.model_variant,
+        )
+
+    return query
+
+
+def _validate_requested_variant(engine_input: dict[str, object]) -> str | None:
+    requested_variant = engine_input.get("model_variant")
+    if requested_variant is None:
+        return None
+
+    if requested_variant == "uacr" and engine_input.get("uacr") is None:
+        raise ValueError("El modelo UACR requiere un valor de UACR.")
+    if requested_variant == "hba1c" and engine_input.get("hba1c") is None:
+        raise ValueError("El modelo HbA1c requiere un valor de HbA1c.")
+    if requested_variant == "sdi" and engine_input.get("sdi") is None:
+        raise ValueError("El modelo SDI requiere un valor de SDI.")
+
+    return str(requested_variant)
+
+
+def _build_engine_warnings(warnings: list[str] | None) -> list[dict[str, object]]:
+    return [
+        {
+            "field": "engine",
+            "field_label": "Motor PREVENT",
+            "value": None,
+            "unit": None,
+            "min": None,
+            "max": None,
+            "range": None,
+            "outcomes": ["cvd", "ascvd", "hf"],
+            "message": str(warning),
+            "severity": "warning",
+        }
+        for warning in warnings or []
+    ]
+
+
+def create_prevent_record(
+    db: Session,
+    payload: PreventRecordCreate,
+    *,
+    debug: bool = False,
+) -> PreventRecordCreateResponse:
+    engine_input = payload.model_dump(by_alias=True, exclude_none=True)
+    requested_variant = _validate_requested_variant(engine_input)
+    logger.info("PREVENT input payload received: %s", _safe_payload_for_log(engine_input))
+    model_variant, result, warnings = compute_prevent_10y(engine_input, requested_variant)
+    validation_warnings = validate_prevent_inputs(engine_input)
+    invalid_outcomes = invalid_outcomes_from_warnings(validation_warnings)
+    if "cvd" in invalid_outcomes:
+        result["cvd_10y"] = None
+    if "ascvd" in invalid_outcomes:
+        result["ascvd_10y"] = None
+    if "hf" in invalid_outcomes:
+        result["hf_10y"] = None
+    combined_warnings = [
+        *_build_engine_warnings(warnings),
+        *validation_warnings,
+    ] or None
+    logger.info(
+        "PREVENT raw engine result: %s",
+        {
+            "model_variant": model_variant,
+            "result": result,
+            "warnings": combined_warnings,
+        },
+    )
+    cvd_risk = result["cvd_10y"]
+    ascvd_risk = result["ascvd_10y"]
+    hf_risk = result["hf_10y"]
+    prevent_age = calculate_prevent_age(cvd_risk, engine_input.get("sex"))
+    cvd_category = classify_risk(cvd_risk) if cvd_risk is not None else None
+    ascvd_category = classify_risk(ascvd_risk) if ascvd_risk is not None else None
+    hf_category = classify_risk(hf_risk) if hf_risk is not None else None
+    clinical_interpretation = build_clinical_interpretation(
+        prevent_result={
+            "cvd_risk": cvd_risk,
+            "ascvd_risk": ascvd_risk,
+            "hf_risk": hf_risk,
+            "prevent_age": prevent_age,
+            "model_variant": model_variant,
+        },
+        input_payload=engine_input,
+        warnings=combined_warnings,
+    )
+    risk_10y_stored = (cvd_risk / 100.0) if cvd_risk is not None else None
+    evaluation_debug = None
+    if debug:
+        evaluation_debug = {
+            "cvd_input_summary": {
+                "model": f"prevent_{model_variant}_10y",
+                "outcome": "cvd",
+                "inputs": engine_input,
+            },
+            "ascvd_input_summary": {
+                "model": f"prevent_{model_variant}_10y",
+                "outcome": "ascvd",
+                "inputs": engine_input,
+            },
+            "hf_input_summary": {
+                "model": f"prevent_{model_variant}_10y",
+                "outcome": "hf",
+                "inputs": engine_input,
+                "requires_bmi": True,
+            },
+            "model_variant": model_variant,
+            "cvd_risk": cvd_risk,
+            "ascvd_risk": ascvd_risk,
+            "hf_risk": hf_risk,
+            "prevent_age": prevent_age,
+            "warnings": combined_warnings,
+            "clinical_interpretation": clinical_interpretation,
+        }
+
+    record_data = payload.model_dump(
+        exclude_none=True,
+        exclude={
+            "risk_10y",
+            "model_variant",
+            "zip_code",
+            "input_payload_json",
+        },
+    )
+    record = PreventRecord(
+        **record_data,
+        risk_10y=risk_10y_stored,
+        risk_category=cvd_category,
+        model_variant_used=model_variant,
+        cvd_risk_10y=cvd_risk,
+        ascvd_risk_10y=ascvd_risk,
+        hf_risk_10y=hf_risk,
+        cvd_category=cvd_category,
+        ascvd_category=ascvd_category,
+        hf_category=hf_category,
+        prevent_age=round(prevent_age) if prevent_age is not None else None,
+        input_payload_json={
+            **engine_input,
+            "model_variant": model_variant,
+            "warnings": combined_warnings,
+            "clinical_interpretation": clinical_interpretation,
+            "results": {
+                **result,
+                "prevent_age": prevent_age,
+            },
+        },
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    logger.info(
+        "PREVENT outcome results generated: %s",
+        {
+            "cvd_risk": cvd_risk,
+            "ascvd_risk": ascvd_risk,
+            "hf_risk": hf_risk,
+            "prevent_age": prevent_age,
+            "model_variant": model_variant,
+            "warnings": combined_warnings,
+            "clinical_interpretation": clinical_interpretation,
+        },
+    )
+    response_payload = {
+        "id": record.id,
+        "cvd_risk": cvd_risk,
+        "ascvd_risk": ascvd_risk,
+        "hf_risk": hf_risk,
+        "prevent_age": prevent_age,
+        "cvd_category": cvd_category,
+        "ascvd_category": ascvd_category,
+        "hf_category": hf_category,
+        "model_variant": model_variant,
+        "risk_10y": record.risk_10y,
+        "risk_category": record.risk_category,
+        "engine_status": PREVENT_ENGINE_STATUS,
+        "methodology_note": PREVENT_METHOD_NOTE,
+        "warnings": combined_warnings,
+        "clinical_interpretation": clinical_interpretation,
+        "debug": evaluation_debug,
+        "message": "Prevent risk calculated successfully",
+    }
+    logger.info("PREVENT response payload: %s", response_payload)
+    return PreventRecordCreateResponse(
+        id=record.id,
+        cvd_risk=cvd_risk,
+        ascvd_risk=ascvd_risk,
+        hf_risk=hf_risk,
+        prevent_age=prevent_age,
+        cvd_category=cvd_category,
+        ascvd_category=ascvd_category,
+        hf_category=hf_category,
+        model_variant=model_variant,
+        risk_10y=record.risk_10y,
+        risk_category=record.risk_category,
+        engine_status=PREVENT_ENGINE_STATUS,
+        methodology_note=PREVENT_METHOD_NOTE,
+        warnings=combined_warnings,
+        clinical_interpretation=clinical_interpretation,
+        debug=evaluation_debug,
+        message="Prevent risk calculated successfully",
+    )
+
+
+def get_prevent_record(db: Session, record_id: UUID) -> PreventRecord | None:
+    return db.get(PreventRecord, record_id)
+
+
+def list_prevent_records(
+    db: Session,
+    filters: PreventRecordListFilters,
+) -> PreventRecordListResponse:
+    page = max(filters.page, 1)
+    page_size = min(max(filters.page_size, 1), 100)
+    query = _build_prevent_records_query(db, filters)
+    total = query.count()
+    records = (
+        query.order_by(PreventRecord.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    items: list[PreventRecordListItem] = []
+    for record in records:
+        extracted = _extract_record_results(record)
+        items.append(
+            PreventRecordListItem(
+                id=record.id,
+                created_at=record.created_at,
+                patient_age=record.patient_age,
+                patient_sex=record.patient_sex,
+                physician_name=record.physician_name,
+                cvd_risk=extracted["cvd_risk"],
+                ascvd_risk=extracted["ascvd_risk"],
+                hf_risk=extracted["hf_risk"],
+                model_variant=extracted["model_variant"],
+            ),
+        )
+
+    return PreventRecordListResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+def get_prevent_record_detail(
+    db: Session,
+    record_id: UUID,
+) -> PreventRecordDetailResponse | None:
+    record = get_prevent_record(db, record_id)
+    if record is None:
+        return None
+
+    extracted = _extract_record_results(record)
+    return PreventRecordDetailResponse(
+        id=record.id,
+        created_at=record.created_at,
+        updated_at=record.updated_at,
+        patient_age=record.patient_age,
+        patient_sex=record.patient_sex,
+        patient_country=record.patient_country,
+        patient_province=record.patient_province,
+        total_cholesterol=record.total_cholesterol,
+        hdl_cholesterol=record.hdl_cholesterol,
+        ldl_cholesterol=record.ldl_cholesterol,
+        systolic_bp=record.systolic_bp,
+        diabetes=record.diabetes,
+        smoker=record.smoker,
+        bmi=record.bmi,
+        egfr=record.egfr,
+        statin_use=record.statin_use,
+        antihypertensive_use=record.antihypertensive_use,
+        physician_name=record.physician_name,
+        physician_specialty=record.physician_specialty,
+        physician_city=record.physician_city,
+        risk_10y=record.risk_10y,
+        risk_category=record.risk_category,
+        model_variant_used=record.model_variant_used,
+        cvd_risk_10y=record.cvd_risk_10y,
+        ascvd_risk_10y=record.ascvd_risk_10y,
+        hf_risk_10y=record.hf_risk_10y,
+        cvd_category=record.cvd_category,
+        ascvd_category=record.ascvd_category,
+        hf_category=record.hf_category,
+        prevent_age=record.prevent_age,
+        engine_version=record.engine_version,
+        source_org=record.source_org,
+        initiative_name=record.initiative_name,
+        director_name=record.director_name,
+        consent_for_research=record.consent_for_research,
+        notes=record.notes,
+        input_payload_json=record.input_payload_json,
+        cvd_risk=extracted["cvd_risk"],
+        ascvd_risk=extracted["ascvd_risk"],
+        hf_risk=extracted["hf_risk"],
+        model_variant=extracted["model_variant"],
+        clinical_interpretation=_clinical_interpretation_from_record(record),
+    )
+
+
+def export_prevent_records_csv(
+    db: Session,
+    filters: PreventRecordListFilters,
+) -> str:
+    query = _build_prevent_records_query(db, filters)
+    records = query.order_by(PreventRecord.created_at.desc()).all()
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(
+        [
+            "id",
+            "fecha",
+            "edad",
+            "sexo",
+            "medico",
+            "especialidad_medica",
+            "colesterol_total",
+            "hdl",
+            "presion_sistolica",
+            "egfr",
+            "imc",
+            "diabetes",
+            "tabaquismo",
+            "uso_estatinas",
+            "uso_antihipertensivos",
+            "uacr",
+            "hba1c",
+            "sdi",
+            "riesgo_cvd_10y",
+            "riesgo_ascvd_10y",
+            "riesgo_ic_10y",
+            "edad_prevent",
+            "variante_modelo",
+        ],
+    )
+
+    for record in records:
+        extracted = _extract_record_results(record)
+        uacr = _column_or_payload(record, record.uacr, "uacr")
+        hba1c = _column_or_payload(record, record.hba1c, "hba1c")
+        sdi = _column_or_payload(record, record.sdi, "sdi")
+        model_variant = record.model_variant_used or _payload_value(record, "model_variant")
+        cvd_risk = record.cvd_risk_10y
+        if cvd_risk is None and record.risk_10y is not None:
+            cvd_risk = record.risk_10y * 100
+        if cvd_risk is None:
+            cvd_risk = _result_payload_value(record, "cvd_10y")
+        ascvd_risk = (
+            record.ascvd_risk_10y
+            if record.ascvd_risk_10y is not None
+            else _result_payload_value(record, "ascvd_10y")
+        )
+        hf_risk = (
+            record.hf_risk_10y
+            if record.hf_risk_10y is not None
+            else _result_payload_value(record, "hf_10y")
+        )
+        prevent_age = (
+            record.prevent_age
+            if record.prevent_age is not None
+            else _result_payload_value(record, "prevent_age")
+        )
+        writer.writerow(
+            [
+                str(record.id),
+                record.created_at.isoformat(),
+                record.patient_age,
+                record.patient_sex,
+                record.physician_name,
+                record.physician_specialty,
+                record.total_cholesterol,
+                record.hdl_cholesterol,
+                record.systolic_bp,
+                record.egfr,
+                record.bmi,
+                record.diabetes,
+                record.smoker,
+                record.statin_use,
+                record.antihypertensive_use,
+                uacr,
+                hba1c,
+                sdi,
+                _format_risk_for_csv(
+                    cvd_risk if cvd_risk is not None else extracted["cvd_risk"],
+                ),
+                _format_risk_for_csv(
+                    ascvd_risk if ascvd_risk is not None else extracted["ascvd_risk"],
+                ),
+                _format_risk_for_csv(
+                    hf_risk if hf_risk is not None else extracted["hf_risk"],
+                ),
+                round(float(prevent_age), 2) if prevent_age is not None else None,
+                model_variant or extracted["model_variant"],
+            ],
+        )
+
+    return buffer.getvalue()

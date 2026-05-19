@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Informe PREVENT Ecuador</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 22mm 18mm;
+      }
+
+      :root {
+        --ink: #1f2933;
+        --muted: #52606d;
+        --line: #d9e2ec;
+        --soft: #f7f9fb;
+        --accent: #284b63;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Helvetica", "Arial", sans-serif;
+        color: var(--ink);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .header {
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 14px;
+        margin-bottom: 22px;
+      }
+
+      .header h1,
+      .header h2 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .header h1 {
+        font-size: 18px;
+      }
+
+      .header h2 {
+        font-size: 15px;
+        margin-top: 2px;
+      }
+
+      .header p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .director {
+        margin-top: 10px;
+        font-size: 11px;
+      }
+
+      .section {
+        margin-bottom: 18px;
+      }
+
+      .section-title {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .grid {
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border: 1px solid var(--line);
+      }
+
+      .row {
+        display: table-row;
+      }
+
+      .cell {
+        display: table-cell;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+
+      .row:last-child .cell {
+        border-bottom: none;
+      }
+
+      .label {
+        width: 38%;
+        background: var(--soft);
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .result-box {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--accent);
+        padding: 14px 16px;
+        background: var(--soft);
+      }
+
+      .result-kicker {
+        margin: 0 0 6px;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .result-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .result-category {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 4px 10px;
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .interpretation,
+      .disclaimer {
+        border: 1px solid var(--line);
+        padding: 12px 14px;
+        background: #fff;
+      }
+
+      .disclaimer {
+        margin-top: 26px;
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <h1>ANOVA Research Group</h1>
+      <h2>Red Ecuatoriana de Cardiometabolismo DOH</h2>
+      <p>
+        Herramienta clínica de estimación cardiovascular basada en el marco
+        PREVENT
+      </p>
+      <div class="director"><strong>Director y fundador:</strong> Dr. David Guzmán</div>
+    </header>
+
+    <section class="section">
+      <h3 class="section-title">Datos del médico</h3>
+      <div class="grid">
+        <div class="row">
+          <div class="cell label">Nombre</div>
+          <div class="cell">{{ record.physician_name }}</div>
+        </div>
+        <div class="row">
+          <div class="cell label">Especialidad</div>
+          <div class="cell">{{ record.physician_specialty }}</div>
+        </div>
+        {% if record.physician_city %}
+        <div class="row">
+          <div class="cell label">Ciudad</div>
+          <div class="cell">{{ record.physician_city }}</div>
+        </div>
+        {% endif %}
+        <div class="row">
+          <div class="cell label">Fecha de generación</div>
+          <div class="cell">{{ generated_at.strftime("%d/%m/%Y %H:%M") }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3 class="section-title">Datos del paciente</h3>
+      <div class="grid">
+        <div class="row">
+          <div class="cell label">Edad</div>
+          <div class="cell">{{ record.patient_age }} años</div>
+        </div>
+        <div class="row">
+          <div class="cell label">Sexo</div>
+          <div class="cell">{{ record.patient_sex }}</div>
+        </div>
+        <div class="row">
+          <div class="cell label">País</div>
+          <div class="cell">{{ record.patient_country }}</div>
+        </div>
+        {% if record.patient_province %}
+        <div class="row">
+          <div class="cell label">Provincia</div>
+          <div class="cell">{{ record.patient_province }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="section">
+      <h3 class="section-title">Variables clínicas</h3>
+      <div class="grid">
+        {% if record.total_cholesterol is not none %}
+        <div class="row">
+          <div class="cell label">Colesterol total</div>
+          <div class="cell">{{ "%.1f"|format(record.total_cholesterol) }} mg/dL</div>
+        </div>
+        {% endif %}
+        {% if record.hdl_cholesterol is not none %}
+        <div class="row">
+          <div class="cell label">HDL colesterol</div>
+          <div class="cell">{{ "%.1f"|format(record.hdl_cholesterol) }} mg/dL</div>
+        </div>
+        {% endif %}
+        {% if record.ldl_cholesterol is not none %}
+        <div class="row">
+          <div class="cell label">LDL colesterol</div>
+          <div class="cell">{{ "%.1f"|format(record.ldl_cholesterol) }} mg/dL</div>
+        </div>
+        {% endif %}
+        {% if record.systolic_bp is not none %}
+        <div class="row">
+          <div class="cell label">Presión arterial sistólica</div>
+          <div class="cell">{{ "%.1f"|format(record.systolic_bp) }} mmHg</div>
+        </div>
+        {% endif %}
+        {% if record.diabetes is not none %}
+        <div class="row">
+          <div class="cell label">Diabetes</div>
+          <div class="cell">{{ format_boolean(record.diabetes) }}</div>
+        </div>
+        {% endif %}
+        {% if record.smoker is not none %}
+        <div class="row">
+          <div class="cell label">Tabaquismo actual</div>
+          <div class="cell">{{ format_boolean(record.smoker) }}</div>
+        </div>
+        {% endif %}
+        {% if record.egfr is not none %}
+        <div class="row">
+          <div class="cell label">eGFR</div>
+          <div class="cell">{{ "%.1f"|format(record.egfr) }} mL/min/1.73m²</div>
+        </div>
+        {% endif %}
+        {% if optional_inputs.bmi is not none %}
+        <div class="row">
+          <div class="cell label">IMC</div>
+          <div class="cell">{{ "%.1f"|format(optional_inputs.bmi) }} kg/m²</div>
+        </div>
+        {% endif %}
+        {% if optional_inputs.uacr is not none %}
+        <div class="row">
+          <div class="cell label">UACR</div>
+          <div class="cell">{{ "%.1f"|format(optional_inputs.uacr) }} mg/g</div>
+        </div>
+        {% endif %}
+        {% if optional_inputs.hba1c is not none %}
+        <div class="row">
+          <div class="cell label">HbA1c</div>
+          <div class="cell">{{ "%.1f"|format(optional_inputs.hba1c) }} %</div>
+        </div>
+        {% endif %}
+        {% if optional_inputs.sdi is not none %}
+        <div class="row">
+          <div class="cell label">SDI</div>
+          <div class="cell">{{ optional_inputs.sdi }}</div>
+        </div>
+        {% endif %}
+        {% if record.statin_use is not none %}
+        <div class="row">
+          <div class="cell label">Uso de estatinas</div>
+          <div class="cell">{{ format_boolean(record.statin_use) }}</div>
+        </div>
+        {% endif %}
+        {% if record.antihypertensive_use is not none %}
+        <div class="row">
+          <div class="cell label">Tratamiento antihipertensivo</div>
+          <div class="cell">{{ format_boolean(record.antihypertensive_use) }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="section">
+      <h3 class="section-title">Resultado</h3>
+      <div class="result-box">
+        <p class="result-kicker">Riesgo cardiovascular PREVENT a 10 años</p>
+        <p class="result-kicker">Modelo PREVENT aplicado: {{ model_variant_label }}</p>
+        <p class="result-value">
+          {% if risk_percentage is not none %}
+          {{ "%.1f"|format(risk_percentage) }} %
+          {% else %}
+          No disponible
+          {% endif %}
+        </p>
+        {% if record.risk_category %}
+        <div class="result-category">{{ record.risk_category }}</div>
+        {% endif %}
+      </div>
+      <div class="grid" style="margin-top: 14px">
+        <div class="row">
+          <div class="cell label">Riesgo CVD</div>
+          <div class="cell">
+            {% if risk_percentage is not none %}
+            {{ "%.1f"|format(risk_percentage) }} %
+            {% else %}
+            No disponible
+            {% endif %}
+          </div>
+        </div>
+        <div class="row">
+          <div class="cell label">Riesgo ASCVD</div>
+          <div class="cell">
+            {% if ascvd_percentage is not none %}
+            {{ "%.1f"|format(ascvd_percentage) }} %
+            {% else %}
+            No disponible
+            {% endif %}
+          </div>
+        </div>
+        <div class="row">
+          <div class="cell label">Riesgo de insuficiencia cardíaca</div>
+          <div class="cell">
+            {% if hf_percentage is not none %}
+            {{ "%.1f"|format(hf_percentage) }} %
+            {% else %}
+            No calculado (requiere IMC)
+            {% endif %}
+          </div>
+        </div>
+        <div class="row">
+          <div class="cell label">Edad cardiovascular estimada (PREVENT-Age)</div>
+          <div class="cell">
+            {% if prevent_age is not none %}
+            {{ "%.1f"|format(prevent_age) }} años
+            {% else %}
+            No disponible
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3 class="section-title">Interpretación</h3>
+      <div class="interpretation">{{ interpretation }}</div>
+    </section>
+
+    <footer class="disclaimer">
+      Este informe constituye una herramienta de apoyo a la decisión clínica y
+      no sustituye el juicio médico. {{ methodology_note }}
+    </footer>
+  </body>
+</html>
