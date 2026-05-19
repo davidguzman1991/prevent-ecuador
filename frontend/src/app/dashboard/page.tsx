@@ -155,7 +155,7 @@ export default function DashboardPage() {
   const [isAccessChecked, setIsAccessChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState<"csv" | "xlsx" | null>(null);
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
   const [page, setPage] = useState(1);
@@ -306,14 +306,15 @@ export default function DashboardPage() {
     }
   };
 
-  const handleExport = async () => {
-    setIsExporting(true);
+  const handleExport = async (format: "csv" | "xlsx") => {
+    setExportingFormat(format);
     setError("");
 
     try {
       const query = buildQueryString(filters, page, pageSize);
+      const exportPath = format === "xlsx" ? "export.xlsx" : "export";
       const response = await fetch(
-        `${getApiBaseUrl()}/api/prevent-records/export?${query}`,
+        `${getApiBaseUrl()}/api/prevent-records/${exportPath}?${query}`,
         { headers: getAdminHeaders() },
       );
       if (response.status === 401) {
@@ -321,14 +322,14 @@ export default function DashboardPage() {
         return;
       }
       if (!response.ok) {
-        throw new Error("No se pudo exportar el archivo CSV.");
+        throw new Error(`No se pudo exportar el archivo ${format.toUpperCase()}.`);
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = "prevent_records_export.csv";
+      anchor.download = `prevent_records_export.${format}`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -337,10 +338,10 @@ export default function DashboardPage() {
       setError(
         exportError instanceof Error
           ? exportError.message
-          : "No se pudo exportar el archivo CSV.",
+          : `No se pudo exportar el archivo ${format.toUpperCase()}.`,
       );
     } finally {
-      setIsExporting(false);
+      setExportingFormat(null);
     }
   };
 
@@ -400,7 +401,7 @@ export default function DashboardPage() {
           <div className="prevent-panel-header">
             <span className="prevent-panel-badge">📊 Visualización clínica</span>
             <h2>Registros PREVENT</h2>
-            <p>Consulta longitudinal de evaluaciones con filtros clínicos y exportación CSV.</p>
+            <p>Consulta longitudinal de evaluaciones con filtros clínicos y exportación CSV/XLSX.</p>
           </div>
 
           <form className="dashboard-filters" onSubmit={handleApplyFilters}>
@@ -463,10 +464,18 @@ export default function DashboardPage() {
               <button
                 className="dashboard-button dashboard-button-secondary"
                 type="button"
-                onClick={handleExport}
-                disabled={isExporting}
+                onClick={() => void handleExport("csv")}
+                disabled={exportingFormat !== null}
               >
-                {isExporting ? "Exportando..." : "Exportar CSV"}
+                {exportingFormat === "csv" ? "Exportando..." : "Exportar CSV"}
+              </button>
+              <button
+                className="dashboard-button dashboard-button-secondary"
+                type="button"
+                onClick={() => void handleExport("xlsx")}
+                disabled={exportingFormat !== null}
+              >
+                {exportingFormat === "xlsx" ? "Exportando..." : "Exportar XLSX"}
               </button>
             </div>
           </form>

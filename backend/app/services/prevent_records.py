@@ -26,6 +26,32 @@ from app.services.prevent_coefficients import PREVENT_ENGINE_STATUS, PREVENT_MET
 
 logger = logging.getLogger(__name__)
 
+PREVENT_EXPORT_HEADERS = [
+    "id",
+    "fecha",
+    "edad",
+    "sexo",
+    "medico",
+    "especialidad_medica",
+    "colesterol_total",
+    "hdl",
+    "presion_sistolica",
+    "egfr",
+    "imc",
+    "diabetes",
+    "tabaquismo",
+    "uso_estatinas",
+    "uso_antihipertensivos",
+    "uacr",
+    "hba1c",
+    "sdi",
+    "riesgo_cvd_10y",
+    "riesgo_ascvd_10y",
+    "riesgo_ic_10y",
+    "edad_prevent",
+    "variante_modelo",
+]
+
 
 def _safe_payload_for_log(payload: dict[str, object]) -> dict[str, object]:
     return {
@@ -89,6 +115,86 @@ def _format_exact_risk_for_csv(value) -> float | None:
     if value is None:
         return None
     return float(value)
+
+
+def _format_decimal_for_regional_csv(value) -> str | None:
+    if value is None:
+        return None
+    return f"{float(value):.15g}".replace(".", ",")
+
+
+def _format_boolean_for_csv(value: bool | None) -> str | None:
+    if value is None:
+        return None
+    return "Sí" if value else "No"
+
+
+def _format_value_for_regional_csv(value):
+    if isinstance(value, bool):
+        return _format_boolean_for_csv(value)
+    if isinstance(value, float):
+        return _format_decimal_for_regional_csv(value)
+    return value
+
+
+def _build_prevent_export_row(record: PreventRecord) -> list[object]:
+    extracted = _extract_record_results(record)
+    uacr = _column_or_payload(record, record.uacr, "uacr")
+    hba1c = _column_or_payload(record, record.hba1c, "hba1c")
+    sdi = _column_or_payload(record, record.sdi, "sdi")
+    model_variant = record.model_variant_used or _payload_value(record, "model_variant")
+    cvd_risk = record.cvd_risk_10y
+    if cvd_risk is None and record.risk_10y is not None:
+        cvd_risk = record.risk_10y * 100
+    if cvd_risk is None:
+        cvd_risk = _result_payload_value(record, "cvd_10y")
+    ascvd_risk = (
+        record.ascvd_risk_10y
+        if record.ascvd_risk_10y is not None
+        else _result_payload_value(record, "ascvd_10y")
+    )
+    hf_risk = (
+        record.hf_risk_10y
+        if record.hf_risk_10y is not None
+        else _result_payload_value(record, "hf_10y")
+    )
+    prevent_age = (
+        record.prevent_age
+        if record.prevent_age is not None
+        else _result_payload_value(record, "prevent_age")
+    )
+
+    return [
+        str(record.id),
+        record.created_at.isoformat(),
+        record.patient_age,
+        record.patient_sex,
+        record.physician_name,
+        record.physician_specialty,
+        record.total_cholesterol,
+        record.hdl_cholesterol,
+        record.systolic_bp,
+        record.egfr,
+        record.bmi,
+        record.diabetes,
+        record.smoker,
+        record.statin_use,
+        record.antihypertensive_use,
+        uacr,
+        hba1c,
+        sdi,
+        _format_exact_risk_for_csv(
+            cvd_risk if cvd_risk is not None else extracted["cvd_risk"],
+        ),
+        _format_exact_risk_for_csv(
+            ascvd_risk if ascvd_risk is not None else extracted["ascvd_risk"],
+        ),
+        _format_exact_risk_for_csv(
+            hf_risk if hf_risk is not None else extracted["hf_risk"],
+        ),
+        float(prevent_age) if prevent_age is not None else None,
+        model_variant or extracted["model_variant"],
+    ]
 
 
 def _extract_record_results(record: PreventRecord) -> dict[str, float | str | None]:
@@ -446,93 +552,65 @@ def export_prevent_records_csv(
     records = query.order_by(PreventRecord.created_at.desc()).all()
 
     buffer = io.StringIO()
-    writer = csv.writer(buffer)
-    writer.writerow(
-        [
-            "id",
-            "fecha",
-            "edad",
-            "sexo",
-            "medico",
-            "especialidad_medica",
-            "colesterol_total",
-            "hdl",
-            "presion_sistolica",
-            "egfr",
-            "imc",
-            "diabetes",
-            "tabaquismo",
-            "uso_estatinas",
-            "uso_antihipertensivos",
-            "uacr",
-            "hba1c",
-            "sdi",
-            "riesgo_cvd_10y",
-            "riesgo_ascvd_10y",
-            "riesgo_ic_10y",
-            "edad_prevent",
-            "variante_modelo",
-        ],
-    )
+    writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
+    writer.writerow(PREVENT_EXPORT_HEADERS)
 
     for record in records:
-        extracted = _extract_record_results(record)
-        uacr = _column_or_payload(record, record.uacr, "uacr")
-        hba1c = _column_or_payload(record, record.hba1c, "hba1c")
-        sdi = _column_or_payload(record, record.sdi, "sdi")
-        model_variant = record.model_variant_used or _payload_value(record, "model_variant")
-        cvd_risk = record.cvd_risk_10y
-        if cvd_risk is None and record.risk_10y is not None:
-            cvd_risk = record.risk_10y * 100
-        if cvd_risk is None:
-            cvd_risk = _result_payload_value(record, "cvd_10y")
-        ascvd_risk = (
-            record.ascvd_risk_10y
-            if record.ascvd_risk_10y is not None
-            else _result_payload_value(record, "ascvd_10y")
-        )
-        hf_risk = (
-            record.hf_risk_10y
-            if record.hf_risk_10y is not None
-            else _result_payload_value(record, "hf_10y")
-        )
-        prevent_age = (
-            record.prevent_age
-            if record.prevent_age is not None
-            else _result_payload_value(record, "prevent_age")
-        )
         writer.writerow(
             [
-                str(record.id),
-                record.created_at.isoformat(),
-                record.patient_age,
-                record.patient_sex,
-                record.physician_name,
-                record.physician_specialty,
-                record.total_cholesterol,
-                record.hdl_cholesterol,
-                record.systolic_bp,
-                record.egfr,
-                record.bmi,
-                record.diabetes,
-                record.smoker,
-                record.statin_use,
-                record.antihypertensive_use,
-                uacr,
-                hba1c,
-                sdi,
-                _format_exact_risk_for_csv(
-                    cvd_risk if cvd_risk is not None else extracted["cvd_risk"],
-                ),
-                _format_exact_risk_for_csv(
-                    ascvd_risk if ascvd_risk is not None else extracted["ascvd_risk"],
-                ),
-                _format_exact_risk_for_csv(
-                    hf_risk if hf_risk is not None else extracted["hf_risk"],
-                ),
-                float(prevent_age) if prevent_age is not None else None,
-                model_variant or extracted["model_variant"],
+                _format_value_for_regional_csv(value)
+                for value in _build_prevent_export_row(record)
             ],
         )
 
-    return buffer.getvalue()
+    return "\ufeff" + buffer.getvalue()
+
+
+def export_prevent_records_xlsx(
+    db: Session,
+    filters: PreventRecordListFilters,
+) -> bytes:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    query = _build_prevent_records_query(db, filters)
+    records = query.order_by(PreventRecord.created_at.desc()).all()
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "PREVENT"
+    worksheet.append(PREVENT_EXPORT_HEADERS)
+
+    for record in records:
+        worksheet.append(_build_prevent_export_row(record))
+
+    header_fill = PatternFill("solid", fgColor="E5F3FB")
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True, color="1C6D9B")
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    risk_headers = {"riesgo_cvd_10y", "riesgo_ascvd_10y", "riesgo_ic_10y"}
+    decimal_headers = {
+        "colesterol_total",
+        "hdl",
+        "presion_sistolica",
+        "egfr",
+        "imc",
+        "uacr",
+        "hba1c",
+        "sdi",
+        "edad_prevent",
+        *risk_headers,
+    }
+    for column_index, header in enumerate(PREVENT_EXPORT_HEADERS, start=1):
+        column_letter = worksheet.cell(row=1, column=column_index).column_letter
+        worksheet.column_dimensions[column_letter].width = max(len(header) + 2, 14)
+        if header in decimal_headers:
+            number_format = "0.000000" if header in risk_headers else "0.######"
+            for row in range(2, worksheet.max_row + 1):
+                worksheet.cell(row=row, column=column_index).number_format = number_format
+
+    output = io.BytesIO()
+    workbook.save(output)
+    return output.getvalue()

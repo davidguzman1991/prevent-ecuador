@@ -17,6 +17,7 @@ from app.schemas.prevent_record import (
 from app.services.prevent_records import (
     create_prevent_record,
     export_prevent_records_csv,
+    export_prevent_records_xlsx,
     get_prevent_record_detail,
     list_prevent_records,
 )
@@ -77,6 +78,33 @@ def export_prevent_records_endpoint(
     return StreamingResponse(
         BytesIO(csv_content.encode("utf-8")),
         media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/export.xlsx", dependencies=[Depends(require_admin_api_key)])
+def export_prevent_records_xlsx_endpoint(
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    physician_name: str | None = Query(default=None),
+    diabetes: bool | None = Query(default=None),
+    smoker: bool | None = Query(default=None),
+    model_variant: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    filters = PreventRecordListFilters(
+        date_from=date_from,
+        date_to=date_to,
+        physician_name=physician_name,
+        diabetes=diabetes,
+        smoker=smoker,
+        model_variant=model_variant,
+    )
+    xlsx_content = export_prevent_records_xlsx(db=db, filters=filters)
+    filename = "prevent_records_export.xlsx"
+    return StreamingResponse(
+        BytesIO(xlsx_content),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
