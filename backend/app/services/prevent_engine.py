@@ -18,17 +18,17 @@ from app.services.prevent_hf import calculate_prevent_hf_from_inputs
 
 def calculate_prevent_cvd(data: dict[str, Any]) -> float:
     prepared = prepare_model_inputs(data)
-    return calculate_prevent_cvd_from_inputs(prepared)
+    return calculate_prevent_cvd_from_inputs(prepared) * 100.0
 
 
 def calculate_prevent_ascvd(data: dict[str, Any]) -> float:
     prepared = prepare_model_inputs(data)
-    return calculate_prevent_ascvd_from_inputs(prepared)
+    return calculate_prevent_ascvd_from_inputs(prepared) * 100.0
 
 
 def calculate_prevent_hf(data: dict[str, Any]) -> float:
     prepared = prepare_model_inputs(data)
-    return calculate_prevent_hf_from_inputs(prepared)
+    return calculate_prevent_hf_from_inputs(prepared) * 100.0
 
 
 def evaluate_prevent_outcomes(
@@ -37,9 +37,9 @@ def evaluate_prevent_outcomes(
     include_debug: bool = False,
 ) -> dict[str, Any]:
     prepared = prepare_model_inputs(data)
-    cvd_risk = calculate_prevent_cvd_from_inputs(prepared)
-    ascvd_risk = calculate_prevent_ascvd_from_inputs(prepared)
-    hf_risk = calculate_prevent_hf_from_inputs(prepared)
+    cvd_risk = calculate_prevent_cvd_from_inputs(prepared) * 100.0
+    ascvd_risk = calculate_prevent_ascvd_from_inputs(prepared) * 100.0
+    hf_risk = calculate_prevent_hf_from_inputs(prepared) * 100.0
 
     response: dict[str, Any] = {
         "cvd_risk": cvd_risk,

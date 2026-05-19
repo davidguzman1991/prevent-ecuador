@@ -37,7 +37,7 @@ class PreventFullExactPortTest(unittest.TestCase):
             self.assertLessEqual(abs(float(result[key]) - target), 0.2)
 
     def test_variant_selection_uses_full_when_multiple_optional_inputs_are_present(self) -> None:
-        model_variant, result = compute_prevent_10y(
+        model_variant, result, warnings = compute_prevent_10y(
             {
                 "sex": 1,
                 "age": 45,
@@ -56,6 +56,7 @@ class PreventFullExactPortTest(unittest.TestCase):
         )
 
         self.assertEqual(model_variant, "full")
+        self.assertIsNone(warnings)
         self.assertIsNotNone(result["cvd_10y"])
 
     def test_explicit_variant_overrides_automatic_selection(self) -> None:
@@ -76,9 +77,10 @@ class PreventFullExactPortTest(unittest.TestCase):
             "sdi": 10,
         }
         base_result = prevent_base_10y(payload)
-        model_variant, result = compute_prevent_10y(payload, "base")
+        model_variant, result, warnings = compute_prevent_10y(payload, "base")
 
         self.assertEqual(model_variant, "base")
+        self.assertIsNone(warnings)
         self.assertAlmostEqual(float(result["cvd_10y"]), float(base_result["cvd_10y"]), places=9)
         self.assertAlmostEqual(float(result["ascvd_10y"]), float(base_result["ascvd_10y"]), places=9)
         self.assertAlmostEqual(float(result["hf_10y"]), float(base_result["hf_10y"]), places=9)

@@ -231,8 +231,8 @@ function extractErrorMessage(errorBody: unknown): string {
   return "No se pudo calcular el riesgo PREVENT. Verifica los datos e intenta nuevamente.";
 }
 
-function normalizeRiskPercentage(risk: number): number {
-  return risk > 1 ? risk : risk * 100;
+function getRiskPercentage(risk: number): number {
+  return risk;
 }
 
 function parseClinicalNumber(value: string): number {
@@ -310,7 +310,7 @@ function formatRiskValue(risk: number | null, riskType: RiskType): string {
       : "Datos insuficientes";
   }
 
-  return `${normalizeRiskPercentage(risk).toFixed(1)}%`;
+  return `${getRiskPercentage(risk).toFixed(1)}%`;
 }
 
 function translateRiskCategory(category: string): string {
@@ -359,7 +359,7 @@ function getClinicalInsight(result: PreventResult): string | null {
 
   if (
     result.ascvd_risk !== null &&
-    normalizeRiskPercentage(result.ascvd_risk) >= 20
+    getRiskPercentage(result.ascvd_risk) >= 20
   ) {
     return "Alto riesgo aterosclerótico: considerar intensificación del manejo lipídico.";
   }
@@ -396,10 +396,10 @@ function getRecommendationText(
   if (risk === null) {
     return "Puede completar o ajustar las variables clínicas para habilitar una estimación válida.";
   }
-  if (category === "high" || normalizeRiskPercentage(risk) >= 20) {
+  if (category === "high" || getRiskPercentage(risk) >= 20) {
     return "Sugerencia clínica: considerar evaluación clínica más detallada y manejo de factores de riesgo.";
   }
-  if (category === "intermediate" || normalizeRiskPercentage(risk) >= 7.5) {
+  if (category === "intermediate" || getRiskPercentage(risk) >= 7.5) {
     return "Sugerencia clínica: considerar intervención individualizada y seguimiento de evolución clínica.";
   }
   return "Sugerencia clínica: considerar revisión de estilo de vida y monitoreo periódico.";
@@ -422,7 +422,7 @@ export default function HomePage() {
         : result.hf_risk
     : null;
   const selectedRiskPercentage =
-    selectedRisk !== null ? normalizeRiskPercentage(selectedRisk) : null;
+    selectedRisk !== null ? getRiskPercentage(selectedRisk) : null;
   const selectedCategory = result
     ? riskType === "cvd"
       ? result.cvd_category

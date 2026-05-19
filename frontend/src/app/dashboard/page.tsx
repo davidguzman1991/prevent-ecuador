@@ -126,8 +126,7 @@ function normalizeRisk(risk: number | null): string {
     return "No calculado";
   }
 
-  const percentage = risk > 1 ? risk : risk * 100;
-  return `${percentage.toFixed(1)}%`;
+  return `${risk.toFixed(1)}%`;
 }
 
 function formatDate(value: string): string {

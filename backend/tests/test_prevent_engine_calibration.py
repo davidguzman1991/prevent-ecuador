@@ -107,7 +107,7 @@ class PreventEngineCalibrationTest(unittest.TestCase):
                 result = evaluate_prevent_outcomes(case["payload"])
 
                 for outcome_name, expected_range in case["expected_ranges"].items():
-                    actual_percentage = result[outcome_name] * 100
+                    actual_percentage = result[outcome_name]
                     lower, upper = expected_range
                     max_error = (
                         PREVENT_VALIDATION_THRESHOLDS["low_risk_max_abs_pp_error"]

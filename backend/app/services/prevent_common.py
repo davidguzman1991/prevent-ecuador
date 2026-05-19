@@ -39,13 +39,11 @@ def sigmoid(linear_predictor: float) -> float:
 
 
 def classify_risk(risk: float) -> str:
-    percentage = risk if risk > 1 else risk * 100
-
-    if percentage < 5:
+    if risk < 5:
         return "Bajo"
-    if percentage < 7.5:
+    if risk < 7.5:
         return "Borderline"
-    if percentage < 20:
+    if risk < 20:
         return "Intermedio"
     return "Alto"
 
