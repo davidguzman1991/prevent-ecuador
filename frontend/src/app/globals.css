@@ -477,6 +477,63 @@ button {
   line-height: 1.5;
 }
 
+.prevent-bmi-field {
+  align-self: start;
+}
+
+.prevent-bmi-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.prevent-inline-action {
+  border: 0;
+  background: transparent;
+  color: var(--primary-dark);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.35;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.prevent-inline-action:hover,
+.prevent-inline-action:focus-visible {
+  color: var(--primary);
+}
+
+.prevent-bmi-calculator {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid rgba(46, 139, 192, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fbfdff 0%, #f6fbfe 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.prevent-bmi-calculator .prevent-input {
+  height: 46px;
+}
+
+.prevent-bmi-calculate {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  font-size: 0.82rem;
+}
+
+.prevent-bmi-error {
+  grid-column: 1 / -1;
+}
+
 .prevent-switch-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2505,6 +2562,15 @@ button {
   .prevent-form-grid,
   .prevent-switch-grid,
   .prevent-result-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .prevent-bmi-label-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .prevent-bmi-calculator {
     grid-template-columns: 1fr;
   }
 

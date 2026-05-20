@@ -150,6 +150,13 @@ type FieldValidationRule = {
   outcomes: RiskType[];
 };
 
+type BmiCalculatorState = {
+  isOpen: boolean;
+  weightKg: string;
+  heightCm: string;
+  error: string;
+};
+
 const VALIDATION_BADGE_TEXT = "Validación técnica";
 const DEFAULT_METHOD_NOTE =
   "Implementación independiente contrastada con el paquete oficial R PREVENT-AHA y la calculadora web PREVENT.";
@@ -219,6 +226,13 @@ const initialFormState: FormState = {
   physician_specialty: "",
 };
 
+const initialBmiCalculatorState: BmiCalculatorState = {
+  isOpen: false,
+  weightKg: "",
+  heightCm: "",
+  error: "",
+};
+
 function extractErrorMessage(errorBody: unknown): string {
   if (
     errorBody &&
@@ -241,6 +255,21 @@ function parseOptionalClinicalNumber(value: string): number | null {
     return null;
   }
   return parseClinicalNumber(value);
+}
+
+function calculateBmiFromWeightAndHeight(weightKg: string, heightCm: string): string {
+  const weight = parseClinicalNumber(weightKg);
+  const height = parseClinicalNumber(heightCm);
+
+  if (!Number.isFinite(weight) || weight <= 0) {
+    throw new Error("Ingrese un peso mayor a 0 kg.");
+  }
+  if (!Number.isFinite(height) || height <= 0) {
+    throw new Error("Ingrese una talla mayor a 0 cm.");
+  }
+
+  const heightMeters = height / 100;
+  return (weight / (heightMeters * heightMeters)).toFixed(1);
 }
 
 function getFieldRangeText(rule: FieldValidationRule): string {
@@ -411,6 +440,9 @@ export default function HomePage() {
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUncalculatedChanges, setHasUncalculatedChanges] = useState(false);
+  const [bmiCalculator, setBmiCalculator] = useState<BmiCalculatorState>(
+    initialBmiCalculatorState,
+  );
   const selectedRisk = result
     ? riskType === "cvd"
       ? result.cvd_risk
@@ -460,6 +492,60 @@ export default function HomePage() {
       setRecordId(null);
       setRiskType("cvd");
       setHasUncalculatedChanges(true);
+    }
+  };
+
+  const updateBmiValue = (nextBmi: string) => {
+    const nextFormState = {
+      ...form,
+      bmi: nextBmi,
+    };
+
+    setForm(nextFormState);
+    console.debug("PREVENT formState visible", {
+      changedField: "bmi",
+      formState: nextFormState,
+    });
+
+    if (result) {
+      console.debug("PREVENT previous result cleared after BMI calculator update", {
+        previousRecordId: recordId,
+        previousResult: result,
+      });
+      setResult(null);
+      setRecordId(null);
+      setRiskType("cvd");
+      setHasUncalculatedChanges(true);
+    }
+  };
+
+  const handleBmiCalculatorChange = (
+    field: "weightKg" | "heightCm",
+    value: string,
+  ) => {
+    setBmiCalculator((current) => ({
+      ...current,
+      [field]: value,
+      error: "",
+    }));
+  };
+
+  const handleCalculateBmi = () => {
+    try {
+      const nextBmi = calculateBmiFromWeightAndHeight(
+        bmiCalculator.weightKg,
+        bmiCalculator.heightCm,
+      );
+      updateBmiValue(nextBmi);
+      setBmiCalculator((current) => ({ ...current, error: "" }));
+    } catch (bmiError) {
+      setBmiCalculator((current) => ({
+        ...current,
+        error:
+          bmiError instanceof Error
+            ? bmiError.message
+            : "No se pudo calcular el IMC.",
+      }));
     }
   };
 
@@ -763,14 +849,19 @@ export default function HomePage() {
                   validationRule={FIELD_VALIDATION_RULES.egfr}
                   warning={getFieldWarning(form, "egfr")}
                 />
-                <Field
-                  label="IMC (kg/m²)"
-                  name="bmi"
-                  type="number"
+                <BmiField
                   value={form.bmi}
                   onChange={handleInputChange}
-                  step="0.1"
-                  help="Necesario para calcular riesgo de insuficiencia cardíaca."
+                  calculator={bmiCalculator}
+                  onToggleCalculator={() =>
+                    setBmiCalculator((current) => ({
+                      ...current,
+                      isOpen: !current.isOpen,
+                      error: "",
+                    }))
+                  }
+                  onCalculatorChange={handleBmiCalculatorChange}
+                  onCalculate={handleCalculateBmi}
                   validationRule={FIELD_VALIDATION_RULES.bmi}
                   warning={getFieldWarning(form, "bmi")}
                 />
@@ -896,6 +987,7 @@ export default function HomePage() {
                   setError("");
                   setRiskType("cvd");
                   setHasUncalculatedChanges(false);
+                  setBmiCalculator(initialBmiCalculatorState);
                 }}
               >
                 LIMPIAR FORMULARIO
@@ -1452,6 +1544,108 @@ function Field({
       ) : null}
       {warning ? <span className="prevent-field-warning">{warning}</span> : null}
     </label>
+  );
+}
+
+type BmiFieldProps = {
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  calculator: BmiCalculatorState;
+  onToggleCalculator: () => void;
+  onCalculatorChange: (field: "weightKg" | "heightCm", value: string) => void;
+  onCalculate: () => void;
+  validationRule: FieldValidationRule;
+  warning: string | null;
+};
+
+function BmiField({
+  value,
+  onChange,
+  calculator,
+  onToggleCalculator,
+  onCalculatorChange,
+  onCalculate,
+  validationRule,
+  warning,
+}: BmiFieldProps) {
+  return (
+    <div className="prevent-field prevent-bmi-field">
+      <div className="prevent-bmi-label-row">
+        <span className="prevent-field-label">
+          IMC (kg/m²)
+          <span
+            className="prevent-field-help"
+            title="Necesario para calcular riesgo de insuficiencia cardíaca."
+          >
+            i
+          </span>
+        </span>
+        <button
+          type="button"
+          className="prevent-inline-action"
+          onClick={onToggleCalculator}
+          aria-expanded={calculator.isOpen}
+        >
+          {calculator.isOpen ? "Ocultar calculadora" : "Calcular IMC"}
+        </button>
+      </div>
+      <input
+        className={`prevent-input ${warning ? "prevent-input-warning" : ""}`}
+        name="bmi"
+        type="number"
+        value={value}
+        onChange={onChange}
+        step="0.1"
+        aria-invalid={warning ? "true" : undefined}
+      />
+      <span className="prevent-field-guidance">
+        Rango validado PREVENT: {getFieldRangeText(validationRule)}
+      </span>
+      {warning ? <span className="prevent-field-warning">{warning}</span> : null}
+
+      {calculator.isOpen ? (
+        <div className="prevent-bmi-calculator">
+          <label className="prevent-field">
+            <span className="prevent-field-label">Peso (kg)</span>
+            <input
+              className="prevent-input"
+              type="number"
+              value={calculator.weightKg}
+              onChange={(event) => onCalculatorChange("weightKg", event.target.value)}
+              min="0"
+              step="0.1"
+              inputMode="decimal"
+              placeholder="Ej. 70"
+            />
+          </label>
+          <label className="prevent-field">
+            <span className="prevent-field-label">Talla (cm)</span>
+            <input
+              className="prevent-input"
+              type="number"
+              value={calculator.heightCm}
+              onChange={(event) => onCalculatorChange("heightCm", event.target.value)}
+              min="0"
+              step="0.1"
+              inputMode="decimal"
+              placeholder="Ej. 170"
+            />
+          </label>
+          <button
+            type="button"
+            className="prevent-button prevent-button-secondary prevent-bmi-calculate"
+            onClick={onCalculate}
+          >
+            Usar IMC calculado
+          </button>
+          {calculator.error ? (
+            <span className="prevent-field-warning prevent-bmi-error">
+              {calculator.error}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
