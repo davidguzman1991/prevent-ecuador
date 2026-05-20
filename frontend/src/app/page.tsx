@@ -363,11 +363,19 @@ function translateRiskCategory(category: string): string {
   const normalizedCategory = category.trim().toLowerCase();
 
   if (normalizedCategory === "low") return "Bajo";
-  if (normalizedCategory === "borderline") return "Limítrofe";
+  if (normalizedCategory === "borderline") return "Límite";
   if (normalizedCategory === "intermediate") return "Intermedio";
   if (normalizedCategory === "high") return "Alto";
 
   return category;
+}
+
+function getPreventRiskCategory(risk: number | null): string | null {
+  if (risk === null) return null;
+  if (risk >= 20) return "high";
+  if (risk >= 7.5) return "intermediate";
+  if (risk >= 5) return "borderline";
+  return "low";
 }
 
 function translateModelVariant(modelVariant: string): string {
@@ -435,22 +443,6 @@ function getMissingRiskMessage(
   return "Datos insuficientes para calcular este desenlace.";
 }
 
-function getRecommendationText(
-  risk: number | null,
-  category: string | null,
-): string {
-  if (risk === null) {
-    return "Puede completar o ajustar las variables clínicas para habilitar una estimación válida.";
-  }
-  if (category === "high" || risk >= 20) {
-    return "Sugerencia clínica: considerar evaluación clínica más detallada y manejo de factores de riesgo.";
-  }
-  if (category === "intermediate" || risk >= 7.5) {
-    return "Sugerencia clínica: considerar intervención individualizada y seguimiento de evolución clínica.";
-  }
-  return "Sugerencia clínica: considerar revisión de estilo de vida y monitoreo periódico.";
-}
-
 export default function HomePage() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [result, setResult] = useState<PreventResult | null>(null);
@@ -475,19 +467,12 @@ export default function HomePage() {
         : result.hf_risk
     : null;
   const selectedRiskPercentage = selectedRisk;
-  const selectedCategory = result
-    ? riskType === "cvd"
-      ? result.cvd_category
-      : riskType === "ascvd"
-        ? result.ascvd_category
-        : result.hf_category
-    : null;
+  const selectedPreventCategory = getPreventRiskCategory(selectedRisk);
   const clinicalInsight = result ? getClinicalInsight(result) : null;
   const methodologyNote = result?.methodology_note ?? DEFAULT_METHOD_NOTE;
   const showValidationBadge = (result?.engine_status ?? "validation") !== "validated";
   const variantHelperMessage = getVariantHelperMessage(form);
   const selectedOutcomeWarnings = result ? getOutcomeWarnings(result, riskType) : [];
-  const recommendation = getRecommendationText(selectedRisk, selectedCategory);
 
   const handleInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -1157,7 +1142,7 @@ export default function HomePage() {
 
             <RiskGauge
               percentage={selectedRiskPercentage}
-              category={selectedCategory}
+              category={selectedPreventCategory}
               label={getRiskTypeShortLabel(riskType)}
             />
 
@@ -1180,9 +1165,13 @@ export default function HomePage() {
               </ul>
             ) : null}
 
-            <div className="prevent-recommendation">
-              <span>Recomendación</span>
-              <p>{recommendation}</p>
+            <div className="prevent-score-note">
+              <span>Lectura del score PREVENT</span>
+              <p>
+                El riesgo PREVENT representa una estimación probabilística basada
+                en ecuaciones poblacionales. La interpretación clínica final debe
+                contextualizarse según comorbilidades y factores asociados.
+              </p>
             </div>
 
             {clinicalInsight ? <div className="prevent-insight">{clinicalInsight}</div> : null}
@@ -1278,7 +1267,7 @@ export default function HomePage() {
 
           {result.clinical_interpretation ? (
             <section className="print-report-section print-report-clinical-section">
-              <h2>Interpretación clínica resumida</h2>
+              <h2>Perfil clínico cardiometabólico</h2>
               <PrintClinicalSummary interpretation={result.clinical_interpretation} />
               <PrintRiskProfile interpretation={result.clinical_interpretation} />
             </section>
@@ -1340,13 +1329,13 @@ function RiskGauge({
   label: string;
 }) {
   const clampedPercentage = percentage === null ? 0 : Math.min(Math.max(percentage, 0), 100);
-  const categoryLabel = category ? `RIESGO ${translateRiskCategory(category).toUpperCase()}` : "PENDIENTE";
+  const categoryLabel = category ? translateRiskCategory(category) : "Pendiente";
   const categoryTone = category ?? "pending";
 
   return (
     <div className={`prevent-gauge-card prevent-gauge-${categoryTone}`}>
       <div className="prevent-gauge-header">
-        <span className="prevent-outcome-pill">{label}</span>
+        <span className="prevent-outcome-pill">Riesgo PREVENT estimado</span>
         <strong className="prevent-category-pill">{categoryLabel}</strong>
       </div>
       <div className="prevent-gauge-visual">
@@ -1366,8 +1355,12 @@ function RiskGauge({
       </div>
       <div className="prevent-gauge-readout">
         <strong>{percentage !== null ? formatClinicalRisk(percentage) : "--"}</strong>
-        <span>Probabilidad estimada a 10 años</span>
+        <span>{label} a 10 años</span>
       </div>
+      <p className="prevent-gauge-context">
+        Categorías PREVENT clásicas: Bajo &lt;5%, Límite 5-7.4%,
+        Intermedio 7.5-19.9%, Alto ≥20%.
+      </p>
     </div>
   );
 }
@@ -1443,13 +1436,20 @@ function ClinicalInterpretationPanel({
   return (
     <section className="clinical-interpretation-card">
       <div className="clinical-interpretation-header">
-        <span>Análisis de Riesgo Integrado</span>
+        <div className="clinical-interpretation-title">
+          <span>Interpretación clínica contextual</span>
+          <strong>Perfil clínico cardiometabólico</strong>
+        </div>
         <strong className={`clinical-risk-pill clinical-risk-${interpretation.risk_category.color}`}>
           {interpretation.risk_category.label}
         </strong>
       </div>
       <p className="clinical-category-description">
         {interpretation.risk_category.description}
+      </p>
+      <p className="clinical-context-note">
+        Este perfil integra comorbilidades y factores asociados; puede orientar
+        metas terapéuticas aunque el score PREVENT matemático sea menor.
       </p>
 
       {interpretation.ldl_goal ? (
@@ -1476,7 +1476,7 @@ function ClinicalInterpretationPanel({
 
       {recommendations.length ? (
         <div className="clinical-mini-section clinical-recommendations">
-          <span>Recomendaciones orientativas</span>
+          <span>Recomendaciones orientativas contextuales</span>
           <ul>
             {recommendations.map((recommendation) => (
               <li key={`${recommendation.type}-${recommendation.title}`}>

@@ -898,6 +898,15 @@ button {
   color: var(--success);
 }
 
+.prevent-gauge-context {
+  margin: -4px 0 0;
+  color: var(--muted-2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .prevent-risk-support {
   margin: -2px 0 0;
   color: var(--muted);
@@ -918,7 +927,7 @@ button {
   line-height: 1.5;
 }
 
-.prevent-recommendation,
+.prevent-score-note,
 .prevent-insight {
   padding: 15px 16px;
   border-radius: 18px;
@@ -938,7 +947,7 @@ button {
   line-height: 1.45;
 }
 
-.prevent-recommendation span {
+.prevent-score-note span {
   display: block;
   margin-bottom: 5px;
   font-size: 0.73rem;
@@ -947,7 +956,7 @@ button {
   text-transform: uppercase;
 }
 
-.prevent-recommendation p,
+.prevent-score-note p,
 .prevent-insight {
   margin: 0;
   font-size: 0.9rem;
@@ -975,7 +984,12 @@ button {
   gap: 10px;
 }
 
-.clinical-interpretation-header > span,
+.clinical-interpretation-title {
+  display: grid;
+  gap: 4px;
+}
+
+.clinical-interpretation-title > span,
 .clinical-findings-section > span,
 .clinical-mini-section > span,
 .clinical-ldl-goal > span {
@@ -984,6 +998,13 @@ button {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.clinical-interpretation-title > strong {
+  color: #12324a;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.2;
 }
 
 .clinical-risk-pill {
@@ -1018,12 +1039,23 @@ button {
 }
 
 .clinical-category-description,
+.clinical-context-note,
 .clinical-disclaimer,
 .clinical-ldl-goal p {
   margin: 0;
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.5;
+}
+
+.clinical-context-note {
+  padding: 10px 12px;
+  border: 1px solid rgba(46, 139, 192, 0.14);
+  border-radius: 14px;
+  background: #f8fbfd;
+  color: var(--primary-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .clinical-ldl-goal {
@@ -2706,6 +2738,11 @@ button {
   }
 
   .prevent-gauge-header {
+    flex-direction: column;
+  }
+
+  .clinical-interpretation-header {
+    align-items: flex-start;
     flex-direction: column;
   }
 
