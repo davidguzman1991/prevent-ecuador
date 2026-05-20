@@ -157,6 +157,26 @@ type BmiCalculatorState = {
   error: string;
 };
 
+const CUSTOM_SPECIALTY_VALUE = "__other__";
+
+const PHYSICIAN_SPECIALTY_OPTIONS = [
+  "Medicina General",
+  "Medicina Interna",
+  "Cardiología",
+  "Endocrinología",
+  "Diabetología",
+  "Nefrología",
+  "Neurología",
+  "Geriatría",
+  "Medicina Familiar",
+  "Cuidados Paliativos",
+  "Emergencia",
+  "Medicina Crítica / UCI",
+  "Cirugía General",
+  "Interno de Medicina",
+  "Médico Investigador",
+] as const;
+
 const VALIDATION_BADGE_TEXT = "Validación técnica";
 const DEFAULT_METHOD_NOTE =
   "Implementación independiente contrastada con el paquete oficial R PREVENT-AHA y la calculadora web PREVENT.";
@@ -443,6 +463,7 @@ export default function HomePage() {
   const [bmiCalculator, setBmiCalculator] = useState<BmiCalculatorState>(
     initialBmiCalculatorState,
   );
+  const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
   const selectedRisk = result
     ? riskType === "cvd"
       ? result.cvd_risk
@@ -493,6 +514,49 @@ export default function HomePage() {
       setRiskType("cvd");
       setHasUncalculatedChanges(true);
     }
+  };
+
+  const updateFormValue = (
+    fieldName: keyof FormState,
+    nextValue: FormState[keyof FormState],
+  ) => {
+    const nextFormState = {
+      ...form,
+      [fieldName]: nextValue,
+    } as FormState;
+
+    setForm(nextFormState);
+    console.debug("PREVENT formState visible", {
+      changedField: fieldName,
+      formState: nextFormState,
+    });
+
+    if (result) {
+      console.debug("PREVENT previous result cleared after visible form change", {
+        changedField: fieldName,
+        previousRecordId: recordId,
+        previousResult: result,
+      });
+      setResult(null);
+      setRecordId(null);
+      setRiskType("cvd");
+      setHasUncalculatedChanges(true);
+    }
+  };
+
+  const handleSpecialtySelectionChange = (
+    event: ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const nextSpecialty = event.target.value;
+
+    if (nextSpecialty === CUSTOM_SPECIALTY_VALUE) {
+      setUsesCustomSpecialty(true);
+      updateFormValue("physician_specialty", "");
+      return;
+    }
+
+    setUsesCustomSpecialty(false);
+    updateFormValue("physician_specialty", nextSpecialty);
   };
 
   const updateBmiValue = (nextBmi: string) => {
@@ -952,13 +1016,11 @@ export default function HomePage() {
                   onChange={handleInputChange}
                   required
                 />
-                <Field
-                  label="Especialidad"
-                  name="physician_specialty"
-                  type="text"
+                <PhysicianSpecialtyField
                   value={form.physician_specialty}
-                  onChange={handleInputChange}
-                  required
+                  usesCustomSpecialty={usesCustomSpecialty}
+                  onSelectChange={handleSpecialtySelectionChange}
+                  onCustomChange={handleInputChange}
                 />
               </div>
             </SectionCard>
@@ -988,6 +1050,7 @@ export default function HomePage() {
                   setRiskType("cvd");
                   setHasUncalculatedChanges(false);
                   setBmiCalculator(initialBmiCalculatorState);
+                  setUsesCustomSpecialty(false);
                 }}
               >
                 LIMPIAR FORMULARIO
@@ -1644,6 +1707,80 @@ function BmiField({
             </span>
           ) : null}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+type PhysicianSpecialtyFieldProps = {
+  value: string;
+  usesCustomSpecialty: boolean;
+  onSelectChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  onCustomChange: (event: ChangeEvent<HTMLInputElement>) => void;
+};
+
+function PhysicianSpecialtyField({
+  value,
+  usesCustomSpecialty,
+  onSelectChange,
+  onCustomChange,
+}: PhysicianSpecialtyFieldProps) {
+  const isPresetSpecialty =
+    value === "" ||
+    PHYSICIAN_SPECIALTY_OPTIONS.includes(
+      value as (typeof PHYSICIAN_SPECIALTY_OPTIONS)[number],
+    );
+  const showCustomSpecialty = usesCustomSpecialty || (!isPresetSpecialty && value !== "");
+  const selectValue = showCustomSpecialty ? CUSTOM_SPECIALTY_VALUE : value;
+
+  return (
+    <div className="prevent-field prevent-specialty-field">
+      <label className="prevent-field">
+        <span className="prevent-field-label">Especialidad</span>
+        <span className="prevent-select-wrap">
+          <select
+            className="prevent-input prevent-select"
+            name="physician_specialty_select"
+            value={selectValue}
+            onChange={onSelectChange}
+          >
+            <option value="">Sin especificar</option>
+            {PHYSICIAN_SPECIALTY_OPTIONS.map((specialty) => (
+              <option key={specialty} value={specialty}>
+                {specialty}
+              </option>
+            ))}
+            <option value={CUSTOM_SPECIALTY_VALUE}>Otro</option>
+          </select>
+          <svg
+            className="prevent-select-icon"
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            fill="none"
+          >
+            <path
+              d="M5.5 7.5L10 12l4.5-4.5"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.8"
+            />
+          </svg>
+        </span>
+      </label>
+
+      {showCustomSpecialty ? (
+        <label className="prevent-field prevent-specialty-custom">
+          <span className="prevent-field-label">Especifique especialidad</span>
+          <input
+            className="prevent-input"
+            name="physician_specialty"
+            type="text"
+            value={value}
+            onChange={onCustomChange}
+            placeholder="Ingrese especialidad"
+          />
+        </label>
       ) : null}
     </div>
   );

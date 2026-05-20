@@ -534,6 +534,14 @@ button {
   grid-column: 1 / -1;
 }
 
+.prevent-specialty-field {
+  align-self: start;
+}
+
+.prevent-specialty-custom {
+  margin-top: 4px;
+}
+
 .prevent-switch-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
