@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, FormEvent, ReactNode, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useRef, useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ValidationInfoCard } from "@/components/ValidationInfoCard";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
@@ -459,11 +459,14 @@ export default function HomePage() {
   const [manualVariantSelection, setManualVariantSelection] = useState(false);
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitFeedback, setSubmitFeedback] = useState("");
   const [hasUncalculatedChanges, setHasUncalculatedChanges] = useState(false);
   const [bmiCalculator, setBmiCalculator] = useState<BmiCalculatorState>(
     initialBmiCalculatorState,
   );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
+  const resultsRef = useRef<HTMLElement | null>(null);
+  const feedbackTimeoutRef = useRef<number | null>(null);
   const selectedRisk = result
     ? riskType === "cvd"
       ? result.cvd_risk
@@ -513,6 +516,7 @@ export default function HomePage() {
       setRecordId(null);
       setRiskType("cvd");
       setHasUncalculatedChanges(true);
+      setSubmitFeedback("");
     }
   };
 
@@ -541,6 +545,7 @@ export default function HomePage() {
       setRecordId(null);
       setRiskType("cvd");
       setHasUncalculatedChanges(true);
+      setSubmitFeedback("");
     }
   };
 
@@ -580,6 +585,7 @@ export default function HomePage() {
       setRecordId(null);
       setRiskType("cvd");
       setHasUncalculatedChanges(true);
+      setSubmitFeedback("");
     }
   };
 
@@ -613,9 +619,49 @@ export default function HomePage() {
     }
   };
 
+  const clearSubmitFeedbackTimer = () => {
+    if (feedbackTimeoutRef.current !== null) {
+      window.clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+    }
+  };
+
+  const showResultUpdatedFeedback = () => {
+    clearSubmitFeedbackTimer();
+    setSubmitFeedback("Resultado actualizado");
+    feedbackTimeoutRef.current = window.setTimeout(() => {
+      setSubmitFeedback("");
+      feedbackTimeoutRef.current = null;
+    }, 3200);
+  };
+
+  const scrollToResultsAfterCalculation = () => {
+    window.requestAnimationFrame(() => {
+      const resultsElement = resultsRef.current;
+
+      if (!resultsElement) {
+        return;
+      }
+
+      const rect = resultsElement.getBoundingClientRect();
+      const isMobileLayout = window.matchMedia("(max-width: 980px)").matches;
+      const isResultsStartVisible =
+        rect.top >= 0 && rect.top <= window.innerHeight * 0.45;
+
+      if (isMobileLayout || !isResultsStartVisible) {
+        resultsElement.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    });
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    clearSubmitFeedbackTimer();
+    setSubmitFeedback("");
     setError("");
     setResult(null);
     setRecordId(null);
@@ -681,6 +727,8 @@ export default function HomePage() {
       );
       setRecordId(data.id);
       setResult(data);
+      showResultUpdatedFeedback();
+      scrollToResultsAfterCalculation();
     } catch (submitError) {
       const message =
         submitError instanceof Error
@@ -1036,8 +1084,9 @@ export default function HomePage() {
                 type="submit"
                 disabled={isSubmitting}
                 className="prevent-button prevent-button-primary"
+                aria-busy={isSubmitting}
               >
-                {isSubmitting ? "Calculando..." : "CALCULAR RIESGO"}
+                {isSubmitting ? "Calculando riesgo..." : "CALCULAR RIESGO"}
               </button>
               <button
                 type="button"
@@ -1048,6 +1097,7 @@ export default function HomePage() {
                   setRecordId(null);
                   setError("");
                   setRiskType("cvd");
+                  setSubmitFeedback("");
                   setHasUncalculatedChanges(false);
                   setBmiCalculator(initialBmiCalculatorState);
                   setUsesCustomSpecialty(false);
@@ -1056,10 +1106,15 @@ export default function HomePage() {
                 LIMPIAR FORMULARIO
               </button>
             </div>
+            {isSubmitting || submitFeedback ? (
+              <p className="prevent-submit-feedback" role="status" aria-live="polite">
+                {isSubmitting ? "Calculando riesgo..." : submitFeedback}
+              </p>
+            ) : null}
           </form>
         </section>
 
-        <aside className="prevent-results-column" id="resultados">
+        <aside className="prevent-results-column" id="resultados" ref={resultsRef}>
           <section className="prevent-result-card">
             <div className="prevent-panel-header">
               <span className="prevent-panel-badge">RESULTADOS Y EVALUACIÓN</span>
