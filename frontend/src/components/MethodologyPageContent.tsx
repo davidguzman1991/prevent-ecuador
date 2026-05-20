@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ContactCard } from "@/components/ContactCard";
 
 const CLINICAL_VARIABLES = [
   ["Edad", "30–79 años"],
@@ -285,6 +286,8 @@ export function MethodologyPageContent() {
           </div>
         </div>
       </section>
+
+      <ContactCard />
     </div>
   );
 }

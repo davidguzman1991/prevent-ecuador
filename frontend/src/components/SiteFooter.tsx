@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { ContactCard } from "@/components/ContactCard";
 
 export function SiteFooter() {
   return (
     <footer className="prevent-footer">
+      <ContactCard compact />
       <div className="prevent-footer-grid">
         <div className="prevent-footer-copy">
           <p>
