@@ -162,6 +162,44 @@
       .technical-section p {
         margin: 2px 0;
       }
+
+      .factor-list,
+      .domain-list {
+        margin: 0;
+        padding-left: 16px;
+      }
+
+      .factor-list li,
+      .domain-list li {
+        margin: 3px 0;
+      }
+
+      .domain-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        background: #fff;
+        break-inside: avoid;
+      }
+
+      .domain-card h4 {
+        margin: 0 0 4px;
+        color: var(--accent);
+        font-size: 12px;
+      }
+
+      .domain-card p {
+        margin: 4px 0;
+      }
+
+      .traceability {
+        margin-top: 8px;
+        padding-top: 7px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 10.5px;
+      }
     </style>
   </head>
   <body>
@@ -380,14 +418,62 @@
       </p>
     </section>
 
+    {% if clinical_interpretation %}
+    <section class="section">
+      <h3 class="section-title">Factores clínicos relevantes</h3>
+      {% set clinical_factors = clinical_interpretation.get("clinical_factors", {}).get("items", []) %}
+      {% if clinical_factors %}
+      <ul class="factor-list">
+        {% for factor in clinical_factors %}
+        <li>
+          <strong>{{ factor.get("label") }}</strong>
+          {% if factor.get("description") %} — {{ factor.get("description") }}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="interpretation">No se registran factores contextuales adicionales para esta evaluación.</div>
+      {% endif %}
+    </section>
+
+    <section class="section">
+      <h3 class="section-title">Recomendaciones por dominio</h3>
+      {% for domain in clinical_interpretation.get("domain_recommendations", []) %}
+      <article class="domain-card">
+        <h4>{{ domain.get("title") }} — {{ domain.get("risk_label") }}</h4>
+        <p>{{ domain.get("interpretation") }}</p>
+        {% if domain.get("recommendations") %}
+        <ul class="domain-list">
+          {% for recommendation in domain.get("recommendations") %}
+          <li>{{ recommendation }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="traceability">
+          <p><strong>Dominio:</strong> {{ domain.get("domain_type") or domain.get("key") }}</p>
+          <p><strong>Base metodológica:</strong> {{ domain.get("recommendation_basis") or domain.get("base") }}</p>
+          {% if domain.get("guideline_context") %}
+          <p><strong>Referencia contextual:</strong> {{ domain.get("guideline_context") }}</p>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+
     <section class="section">
       <h3 class="section-title">Interpretación</h3>
       <div class="interpretation">{{ interpretation }}</div>
     </section>
 
     <footer class="disclaimer">
+      {% if clinical_interpretation and clinical_interpretation.get("methodological_disclaimer") %}
+      {{ clinical_interpretation.get("methodological_disclaimer") }}
+      {% else %}
       Este informe constituye una herramienta de apoyo a la decisión clínica y
-      no sustituye el juicio médico. {{ methodology_note }}
+      no sustituye el juicio médico.
+      {% endif %}
+      {{ methodology_note }}
     </footer>
   </body>
 </html>

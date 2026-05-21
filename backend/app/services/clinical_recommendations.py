@@ -5,11 +5,40 @@ from typing import Any, Literal
 RiskCategoryName = Literal["low", "borderline", "intermediate", "high", "unavailable"]
 
 CLINICAL_DISCLAIMER = (
-    "Sistema de apoyo a la decisión clínica basado en ecuaciones PREVENT y guías "
-    "clínicas vigentes. Las recomendaciones se organizan por dominio clínico. "
-    "El score PREVENT no se modifica por los factores contextuales; estos solo "
-    "orientan la discusión clínica individual. No reemplaza juicio clínico profesional."
+    "El score PREVENT representa una estimación probabilística basada en ecuaciones "
+    "poblacionales publicadas por la American Heart Association (AHA). "
+    "Las recomendaciones contextuales presentadas corresponden a una capa "
+    "interpretativa de apoyo clínico organizada por dominios y no modifican el score "
+    "PREVENT calculado. Las decisiones terapéuticas finales deben individualizarse "
+    "según juicio clínico, comorbilidades, guías vigentes y características del paciente."
 )
+
+DOMAIN_TRACEABILITY: dict[str, dict[str, str]] = {
+    "lipids": {
+        "domain_type": "lipids",
+        "outcome": "ASCVD",
+        "recommendation_basis": "PREVENT-ASCVD 10 años",
+        "guideline_context": "ACC/AHA Dyslipidemia Guideline 2026",
+    },
+    "blood_pressure": {
+        "domain_type": "blood_pressure",
+        "outcome": "CVD",
+        "recommendation_basis": "PREVENT-CVD global 10 años + presión arterial sistólica",
+        "guideline_context": "Guías clínicas vigentes de presión arterial",
+    },
+    "heart_failure": {
+        "domain_type": "heart_failure",
+        "outcome": "HF",
+        "recommendation_basis": "PREVENT-HF 10 años",
+        "guideline_context": "Contexto clínico de insuficiencia cardíaca y perfil cardiometabólico",
+    },
+    "renal": {
+        "domain_type": "renal_cardiorenal",
+        "outcome": "renal_cardiorenal",
+        "recommendation_basis": "eGFR / albuminuria si existe / contexto CKM",
+        "guideline_context": "Contexto CKM y guías clínicas vigentes",
+    },
+}
 
 CONTEXT_PROFILE = {
     "name": "Clinical context",
@@ -107,8 +136,20 @@ def _build_ldl_goal(lipid_category: RiskCategoryName) -> dict[str, Any] | None:
         "target": goal,
         "summary": f"Meta LDL orientativa {goal}.",
         "rationale": rationale,
-        "evidence": "Orientación clínica basada en guías vigentes",
+        "evidence": "ACC/AHA Dyslipidemia Guideline 2026",
         "type": "ldl_goal",
+        "domain_type": "lipids",
+        "recommendation_basis": DOMAIN_TRACEABILITY["lipids"]["recommendation_basis"],
+        "guideline_context": DOMAIN_TRACEABILITY["lipids"]["guideline_context"],
+    }
+
+
+def _with_domain_traceability(domain: dict[str, Any]) -> dict[str, Any]:
+    traceability = DOMAIN_TRACEABILITY.get(str(domain.get("key")), {})
+    return {
+        **domain,
+        **traceability,
+        "base": domain.get("base") or traceability.get("recommendation_basis"),
     }
 
 
@@ -176,6 +217,10 @@ def _build_recommendations(
                 "evidence": "Guías clínicas vigentes",
                 "class_of_recommendation": "Orientación no coercitiva",
                 "type": "lipids",
+                "domain_type": "lipids",
+                "outcome": "ASCVD",
+                "recommendation_basis": DOMAIN_TRACEABILITY["lipids"]["recommendation_basis"],
+                "guideline_context": DOMAIN_TRACEABILITY["lipids"]["guideline_context"],
             },
         )
 
@@ -187,6 +232,10 @@ def _build_recommendations(
                 "evidence": "Guías clínicas vigentes",
                 "class_of_recommendation": "Sugerencia orientativa",
                 "type": "lipids",
+                "domain_type": "lipids",
+                "outcome": "ASCVD",
+                "recommendation_basis": DOMAIN_TRACEABILITY["lipids"]["recommendation_basis"],
+                "guideline_context": DOMAIN_TRACEABILITY["lipids"]["guideline_context"],
             },
         )
 
@@ -198,6 +247,10 @@ def _build_recommendations(
                 "evidence": "Contextualización clínica",
                 "class_of_recommendation": "Consideración clínica",
                 "type": "clinical_context",
+                "domain_type": "clinical_context",
+                "outcome": "contextual",
+                "recommendation_basis": "Factores clínicos relevantes sin reclasificación automática",
+                "guideline_context": "Juicio clínico individual y guías vigentes",
             },
         )
 
@@ -228,7 +281,7 @@ def get_blood_pressure_risk_context(
     if bptreat:
         recommendations.append("Paciente en tratamiento antihipertensivo: interpretar cifras actuales en contexto de tratamiento.")
 
-    return {
+    return _with_domain_traceability({
         "key": "blood_pressure",
         "title": "Presión arterial",
         "base": "CVD global 10 años",
@@ -237,7 +290,7 @@ def get_blood_pressure_risk_context(
         "category": _risk_category_from_value(cvd_risk_10y),
         "interpretation": interpretation,
         "recommendations": recommendations,
-    }
+    })
 
 
 def get_heart_failure_context(
@@ -258,7 +311,7 @@ def get_heart_failure_context(
     if dm:
         recommendations.append("Diabetes: considerar manejo cardiometabólico integral según guías vigentes.")
 
-    return {
+    return _with_domain_traceability({
         "key": "heart_failure",
         "title": "Insuficiencia cardíaca",
         "base": "HF 10 años",
@@ -267,7 +320,7 @@ def get_heart_failure_context(
         "category": "descriptive" if hf_risk_10y is not None else "unavailable",
         "interpretation": "Riesgo estimado de insuficiencia cardíaca a 10 años. No se aplican umbrales terapéuticos automáticos.",
         "recommendations": recommendations,
-    }
+    })
 
 
 def get_renal_context(
@@ -291,7 +344,7 @@ def get_renal_context(
         recommendations.append("Diabetes: integrar control metabólico y protección renal según guías vigentes.")
 
     risk_label = "eGFR no registrado" if egfr is None else f"eGFR {egfr:.0f}"
-    return {
+    return _with_domain_traceability({
         "key": "renal",
         "title": "Renal / cardiorrenal",
         "base": "eGFR / perfil renal",
@@ -300,7 +353,7 @@ def get_renal_context(
         "category": "context",
         "interpretation": "Perfil renal/cardiorrenal basado en eGFR, albuminuria si existe, diabetes y contexto CKM.",
         "recommendations": recommendations,
-    }
+    })
 
 
 def get_lipid_domain_context(
@@ -325,7 +378,7 @@ def get_lipid_domain_context(
     if ldl_goal is not None:
         recommendations.append(f"Meta LDL orientativa: {ldl_goal['target']}.")
 
-    return {
+    return _with_domain_traceability({
         "key": "lipids",
         "title": "Lípidos",
         "base": "ASCVD 10 años",
@@ -334,7 +387,43 @@ def get_lipid_domain_context(
         "category": lipid_category,
         "interpretation": "Orientación lipídica basada en riesgo ASCVD estimado a 10 años.",
         "recommendations": recommendations,
-    }
+    })
+
+
+def normalize_clinical_interpretation(
+    clinical_interpretation: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(clinical_interpretation, dict):
+        return None
+
+    normalized = dict(clinical_interpretation)
+    if "lipid_ascvd_category" not in normalized and "prevent_risk_category" in normalized:
+        normalized["lipid_ascvd_category"] = normalized["prevent_risk_category"]
+    if "lipid_ldl_goal" not in normalized and "ldl_goal" in normalized:
+        normalized["lipid_ldl_goal"] = normalized["ldl_goal"]
+    if "methodological_disclaimer" not in normalized:
+        normalized["methodological_disclaimer"] = normalized.get("disclaimer", CLINICAL_DISCLAIMER)
+    if "disclaimer" not in normalized:
+        normalized["disclaimer"] = normalized["methodological_disclaimer"]
+
+    domains = normalized.get("domain_recommendations")
+    if isinstance(domains, list):
+        normalized["domain_recommendations"] = [
+            _with_domain_traceability(dict(domain))
+            for domain in domains
+            if isinstance(domain, dict)
+        ]
+        normalized["recommendation_traceability"] = [
+            {
+                "domain": domain.get("key"),
+                "domain_type": domain.get("domain_type"),
+                "outcome": domain.get("outcome"),
+                "recommendation_basis": domain.get("recommendation_basis"),
+                "guideline_context": domain.get("guideline_context"),
+            }
+            for domain in normalized["domain_recommendations"]
+        ]
+    return normalized
 
 
 def _build_renal_interpretation(payload: dict[str, Any]) -> dict[str, Any] | None:
@@ -457,16 +546,25 @@ def build_clinical_interpretation(
         get_heart_failure_context(hf_risk, bmi, egfr, diabetes),
         get_renal_context(egfr, uacr, diabetes),
     ]
+    lipid_ascvd_category = RISK_CATEGORIES[lipid_category]
     clinical_payload = {
         "source": "PREVENT Ecuador contextual layer",
         "basis": "Recomendaciones organizadas por dominio clínico, separadas del score PREVENT calculado",
-        "risk_category_basis": {
+        "lipid_ascvd_basis": {
             "outcome": "ascvd",
             "risk": ascvd_risk,
             "method": "lipid_domain_ascvd_reference",
             "note": "Lipid guidance uses the calculated PREVENT ASCVD 10-year score. Other domains use their own bases.",
         },
-        "prevent_risk_category": RISK_CATEGORIES[lipid_category],
+        "lipid_ascvd_category": lipid_ascvd_category,
+        "lipid_ldl_goal": ldl_goal,
+        "risk_category_basis": {
+            "outcome": "ascvd",
+            "risk": ascvd_risk,
+            "method": "deprecated_alias_for_lipid_ascvd_basis",
+            "note": "Deprecated alias. Use lipid_ascvd_basis.",
+        },
+        "prevent_risk_category": lipid_ascvd_category,
         "risk_category": CONTEXT_PROFILE,
         "ldl_goal": ldl_goal,
         "recommendations": _build_recommendations(lipid_category, ldl_goal, clinical_factors),
@@ -479,6 +577,7 @@ def build_clinical_interpretation(
         "warnings": warnings or [],
         "future_inputs": ["CAC", "ApoB", "Lp(a)", "triglycerides", "advanced_ckd", "secondary_prevention"],
         "disclaimer": CLINICAL_DISCLAIMER,
+        "methodological_disclaimer": CLINICAL_DISCLAIMER,
     }
 
     optional_sections = {
@@ -490,4 +589,4 @@ def build_clinical_interpretation(
         {key: value for key, value in optional_sections.items() if value is not None},
     )
 
-    return clinical_payload
+    return normalize_clinical_interpretation(clinical_payload) or clinical_payload

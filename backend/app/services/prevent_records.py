@@ -16,7 +16,10 @@ from app.schemas.prevent_record import (
     PreventRecordListItem,
     PreventRecordListResponse,
 )
-from app.services.clinical_recommendations import build_clinical_interpretation
+from app.services.clinical_recommendations import (
+    build_clinical_interpretation,
+    normalize_clinical_interpretation,
+)
 from app.services.prevent_engine import (
     calculate_prevent_age,
     classify_risk,
@@ -51,6 +54,15 @@ PREVENT_EXPORT_HEADERS = [
     "riesgo_ic_10y",
     "edad_prevent",
     "variante_modelo",
+    "dominios_recomendacion",
+    "base_lipidos",
+    "guia_lipidos",
+    "base_presion_arterial",
+    "guia_presion_arterial",
+    "base_insuficiencia_cardiaca",
+    "guia_insuficiencia_cardiaca",
+    "base_renal_cardiorrenal",
+    "guia_renal_cardiorrenal",
 ]
 
 
@@ -77,7 +89,9 @@ def _clinical_interpretation_from_record(record: PreventRecord) -> dict[str, obj
     payload = record.input_payload_json or {}
     stored_interpretation = payload.get("clinical_interpretation")
     if isinstance(stored_interpretation, dict):
-        return stored_interpretation
+        normalized = normalize_clinical_interpretation(stored_interpretation)
+        if normalized is not None:
+            return normalized
 
     extracted = _extract_record_results(record)
     engine_input = {
@@ -106,6 +120,41 @@ def _clinical_interpretation_from_record(record: PreventRecord) -> dict[str, obj
         input_payload=engine_input,
         warnings=warnings,
     )
+
+
+def _domain_traceability_for_export(record: PreventRecord) -> dict[str, str | None]:
+    clinical = _clinical_interpretation_from_record(record) or {}
+    domains = clinical.get("domain_recommendations") or []
+    traceability: dict[str, dict[str, object]] = {}
+    if isinstance(domains, list):
+        for domain in domains:
+            if isinstance(domain, dict):
+                key = str(domain.get("key") or "")
+                traceability[key] = domain
+
+    def value(key: str, field: str) -> str | None:
+        domain = traceability.get(key)
+        if not domain:
+            return None
+        raw_value = domain.get(field)
+        return str(raw_value) if raw_value is not None else None
+
+    domain_types = [
+        str(domain.get("domain_type") or domain.get("key"))
+        for domain in traceability.values()
+        if isinstance(domain, dict)
+    ]
+    return {
+        "dominios_recomendacion": "|".join(domain_types) if domain_types else None,
+        "base_lipidos": value("lipids", "recommendation_basis"),
+        "guia_lipidos": value("lipids", "guideline_context"),
+        "base_presion_arterial": value("blood_pressure", "recommendation_basis"),
+        "guia_presion_arterial": value("blood_pressure", "guideline_context"),
+        "base_insuficiencia_cardiaca": value("heart_failure", "recommendation_basis"),
+        "guia_insuficiencia_cardiaca": value("heart_failure", "guideline_context"),
+        "base_renal_cardiorrenal": value("renal", "recommendation_basis"),
+        "guia_renal_cardiorrenal": value("renal", "guideline_context"),
+    }
 
 
 def _column_or_payload(record: PreventRecord, column_value, payload_key: str):
@@ -164,6 +213,7 @@ def _build_prevent_export_row(record: PreventRecord) -> list[object]:
         if record.prevent_age is not None
         else _result_payload_value(record, "prevent_age")
     )
+    traceability = _domain_traceability_for_export(record)
 
     return [
         str(record.id),
@@ -195,6 +245,15 @@ def _build_prevent_export_row(record: PreventRecord) -> list[object]:
         ),
         float(prevent_age) if prevent_age is not None else None,
         model_variant or extracted["model_variant"],
+        traceability["dominios_recomendacion"],
+        traceability["base_lipidos"],
+        traceability["guia_lipidos"],
+        traceability["base_presion_arterial"],
+        traceability["guia_presion_arterial"],
+        traceability["base_insuficiencia_cardiaca"],
+        traceability["guia_insuficiencia_cardiaca"],
+        traceability["base_renal_cardiorrenal"],
+        traceability["guia_renal_cardiorrenal"],
     ]
 
 

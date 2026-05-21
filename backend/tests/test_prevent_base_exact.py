@@ -81,7 +81,7 @@ class PreventBaseExactPortTest(unittest.TestCase):
             },
             input_payload=payload,
         )
-        self.assertEqual(clinical["prevent_risk_category"]["label"], "Bajo riesgo")
+        self.assertEqual(clinical["lipid_ascvd_category"]["label"], "Bajo riesgo")
         self.assertEqual(clinical["risk_category"]["label"], "Contexto clínico")
 
     def test_intermediate_case_uses_official_percent_scale(self) -> None:

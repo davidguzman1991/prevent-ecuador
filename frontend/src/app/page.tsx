@@ -70,7 +70,19 @@ type ClinicalInterpretation = {
     method: string;
     note: string;
   };
+  lipid_ascvd_basis?: {
+    outcome: string;
+    risk: number | null;
+    method: string;
+    note: string;
+  };
   risk_category: {
+    name: string;
+    label: string;
+    color: string;
+    description: string;
+  };
+  lipid_ascvd_category?: {
     name: string;
     label: string;
     color: string;
@@ -82,12 +94,25 @@ type ClinicalInterpretation = {
     color: string;
     description: string;
   };
+  lipid_ldl_goal?: {
+    target: string;
+    summary: string;
+    rationale: string;
+    evidence: string;
+    type: string;
+    domain_type?: string;
+    recommendation_basis?: string;
+    guideline_context?: string;
+  } | null;
   ldl_goal?: {
     target: string;
     summary: string;
     rationale: string;
     evidence: string;
     type: string;
+    domain_type?: string;
+    recommendation_basis?: string;
+    guideline_context?: string;
   } | null;
   recommendations: Array<{
     title: string;
@@ -95,6 +120,10 @@ type ClinicalInterpretation = {
     evidence: string;
     class_of_recommendation: string;
     type: string;
+    domain_type?: string;
+    outcome?: string;
+    recommendation_basis?: string;
+    guideline_context?: string;
   }>;
   domain_recommendations?: Array<{
     key: string;
@@ -105,6 +134,17 @@ type ClinicalInterpretation = {
     category: string;
     interpretation: string;
     recommendations: string[];
+    domain_type?: string;
+    outcome?: string;
+    recommendation_basis?: string;
+    guideline_context?: string;
+  }>;
+  recommendation_traceability?: Array<{
+    domain?: string | null;
+    domain_type?: string | null;
+    outcome?: string | null;
+    recommendation_basis?: string | null;
+    guideline_context?: string | null;
   }>;
   risk_enhancers?: {
     title: string;
@@ -152,6 +192,7 @@ type ClinicalInterpretation = {
   };
   warnings?: Array<PreventWarning | string> | null;
   disclaimer: string;
+  methodological_disclaimer?: string;
 };
 
 type PreventWarning = {
@@ -728,8 +769,10 @@ export default function HomePage() {
         hfRisk: data.hf_risk,
         hfCategory: data.hf_category,
         clinicalRiskCategory: data.clinical_interpretation?.risk_category ?? null,
-        clinicalRiskCategoryBasis:
-          data.clinical_interpretation?.risk_category_basis ?? null,
+        lipidAscvdBasis:
+          data.clinical_interpretation?.lipid_ascvd_basis ??
+          data.clinical_interpretation?.risk_category_basis ??
+          null,
       });
       console.debug(
         "PREVENT clinical_interpretation used in UI",
@@ -1510,7 +1553,15 @@ function ClinicalInterpretationPanel({
                   ))}
                 </ul>
               ) : null}
-              <small>Base: {domain.base}</small>
+              <small>
+                Base metodológica: {domain.recommendation_basis ?? domain.base}
+                {domain.guideline_context ? (
+                  <>
+                    <br />
+                    Referencia contextual: {domain.guideline_context}
+                  </>
+                ) : null}
+              </small>
             </article>
           ))}
         </div>
@@ -1527,7 +1578,9 @@ function ClinicalInterpretationPanel({
         </div>
       ) : null}
 
-      <p className="clinical-disclaimer">{interpretation.disclaimer}</p>
+      <p className="clinical-disclaimer">
+        {interpretation.methodological_disclaimer ?? interpretation.disclaimer}
+      </p>
     </section>
   );
 }
@@ -1583,10 +1636,17 @@ function PrintClinicalSummary({
 }: {
   interpretation: ClinicalInterpretation;
 }) {
+  const domains = interpretation.domain_recommendations ?? [];
+  const domainLines = domains.map((domain) => {
+    const basis = domain.recommendation_basis ?? domain.base;
+    return `${domain.title}: ${domain.risk_label}. Base: ${basis}.`;
+  });
+  const legacyLdlGoal = interpretation.lipid_ldl_goal ?? interpretation.ldl_goal;
   const lines = [
     `${interpretation.risk_category.label}: ${interpretation.risk_category.description}`,
-    interpretation.ldl_goal
-      ? `Meta LDL orientativa: ${interpretation.ldl_goal.target}.`
+    ...domainLines,
+    legacyLdlGoal
+      ? `Meta LDL orientativa: ${legacyLdlGoal.target}.`
       : null,
     interpretation.renal_interpretation
       ? `Renal: ${interpretation.renal_interpretation.messages[0]}`
@@ -1597,7 +1657,8 @@ function PrintClinicalSummary({
     interpretation.ldl_gap_analysis
       ? `Gap LDL: ${interpretation.ldl_gap_analysis.summary}`
       : null,
-  ].filter((line): line is string => Boolean(line)).slice(0, 4);
+    interpretation.methodological_disclaimer ?? interpretation.disclaimer,
+  ].filter((line): line is string => Boolean(line)).slice(0, 7);
 
   return (
     <div className="print-clinical-summary">
