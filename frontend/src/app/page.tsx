@@ -76,6 +76,12 @@ type ClinicalInterpretation = {
     color: string;
     description: string;
   };
+  prevent_risk_category?: {
+    name: string;
+    label: string;
+    color: string;
+    description: string;
+  };
   ldl_goal?: {
     target: string;
     summary: string;
@@ -92,6 +98,15 @@ type ClinicalInterpretation = {
   }>;
   risk_enhancers: {
     title: string;
+    items: Array<{
+      key: string;
+      label: string;
+      description: string;
+    }>;
+  };
+  clinical_factors?: {
+    title: string;
+    note: string;
     items: Array<{
       key: string;
       label: string;
@@ -1448,8 +1463,10 @@ function ClinicalInterpretationPanel({
         {interpretation.risk_category.description}
       </p>
       <p className="clinical-context-note">
-        Este perfil integra comorbilidades y factores asociados; puede orientar
-        metas terapéuticas aunque el score PREVENT matemático sea menor.
+        El score PREVENT representa una estimación probabilística poblacional. Los
+        factores clínicos presentes pueden influir en la discusión terapéutica y el
+        manejo preventivo individual, pero no modifican automáticamente el score
+        PREVENT calculado.
       </p>
 
       {interpretation.ldl_goal ? (
@@ -1462,7 +1479,7 @@ function ClinicalInterpretationPanel({
 
       {findings.length ? (
         <div className="clinical-findings-section">
-          <span>Hallazgos relevantes</span>
+          <span>Factores clínicos relevantes</span>
           <ul>
             {findings.map((finding) => (
               <li key={finding}>
@@ -1493,13 +1510,15 @@ function ClinicalInterpretationPanel({
 }
 
 function getIntegratedClinicalFindings(interpretation: ClinicalInterpretation): string[] {
+  const clinicalFactors =
+    interpretation.clinical_factors?.items ?? interpretation.risk_enhancers.items;
   const findings = [
     ...(interpretation.advanced_risk_profile?.reasons ?? []),
     ...(interpretation.renal_interpretation?.messages ?? []),
     ...(interpretation.ldl_gap_analysis
       ? [interpretation.ldl_gap_analysis.summary]
       : []),
-    ...interpretation.risk_enhancers.items.map((item) => item.label),
+    ...clinicalFactors.map((item) => item.label),
   ];
 
   return Array.from(new Set(findings)).slice(0, 8);
