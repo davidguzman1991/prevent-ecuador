@@ -1101,6 +1101,67 @@ button {
   line-height: 1.45;
 }
 
+.clinical-domain-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.clinical-domain-card {
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid rgba(46, 139, 192, 0.14);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(46, 139, 192, 0.08), transparent 9rem),
+    #fbfdff;
+}
+
+.clinical-domain-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.clinical-domain-header span {
+  color: #12324a;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.clinical-domain-header strong {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.clinical-domain-card p,
+.clinical-domain-card li,
+.clinical-domain-card small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.clinical-domain-card ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 17px;
+}
+
+.clinical-domain-card small {
+  color: var(--primary-dark);
+  font-weight: 850;
+}
+
 .clinical-finding-icon {
   width: 15px;
   height: 15px;
@@ -2742,6 +2803,11 @@ button {
   }
 
   .clinical-interpretation-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .clinical-domain-header {
     align-items: flex-start;
     flex-direction: column;
   }

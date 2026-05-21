@@ -96,7 +96,17 @@ type ClinicalInterpretation = {
     class_of_recommendation: string;
     type: string;
   }>;
-  risk_enhancers: {
+  domain_recommendations?: Array<{
+    key: string;
+    title: string;
+    base: string;
+    risk: number | null;
+    risk_label: string;
+    category: string;
+    interpretation: string;
+    recommendations: string[];
+  }>;
+  risk_enhancers?: {
     title: string;
     items: Array<{
       key: string;
@@ -1447,6 +1457,7 @@ function ClinicalInterpretationPanel({
 }) {
   const recommendations = interpretation.recommendations.slice(0, 3);
   const findings = getIntegratedClinicalFindings(interpretation);
+  const domainRecommendations = interpretation.domain_recommendations ?? [];
 
   return (
     <section className="clinical-interpretation-card">
@@ -1469,14 +1480,6 @@ function ClinicalInterpretationPanel({
         PREVENT calculado.
       </p>
 
-      {interpretation.ldl_goal ? (
-        <div className="clinical-ldl-goal">
-          <span>Meta LDL orientativa</span>
-          <strong>{interpretation.ldl_goal.target}</strong>
-          <p>{interpretation.ldl_goal.rationale}</p>
-        </div>
-      ) : null}
-
       {findings.length ? (
         <div className="clinical-findings-section">
           <span>Factores clínicos relevantes</span>
@@ -1491,7 +1494,27 @@ function ClinicalInterpretationPanel({
         </div>
       ) : null}
 
-      {recommendations.length ? (
+      {domainRecommendations.length ? (
+        <div className="clinical-domain-grid">
+          {domainRecommendations.map((domain) => (
+            <article className="clinical-domain-card" key={domain.key}>
+              <div className="clinical-domain-header">
+                <span>{domain.title}</span>
+                <strong>{domain.risk_label}</strong>
+              </div>
+              <p>{domain.interpretation}</p>
+              {domain.recommendations.length ? (
+                <ul>
+                  {domain.recommendations.map((recommendation) => (
+                    <li key={recommendation}>{recommendation}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <small>Base: {domain.base}</small>
+            </article>
+          ))}
+        </div>
+      ) : recommendations.length ? (
         <div className="clinical-mini-section clinical-recommendations">
           <span>Recomendaciones orientativas contextuales</span>
           <ul>
@@ -1511,7 +1534,7 @@ function ClinicalInterpretationPanel({
 
 function getIntegratedClinicalFindings(interpretation: ClinicalInterpretation): string[] {
   const clinicalFactors =
-    interpretation.clinical_factors?.items ?? interpretation.risk_enhancers.items;
+    interpretation.clinical_factors?.items ?? interpretation.risk_enhancers?.items ?? [];
   const findings = [
     ...(interpretation.advanced_risk_profile?.reasons ?? []),
     ...(interpretation.renal_interpretation?.messages ?? []),

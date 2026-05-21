@@ -6,9 +6,9 @@ RiskCategoryName = Literal["low", "borderline", "intermediate", "high", "unavail
 
 CLINICAL_DISCLAIMER = (
     "Sistema de apoyo a la decisión clínica basado en ecuaciones PREVENT y guías "
-    "clínicas vigentes. Los factores contextuales no modifican el score PREVENT "
-    "calculado; solo apoyan la interpretación clínica individual. No reemplaza "
-    "juicio clínico profesional."
+    "clínicas vigentes. Las recomendaciones se organizan por dominio clínico. "
+    "El score PREVENT no se modifica por los factores contextuales; estos solo "
+    "orientan la discusión clínica individual. No reemplaza juicio clínico profesional."
 )
 
 CONTEXT_PROFILE = {
@@ -67,6 +67,18 @@ def _risk_category_from_value(risk: float | None) -> RiskCategoryName:
     return "high"
 
 
+def get_lipid_risk_category(ascvd_risk_10y: float | None) -> RiskCategoryName:
+    if ascvd_risk_10y is None:
+        return "unavailable"
+    if ascvd_risk_10y < 3:
+        return "low"
+    if ascvd_risk_10y < 5:
+        return "borderline"
+    if ascvd_risk_10y < 10:
+        return "intermediate"
+    return "high"
+
+
 def _get_number(payload: dict[str, Any], key: str) -> float | None:
     value = payload.get(key)
     if isinstance(value, bool) or value is None or value == "":
@@ -77,42 +89,17 @@ def _get_number(payload: dict[str, Any], key: str) -> float | None:
         return None
 
 
-def _select_risk_for_category(prevent_result: dict[str, Any]) -> tuple[float | None, dict[str, Any]]:
-    """Select a single PREVENT score reference without contextual reclassification."""
-
-    ascvd_risk = _get_number(prevent_result, "ascvd_risk")
-    cvd_risk = _get_number(prevent_result, "cvd_risk")
-
-    if ascvd_risk is not None:
-        return ascvd_risk, {
-            "outcome": "ascvd",
-            "risk": ascvd_risk,
-            "method": "ascvd_score_reference",
-            "note": "Uses the calculated PREVENT ASCVD score as a reference without contextual reclassification.",
-        }
-    if cvd_risk is not None:
-        return cvd_risk, {
-            "outcome": "cvd",
-            "risk": cvd_risk,
-            "method": "cvd_score_reference",
-            "note": "Uses the calculated PREVENT CVD score as a reference without contextual reclassification.",
-        }
-
-    return None, {
-        "outcome": "unavailable",
-        "risk": None,
-        "method": "no_valid_cvd_ascvd_risk",
-        "note": "No valid CVD/ASCVD score was available for contextual reference.",
-    }
+def _format_risk_value(value: float | None) -> str:
+    return f"{value:.1f}%" if value is not None else "No calculado"
 
 
-def _build_ldl_goal(category_name: RiskCategoryName) -> dict[str, Any] | None:
-    if category_name == "high":
+def _build_ldl_goal(lipid_category: RiskCategoryName) -> dict[str, Any] | None:
+    if lipid_category == "high":
         goal = "<70 mg/dL"
-        rationale = "Meta orientativa basada en el score PREVENT calculado, sin reclasificación contextual."
-    elif category_name in {"borderline", "intermediate"}:
+        rationale = "Meta orientativa basada en ASCVD 10 años y contexto clínico, sin modificar el score PREVENT."
+    elif lipid_category in {"borderline", "intermediate"}:
         goal = "<100 mg/dL"
-        rationale = "Meta orientativa basada en el score PREVENT calculado, sin reclasificación contextual."
+        rationale = "Meta orientativa basada en ASCVD 10 años y contexto clínico, sin modificar el score PREVENT."
     else:
         return None
 
@@ -175,20 +162,20 @@ def _build_clinical_factors(payload: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def _build_recommendations(
-    category_name: RiskCategoryName,
+    lipid_category: RiskCategoryName,
     ldl_goal: dict[str, Any] | None,
     clinical_factors: list[dict[str, str]],
 ) -> list[dict[str, str]]:
     recommendations: list[dict[str, str]] = []
 
-    if category_name in {"borderline", "intermediate", "high"}:
+    if lipid_category in {"borderline", "intermediate", "high"}:
         recommendations.append(
             {
-                "title": "Discusión clínica del score PREVENT",
-                "summary": "Considerar una conversación clínica individualizada basada en el porcentaje PREVENT calculado, preferencias del paciente y guías vigentes.",
+                "title": "Orientación lipídica",
+                "summary": "Considerar una conversación clínica individualizada basada en ASCVD 10 años, preferencias del paciente y guías vigentes.",
                 "evidence": "Guías clínicas vigentes",
                 "class_of_recommendation": "Orientación no coercitiva",
-                "type": "shared_decision",
+                "type": "lipids",
             },
         )
 
@@ -196,7 +183,7 @@ def _build_recommendations(
         recommendations.append(
             {
                 "title": "Meta LDL orientativa",
-                "summary": f"Puede considerarse una meta LDL {ldl_goal['target']} según el score PREVENT calculado y el contexto clínico, sin modificar la categoría PREVENT.",
+                "summary": f"Puede considerarse una meta LDL {ldl_goal['target']} según ASCVD 10 años y contexto clínico, sin modificar la categoría PREVENT.",
                 "evidence": "Guías clínicas vigentes",
                 "class_of_recommendation": "Sugerencia orientativa",
                 "type": "lipids",
@@ -215,6 +202,139 @@ def _build_recommendations(
         )
 
     return recommendations
+
+
+def get_blood_pressure_risk_context(
+    cvd_risk_10y: float | None,
+    sbp: float | None,
+    bptreat: bool,
+) -> dict[str, Any]:
+    recommendations: list[str] = [
+        "Valorar cifras tensionales, tratamiento actual y tolerancia clínica según guías vigentes.",
+    ]
+    interpretation = "Orientación de presión arterial basada en riesgo cardiovascular global y cifras tensionales."
+
+    if sbp is None:
+        recommendations.append("Completar presión arterial sistólica para interpretar este dominio.")
+    elif sbp >= 140:
+        recommendations.append("Cifras en rango elevado: considerar confirmación, seguimiento y optimización terapéutica individualizada.")
+    elif sbp >= 130:
+        recommendations.append("Cifras compatibles con presión elevada/estadio inicial: considerar medidas de estilo de vida y seguimiento.")
+    else:
+        recommendations.append("Cifras sistólicas dentro de rango no elevado en esta medición.")
+
+    if cvd_risk_10y is not None and cvd_risk_10y >= 7.5:
+        recommendations.append("El riesgo CVD global puede apoyar una discusión más estrecha sobre manejo de presión arterial.")
+    if bptreat:
+        recommendations.append("Paciente en tratamiento antihipertensivo: interpretar cifras actuales en contexto de tratamiento.")
+
+    return {
+        "key": "blood_pressure",
+        "title": "Presión arterial",
+        "base": "CVD global 10 años",
+        "risk": cvd_risk_10y,
+        "risk_label": _format_risk_value(cvd_risk_10y),
+        "category": _risk_category_from_value(cvd_risk_10y),
+        "interpretation": interpretation,
+        "recommendations": recommendations,
+    }
+
+
+def get_heart_failure_context(
+    hf_risk_10y: float | None,
+    bmi: float | None,
+    egfr: float | None,
+    dm: bool,
+) -> dict[str, Any]:
+    recommendations = [
+        "Interpretar el riesgo HF junto con comorbilidades, síntomas, presión arterial, función renal y estado metabólico.",
+    ]
+    if hf_risk_10y is None:
+        recommendations.append("Completar IMC y variables requeridas para estimar HF cuando corresponda.")
+    if bmi is not None and bmi >= 30:
+        recommendations.append("IMC elevado: considerar optimización cardiometabólica y seguimiento clínico.")
+    if egfr is not None and egfr < 60:
+        recommendations.append("eGFR reducido: integrar evaluación cardiorrenal sin modificar el score PREVENT.")
+    if dm:
+        recommendations.append("Diabetes: considerar manejo cardiometabólico integral según guías vigentes.")
+
+    return {
+        "key": "heart_failure",
+        "title": "Insuficiencia cardíaca",
+        "base": "HF 10 años",
+        "risk": hf_risk_10y,
+        "risk_label": _format_risk_value(hf_risk_10y),
+        "category": "descriptive" if hf_risk_10y is not None else "unavailable",
+        "interpretation": "Riesgo estimado de insuficiencia cardíaca a 10 años. No se aplican umbrales terapéuticos automáticos.",
+        "recommendations": recommendations,
+    }
+
+
+def get_renal_context(
+    egfr: float | None,
+    uacr: float | None,
+    dm: bool,
+) -> dict[str, Any]:
+    recommendations = [
+        "Usar este perfil para contextualizar la prevención cardio-reno-metabólica sin modificar el score PREVENT.",
+    ]
+    if egfr is None:
+        recommendations.append("Completar eGFR para caracterizar el perfil renal.")
+    elif egfr < 60:
+        recommendations.append("eGFR reducido: considerar evaluación renal, albuminuria y optimización cardiorrenal según guías vigentes.")
+    else:
+        recommendations.append("eGFR sin reducción relevante para esta lectura contextual.")
+
+    if uacr is not None and uacr >= 30:
+        recommendations.append("Albuminuria presente: valorar estratificación renal/cardiorrenal individualizada.")
+    if dm:
+        recommendations.append("Diabetes: integrar control metabólico y protección renal según guías vigentes.")
+
+    risk_label = "eGFR no registrado" if egfr is None else f"eGFR {egfr:.0f}"
+    return {
+        "key": "renal",
+        "title": "Renal / cardiorrenal",
+        "base": "eGFR / perfil renal",
+        "risk": egfr,
+        "risk_label": risk_label,
+        "category": "context",
+        "interpretation": "Perfil renal/cardiorrenal basado en eGFR, albuminuria si existe, diabetes y contexto CKM.",
+        "recommendations": recommendations,
+    }
+
+
+def get_lipid_domain_context(
+    ascvd_risk_10y: float | None,
+    ldl_goal: dict[str, Any] | None,
+) -> dict[str, Any]:
+    lipid_category = get_lipid_risk_category(ascvd_risk_10y)
+    recommendations = [
+        "Orientación lipídica basada en riesgo ASCVD estimado a 10 años.",
+    ]
+    if lipid_category == "low":
+        recommendations.append("Considerar medidas de estilo de vida y seguimiento clínico según contexto individual.")
+    elif lipid_category == "borderline":
+        recommendations.append("Valorar discusión clínica sobre reducción de riesgo y preferencias del paciente.")
+    elif lipid_category == "intermediate":
+        recommendations.append("Podría beneficiarse de una discusión más estructurada sobre terapia lipídica según guías vigentes y juicio clínico.")
+    elif lipid_category == "high":
+        recommendations.append("Valorar manejo lipídico más intensivo según guías vigentes, tolerancia y juicio clínico.")
+    else:
+        recommendations.append("ASCVD no disponible para orientar este dominio.")
+
+    if ldl_goal is not None:
+        recommendations.append(f"Meta LDL orientativa: {ldl_goal['target']}.")
+
+    return {
+        "key": "lipids",
+        "title": "Lípidos",
+        "base": "ASCVD 10 años",
+        "risk": ascvd_risk_10y,
+        "risk_label": _format_risk_value(ascvd_risk_10y),
+        "category": lipid_category,
+        "interpretation": "Orientación lipídica basada en riesgo ASCVD estimado a 10 años.",
+        "recommendations": recommendations,
+    }
 
 
 def _build_renal_interpretation(payload: dict[str, Any]) -> dict[str, Any] | None:
@@ -246,46 +366,6 @@ def _build_renal_interpretation(payload: dict[str, Any]) -> dict[str, Any] | Non
         "severity": severity,
         "color": color,
         "messages": messages,
-    }
-
-
-def _build_advanced_risk_profile(
-    *,
-    payload: dict[str, Any],
-    prevent_result: dict[str, Any],
-    risk_enhancers: list[dict[str, str]],
-) -> dict[str, Any] | None:
-    diabetes = bool(payload.get("diabetes"))
-    egfr = _get_number(payload, "egfr")
-    uacr = _get_number(payload, "uacr")
-    cvd_risk = prevent_result.get("cvd_risk")
-    ascvd_risk = prevent_result.get("ascvd_risk")
-    prevent_risk = max(
-        [risk for risk in (cvd_risk, ascvd_risk) if isinstance(risk, (int, float))],
-        default=None,
-    )
-    reasons: list[str] = []
-
-    if diabetes and uacr is not None and uacr >= 300:
-        reasons.extend(["Diabetes", "Albuminuria significativa"])
-    if egfr is not None and egfr < 30:
-        reasons.append("Compromiso renal avanzado")
-    if diabetes and egfr is not None and egfr < 60 and uacr is not None and uacr >= 30:
-        reasons.extend(["Diabetes", "Enfermedad renal crónica probable", "Albuminuria"])
-    if prevent_risk is not None and prevent_risk >= 20 and len(risk_enhancers) >= 2:
-        reasons.extend(["Score PREVENT alto", "Múltiples factores clínicos relevantes"])
-
-    unique_reasons = list(dict.fromkeys(reasons))
-    if not unique_reasons:
-        return None
-
-    return {
-        "label": "Contexto cardio-reno-metabólico relevante",
-        "severity": "context",
-        "color": "slate",
-        "summary": "Factores clínicos relevantes para contextualizar la prevención individual.",
-        "reasons": unique_reasons,
-        "guideline_basis": ["Guías clínicas vigentes"],
     }
 
 
@@ -359,26 +439,42 @@ def build_clinical_interpretation(
     input_payload: dict[str, Any],
     warnings: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    category_risk, category_basis = _select_risk_for_category(prevent_result)
-    category_name = _risk_category_from_value(category_risk)
+    ascvd_risk = _get_number(prevent_result, "ascvd_risk")
+    cvd_risk = _get_number(prevent_result, "cvd_risk")
+    hf_risk = _get_number(prevent_result, "hf_risk")
+    lipid_category = get_lipid_risk_category(ascvd_risk)
     clinical_factors = _build_clinical_factors(input_payload)
-    ldl_goal = _build_ldl_goal(category_name)
+    ldl_goal = _build_ldl_goal(lipid_category)
+    sbp = _get_number(input_payload, "sbp")
+    bmi = _get_number(input_payload, "bmi")
+    egfr = _get_number(input_payload, "egfr")
+    uacr = _get_number(input_payload, "uacr")
+    diabetes = bool(input_payload.get("diabetes"))
+    bptreat = bool(input_payload.get("antihypertensive_use") or input_payload.get("bptreat"))
+    domain_recommendations = [
+        get_lipid_domain_context(ascvd_risk, ldl_goal),
+        get_blood_pressure_risk_context(cvd_risk, sbp, bptreat),
+        get_heart_failure_context(hf_risk, bmi, egfr, diabetes),
+        get_renal_context(egfr, uacr, diabetes),
+    ]
     clinical_payload = {
         "source": "PREVENT Ecuador contextual layer",
-        "basis": "Contextualización clínica separada del score PREVENT calculado",
-        "risk_category_basis": category_basis,
-        "prevent_risk_category": RISK_CATEGORIES[category_name],
+        "basis": "Recomendaciones organizadas por dominio clínico, separadas del score PREVENT calculado",
+        "risk_category_basis": {
+            "outcome": "ascvd",
+            "risk": ascvd_risk,
+            "method": "lipid_domain_ascvd_reference",
+            "note": "Lipid guidance uses the calculated PREVENT ASCVD 10-year score. Other domains use their own bases.",
+        },
+        "prevent_risk_category": RISK_CATEGORIES[lipid_category],
         "risk_category": CONTEXT_PROFILE,
         "ldl_goal": ldl_goal,
-        "recommendations": _build_recommendations(category_name, ldl_goal, clinical_factors),
+        "recommendations": _build_recommendations(lipid_category, ldl_goal, clinical_factors),
+        "domain_recommendations": domain_recommendations,
         "clinical_factors": {
             "title": "Factores clínicos relevantes.",
             "items": clinical_factors,
             "note": "Estos factores no modifican automáticamente el score PREVENT calculado.",
-        },
-        "risk_enhancers": {
-            "title": "Factores clínicos relevantes.",
-            "items": clinical_factors,
         },
         "warnings": warnings or [],
         "future_inputs": ["CAC", "ApoB", "Lp(a)", "triglycerides", "advanced_ckd", "secondary_prevention"],

@@ -14,6 +14,14 @@ def _recommendation_text(clinical: dict[str, object]) -> str:
     )
 
 
+def _domain(clinical: dict[str, object], key: str) -> dict[str, object]:
+    domains = clinical.get("domain_recommendations") or []
+    for item in domains:
+        if isinstance(item, dict) and item.get("key") == key:
+            return item
+    raise AssertionError(f"Domain {key} not found")
+
+
 class ClinicalContextStabilizationTest(unittest.TestCase):
     def test_low_prevent_score_with_smoking_is_not_reclassified(self) -> None:
         clinical = build_clinical_interpretation(
@@ -47,7 +55,7 @@ class ClinicalContextStabilizationTest(unittest.TestCase):
         clinical = build_clinical_interpretation(
             prevent_result={
                 "cvd_risk": 4.2,
-                "ascvd_risk": 3.2,
+                "ascvd_risk": 2.8,
                 "hf_risk": 2.5,
                 "prevent_age": 48.0,
                 "model_variant": "base",
@@ -68,7 +76,7 @@ class ClinicalContextStabilizationTest(unittest.TestCase):
             item["label"] for item in clinical["clinical_factors"]["items"]
         ])
         self.assertIsNone(clinical["ldl_goal"])
-        self.assertIn("no modifican el score PREVENT", clinical["disclaimer"])
+        self.assertIn("El score PREVENT no se modifica", clinical["disclaimer"])
 
     def test_intermediate_prevent_score_with_ckd_keeps_prevent_category(self) -> None:
         clinical = build_clinical_interpretation(
@@ -96,6 +104,95 @@ class ClinicalContextStabilizationTest(unittest.TestCase):
             item["label"] for item in clinical["clinical_factors"]["items"]
         ])
         self.assertNotIn("reclasificación", _recommendation_text(clinical).lower())
+
+    def test_lipid_domain_uses_ascvd_not_higher_cvd(self) -> None:
+        clinical = build_clinical_interpretation(
+            prevent_result={
+                "cvd_risk": 18.0,
+                "ascvd_risk": 2.7,
+                "hf_risk": 3.0,
+                "prevent_age": 61.0,
+                "model_variant": "base",
+            },
+            input_payload={
+                "age": 55,
+                "sex": "male",
+                "smoker": False,
+                "diabetes": False,
+                "egfr": 90,
+                "bmi": 25,
+                "hdl": 50,
+                "sbp": 132,
+            },
+        )
+
+        lipid = _domain(clinical, "lipids")
+        bp = _domain(clinical, "blood_pressure")
+        self.assertEqual(lipid["base"], "ASCVD 10 años")
+        self.assertEqual(lipid["risk"], 2.7)
+        self.assertEqual(lipid["category"], "low")
+        self.assertEqual(bp["base"], "CVD global 10 años")
+        self.assertEqual(bp["risk"], 18.0)
+        self.assertIsNone(clinical["ldl_goal"])
+
+    def test_isolated_high_hf_is_not_lipid_mandate(self) -> None:
+        clinical = build_clinical_interpretation(
+            prevent_result={
+                "cvd_risk": 4.0,
+                "ascvd_risk": 2.4,
+                "hf_risk": 22.0,
+                "prevent_age": 58.0,
+                "model_variant": "base",
+            },
+            input_payload={
+                "age": 54,
+                "sex": "female",
+                "smoker": False,
+                "diabetes": False,
+                "egfr": 82,
+                "bmi": 34,
+                "hdl": 48,
+                "sbp": 124,
+            },
+        )
+
+        hf = _domain(clinical, "heart_failure")
+        lipid = _domain(clinical, "lipids")
+        self.assertEqual(hf["base"], "HF 10 años")
+        self.assertEqual(hf["risk"], 22.0)
+        self.assertEqual(lipid["category"], "low")
+        self.assertIsNone(clinical["ldl_goal"])
+        self.assertNotIn("estatina", _recommendation_text(clinical).lower())
+
+    def test_low_egfr_is_renal_context_without_score_reclassification(self) -> None:
+        clinical = build_clinical_interpretation(
+            prevent_result={
+                "cvd_risk": 6.0,
+                "ascvd_risk": 2.6,
+                "hf_risk": 4.0,
+                "prevent_age": 57.0,
+                "model_variant": "base",
+            },
+            input_payload={
+                "age": 52,
+                "sex": "male",
+                "smoker": False,
+                "diabetes": False,
+                "egfr": 45,
+                "uacr": 40,
+                "bmi": 26,
+                "hdl": 45,
+                "sbp": 128,
+            },
+        )
+
+        renal = _domain(clinical, "renal")
+        self.assertEqual(renal["base"], "eGFR / perfil renal")
+        self.assertEqual(renal["risk"], 45)
+        self.assertIn("Enfermedad renal crónica probable", [
+            item["label"] for item in clinical["clinical_factors"]["items"]
+        ])
+        self.assertEqual(clinical["prevent_risk_category"]["label"], "Bajo riesgo")
 
 
 if __name__ == "__main__":
