@@ -603,6 +603,34 @@ export default function HomePage() {
     }
   };
 
+  const handleCalculationModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextMode = event.target.value as "auto" | "manual";
+    const nextFormState = {
+      ...form,
+      model_variant:
+        nextMode === "auto"
+          ? ("auto" as ModelVariant)
+          : form.model_variant === "auto"
+            ? ("base" as ModelVariant)
+            : form.model_variant,
+    };
+
+    setManualVariantSelection(nextMode === "manual");
+    setForm(nextFormState);
+    console.debug("PREVENT formState visible", {
+      changedField: "model_variant",
+      formState: nextFormState,
+    });
+
+    if (result) {
+      setResult(null);
+      setRecordId(null);
+      setRiskType("cvd");
+      setHasUncalculatedChanges(true);
+      setSubmitFeedback("");
+    }
+  };
+
   const handleSpecialtySelectionChange = (
     event: ChangeEvent<HTMLSelectElement>,
   ) => {
@@ -887,83 +915,35 @@ export default function HomePage() {
           </header>
 
           <section className="prevent-mode-panel" aria-label="Selector de modo del modelo">
-            <div className="prevent-mode-copy">
-              <span className="prevent-mode-label">Selector de modo</span>
-              <p>
-                {manualVariantSelection
-                  ? "Elija una variante específica del modelo PREVENT."
-                  : "Modo automático: se selecciona la mejor variante disponible."}
-              </p>
-            </div>
-            <div className="prevent-mode-controls">
-              <div className="prevent-mode-switch" role="tablist" aria-label="Modo de selección del modelo">
-                <button
-                  type="button"
-                  className={`prevent-mode-option ${!manualVariantSelection ? "is-active" : ""}`}
-                  onClick={() => {
-                    const nextFormState = { ...form, model_variant: "auto" as ModelVariant };
-                    setManualVariantSelection(false);
-                    setForm(nextFormState);
-                    console.debug("PREVENT formState visible", {
-                      changedField: "model_variant",
-                      formState: nextFormState,
-                    });
-                    if (result) {
-                      setResult(null);
-                      setRecordId(null);
-                      setRiskType("cvd");
-                      setHasUncalculatedChanges(true);
-                    }
-                  }}
+            <span className="prevent-mode-icon" aria-hidden="true">⚙</span>
+            <label className="prevent-mode-field">
+              <span className="prevent-mode-label">Modo de cálculo</span>
+              <select
+                className="prevent-mode-select"
+                value={manualVariantSelection ? "manual" : "auto"}
+                onChange={handleCalculationModeChange}
+              >
+                <option value="auto">Automático</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+            {manualVariantSelection ? (
+              <label className="prevent-mode-field">
+                <span className="prevent-mode-label">Variante</span>
+                <select
+                  className="prevent-mode-select"
+                  name="model_variant"
+                  value={form.model_variant}
+                  onChange={handleInputChange}
                 >
-                  Modo automático
-                </button>
-                <button
-                  type="button"
-                  className={`prevent-mode-option ${manualVariantSelection ? "is-active" : ""}`}
-                  onClick={() => {
-                    const nextModelVariant =
-                      form.model_variant === "auto" ? "base" : form.model_variant;
-                    const nextFormState = {
-                      ...form,
-                      model_variant: nextModelVariant,
-                    };
-                    setManualVariantSelection(true);
-                    setForm(nextFormState);
-                    console.debug("PREVENT formState visible", {
-                      changedField: "model_variant",
-                      formState: nextFormState,
-                    });
-                    if (result) {
-                      setResult(null);
-                      setRecordId(null);
-                      setRiskType("cvd");
-                      setHasUncalculatedChanges(true);
-                    }
-                  }}
-                >
-                  Elegir manualmente
-                </button>
-              </div>
-              {manualVariantSelection ? (
-                <div className="prevent-manual-variant">
-                  <SelectField
-                    label="Variante del modelo"
-                    name="model_variant"
-                    value={form.model_variant}
-                    onChange={handleInputChange}
-                    help="El modelo FULL utiliza todas las variables disponibles. El modelo BASE usa solo variables obligatorias."
-                    options={[
-                      { label: "Base", value: "base" },
-                      { label: "UACR", value: "uacr" },
-                      { label: "HbA1c", value: "hba1c" },
-                      { label: "SDI", value: "sdi" },
-                      { label: "Full", value: "full" },
-                    ]}
-                  />
-                </div>
-              ) : null}
-            </div>
+                  <option value="base">Base</option>
+                  <option value="uacr">UACR</option>
+                  <option value="hba1c">HbA1c</option>
+                  <option value="sdi">SDI</option>
+                  <option value="full">Full</option>
+                </select>
+              </label>
+            ) : null}
           </section>
 
           <form className="prevent-form" onSubmit={handleSubmit} noValidate>
