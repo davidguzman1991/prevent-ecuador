@@ -525,6 +525,7 @@ export default function HomePage() {
     initialBmiCalculatorState,
   );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
+  const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState(false);
   const resultsRef = useRef<HTMLElement | null>(null);
   const feedbackTimeoutRef = useRef<number | null>(null);
   const selectedRisk = result
@@ -834,6 +835,38 @@ export default function HomePage() {
             <Link className="prevent-dashboard-link prevent-secondary-link" href="/metodologia">
               Metodología
             </Link>
+          </div>
+          <div className="prevent-mobile-options">
+            <button
+              type="button"
+              className="prevent-mobile-options-button"
+              aria-expanded={isMobileOptionsOpen}
+              aria-controls="prevent-mobile-options-menu"
+              onClick={() => setIsMobileOptionsOpen((isOpen) => !isOpen)}
+            >
+              ☰ Más opciones
+            </button>
+            {isMobileOptionsOpen ? (
+              <div
+                id="prevent-mobile-options-menu"
+                className="prevent-mobile-options-menu"
+              >
+                <Link
+                  className="prevent-mobile-options-link"
+                  href="/dashboard"
+                  onClick={() => setIsMobileOptionsOpen(false)}
+                >
+                  Panel clínico
+                </Link>
+                <Link
+                  className="prevent-mobile-options-link"
+                  href="/metodologia"
+                  onClick={() => setIsMobileOptionsOpen(false)}
+                >
+                  Metodología
+                </Link>
+              </div>
+            ) : null}
           </div>
         </aside>
 
