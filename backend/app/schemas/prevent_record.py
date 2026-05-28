@@ -125,6 +125,8 @@ class PreventRecordListItem(BaseModel):
     patient_age: int
     patient_sex: str
     physician_name: str
+    diabetes: bool
+    smoker: bool
     cvd_risk: float | None
     ascvd_risk: float | None
     hf_risk: float | None

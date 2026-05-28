@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { DashboardOverview } from "@/components/DashboardOverview";
 import { PinGate } from "@/components/PinGate";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 
@@ -35,6 +36,8 @@ type DashboardListItem = {
   patient_age: number;
   patient_sex: string;
   physician_name: string;
+  diabetes: boolean;
+  smoker: boolean;
   cvd_risk: number | null;
   ascvd_risk: number | null;
   hf_risk: number | null;
@@ -163,6 +166,7 @@ export default function DashboardPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [isAccessChecked, setIsAccessChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<"csv" | "xlsx" | null>(null);
   const [error, setError] = useState("");
@@ -174,6 +178,7 @@ export default function DashboardPage() {
   const [total, setTotal] = useState(0);
   const [activeTotal, setActiveTotal] = useState(0);
   const [archivedTotal, setArchivedTotal] = useState(0);
+  const [analyticsRecords, setAnalyticsRecords] = useState<DashboardListItem[]>([]);
 
   const totalPages = useMemo(
     () => Math.max(Math.ceil(total / pageSize), 1),
@@ -191,7 +196,62 @@ export default function DashboardPage() {
     setMessage(UNAUTHORIZED_MESSAGE);
   };
 
-  const loadRecords = async (nextPage = page) => {
+  const loadAnalyticsRecords = async (
+    nextFilters = filters,
+    key = adminApiKey,
+  ) => {
+    setIsAnalyticsLoading(true);
+
+    try {
+      if (!key) {
+        throw new Error(UNAUTHORIZED_MESSAGE);
+      }
+
+      const analyticsPageSize = 100;
+      let analyticsPage = 1;
+      let analyticsTotal = 0;
+      const collectedRecords: DashboardListItem[] = [];
+
+      do {
+        const query = buildQueryString(nextFilters, analyticsPage, analyticsPageSize);
+        const response = await fetch(
+          `${getApiBaseUrl()}/api/prevent-records/list?${query}`,
+          { headers: getAdminHeaders(key) },
+        );
+
+        if (response.status === 401) {
+          handleUnauthorized(setError);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar los datos analíticos.");
+        }
+
+        const data = (await response.json()) as DashboardListResponse;
+        collectedRecords.push(...data.items);
+        analyticsTotal = data.total;
+        analyticsPage += 1;
+      } while (collectedRecords.length < analyticsTotal);
+
+      setAnalyticsRecords(collectedRecords);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "No se pudo cargar el resumen analítico.",
+      );
+      setAnalyticsRecords([]);
+    } finally {
+      setIsAnalyticsLoading(false);
+    }
+  };
+
+  const loadRecords = async (
+    nextPage = page,
+    shouldRefreshAnalytics = false,
+    nextFilters = filters,
+  ) => {
     setIsLoading(true);
     setError("");
 
@@ -199,7 +259,7 @@ export default function DashboardPage() {
       if (!adminApiKey) {
         throw new Error(UNAUTHORIZED_MESSAGE);
       }
-      const query = buildQueryString(filters, nextPage, pageSize);
+      const query = buildQueryString(nextFilters, nextPage, pageSize);
       const response = await fetch(
         `${getApiBaseUrl()}/api/prevent-records/list?${query}`,
         { headers: getAdminHeaders() },
@@ -220,6 +280,10 @@ export default function DashboardPage() {
       setActiveTotal(data.active_total);
       setArchivedTotal(data.archived_total);
       setPage(data.page);
+
+      if (shouldRefreshAnalytics) {
+        void loadAnalyticsRecords(nextFilters);
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -243,7 +307,7 @@ export default function DashboardPage() {
       setIsLoading(false);
       return;
     }
-    void loadRecords(1);
+    void loadRecords(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAccess, adminApiKey]);
 
@@ -256,7 +320,7 @@ export default function DashboardPage() {
 
   const handleApplyFilters = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await loadRecords(1);
+    await loadRecords(1, true);
   };
 
   const handleResetFilters = async () => {
@@ -267,8 +331,10 @@ export default function DashboardPage() {
 
     try {
       setIsLoading(true);
+      setIsAnalyticsLoading(true);
+      const query = buildQueryString(initialFilters, 1, pageSize);
       const response = await fetch(
-        `${getApiBaseUrl()}/api/prevent-records/list?page=1&page_size=${pageSize}`,
+        `${getApiBaseUrl()}/api/prevent-records/list?${query}`,
         { headers: getAdminHeaders() },
       );
       if (response.status === 401) {
@@ -284,6 +350,7 @@ export default function DashboardPage() {
       setActiveTotal(data.active_total);
       setArchivedTotal(data.archived_total);
       setPage(data.page);
+      void loadAnalyticsRecords(initialFilters);
     } catch (resetError) {
       setError(
         resetError instanceof Error
@@ -392,7 +459,7 @@ export default function DashboardPage() {
       const data = (await response.json()) as DashboardDetail;
       setSelectedRecord(data);
       setArchiveDialog(null);
-      await loadRecords(page);
+      await loadRecords(page, true);
     } catch (archiveError) {
       setDetailError(
         archiveError instanceof Error
@@ -558,6 +625,12 @@ export default function DashboardPage() {
             <span>{archivedTotal} archivados</span>
             <span>Página {page} de {totalPages}</span>
           </div>
+
+          <DashboardOverview
+            records={analyticsRecords}
+            totalRecords={total}
+            isLoading={isLoading || isAnalyticsLoading}
+          />
 
           <div className="dashboard-table-wrap">
             <table className="dashboard-table">

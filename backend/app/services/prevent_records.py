@@ -576,6 +576,8 @@ def list_prevent_records(
                 patient_age=record.patient_age,
                 patient_sex=record.patient_sex,
                 physician_name=record.physician_name,
+                diabetes=record.diabetes,
+                smoker=record.smoker,
                 cvd_risk=extracted["cvd_risk"],
                 ascvd_risk=extracted["ascvd_risk"],
                 hf_risk=extracted["hf_risk"],
