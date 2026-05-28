@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, ReactNode, useRef, useState } from "react";
+import { PrivacyConsentModal } from "@/components/PrivacyConsentModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ValidationInfoCard } from "@/components/ValidationInfoCard";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
@@ -806,6 +807,8 @@ export default function HomePage() {
 
   return (
     <main className="prevent-shell">
+      <PrivacyConsentModal />
+
       <div className="prevent-layout">
         <aside className="prevent-sidebar" aria-label="Navegación clínica">
           <div className="prevent-brand-mark">PE</div>
