@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ChangeEvent, FormEvent, ReactNode, useRef, useState } from "react";
 import { PrivacyConsentModal } from "@/components/PrivacyConsentModal";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -839,17 +840,15 @@ export default function HomePage() {
         <section className="prevent-main-column" id="ingreso">
           <header className="prevent-hero-card">
             <div className="prevent-hero-grid">
-              <div className="prevent-hero-text">
-                <span className="prevent-kicker">
-                  <span className="prevent-brand-word">PREVENT</span>
-                  <EcuadorIdentity />
-                </span>
-                <h1 className="prevent-title">
-                  Riesgo Cardiovascular <span className="prevent-brand-word">PREVENT</span>
-                </h1>
-                <p className="prevent-copy">
-                  Calcule el riesgo, interprete el resultado y valide la información clínica.
-                </p>
+              <div className="flex h-full w-full items-center justify-center py-6">
+                <Image
+                  src="/LOGO PREVENT.png"
+                  alt="PREVENT Ecuador"
+                  width={520}
+                  height={180}
+                  priority
+                  className="h-auto w-full max-w-[520px] object-contain"
+                />
               </div>
             </div>
           </header>
