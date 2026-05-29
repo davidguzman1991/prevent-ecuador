@@ -502,15 +502,15 @@ def _build_vascular_age_interpretation(
     if difference >= 15:
         severity = "high"
         color = "red"
-        message = "Edad cardiovascular significativamente superior a la edad cronológica."
+        message = "Edad cardiovascular equivalente estimada significativamente superior a la edad cronológica."
     elif difference >= 5:
         severity = "moderate"
         color = "orange"
-        message = "Edad cardiovascular moderadamente elevada."
+        message = "Edad cardiovascular equivalente estimada moderadamente elevada."
     else:
         severity = "concordant"
         color = "green"
-        message = "Edad cardiovascular concordante con la edad cronológica."
+        message = "Edad cardiovascular equivalente estimada concordante con la edad cronológica."
 
     return {
         "chronological_age": chronological_age,

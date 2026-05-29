@@ -2141,6 +2141,14 @@ button {
   break-inside: avoid;
 }
 
+.print-metric-note {
+  margin: 10px 0 0;
+  color: #52606d;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  break-inside: avoid;
+}
+
 .print-clinical-footer {
   margin-top: 12px;
   padding-top: 8px;
@@ -2538,6 +2546,15 @@ button {
 .dashboard-detail-item strong {
   font-size: 1rem;
   line-height: 1.4;
+}
+
+.dashboard-equivalent-age-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .dashboard-json-panel h4 {
@@ -3031,6 +3048,7 @@ button {
   #prevent-print-report .print-report-results,
   #prevent-print-report .print-report-item,
   .print-result-card,
+  #prevent-print-report .print-metric-note,
   #prevent-print-report .print-disclaimer,
   #prevent-print-report .print-risk-profile,
   #prevent-print-report .print-clinical-footer {

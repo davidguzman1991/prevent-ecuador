@@ -1212,8 +1212,11 @@ export function PreventCalculator() {
               <PrintResultCard label="Riesgo global" value={formatRiskValue(result.cvd_risk, "cvd")} />
               <PrintResultCard label="ASCVD" value={formatRiskValue(result.ascvd_risk, "ascvd")} />
               <PrintResultCard label="HF" value={formatRiskValue(result.hf_risk, "hf")} />
-              <PrintResultCard label="Edad cardiovascular" value={formatPreventAge(result.prevent_age)} />
+              <PrintResultCard label="Edad cardiovascular equivalente" value={formatPreventAge(result.prevent_age)} />
             </div>
+            <p className="print-metric-note">
+              Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
+            </p>
           </section>
 
           <section className="print-report-section">
@@ -1336,8 +1339,8 @@ function CardiovascularAgeCard({
   const vascularDifferenceLabel =
     vascularDifference !== undefined
       ? vascularDifference > 0
-        ? `+${vascularDifference.toFixed(1)} años de exceso vascular`
-        : "sin exceso vascular"
+        ? `+${vascularDifference.toFixed(1)} años sobre la edad cronológica`
+        : "sin diferencia frente a la edad cronológica"
       : null;
   const ageLabel =
     hasValue && vascularDifferenceLabel
@@ -1366,14 +1369,14 @@ function CardiovascularAgeCard({
       </div>
       <div className="prevent-cardiovascular-age-copy">
         <span>
-          Edad Cardiovascular
-          <i title="Estima la edad biológica de las arterias del paciente en comparación con su edad cronológica.">
+          Edad cardiovascular equivalente
+          <i title="Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.">
             i
           </i>
         </span>
         <strong className={hasValue ? "" : "is-pending"}>{ageLabel}</strong>
         <p>
-          Estimación de la edad biológica vascular frente a la edad cronológica del paciente.
+          Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
         </p>
       </div>
     </div>
@@ -1539,7 +1542,7 @@ function PrintClinicalSummary({
       ? `Renal: ${interpretation.renal_interpretation.messages[0]}`
       : null,
     interpretation.vascular_age_interpretation
-      ? `Edad cardiovascular: ${interpretation.vascular_age_interpretation.message}`
+      ? `Edad cardiovascular equivalente estimada: ${interpretation.vascular_age_interpretation.message}`
       : null,
     interpretation.ldl_gap_analysis
       ? `Gap LDL: ${interpretation.ldl_gap_analysis.summary}`

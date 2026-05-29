@@ -764,13 +764,16 @@ export default function DashboardPage() {
                   <DetailItem label="ASCVD" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
                   <DetailItem label="HF" value={formatClinicalRisk(selectedRecord.hf_risk)} />
                   <DetailItem
-                    label="Edad cardiovascular"
+                    label="Edad cardiovascular equivalente"
                     value={
                       selectedRecord.prevent_age !== null
                         ? `${selectedRecord.prevent_age.toFixed(1)} años`
                         : "No calculado"
                     }
                   />
+                  <p className="dashboard-equivalent-age-note">
+                    Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
+                  </p>
                   <DetailItem
                     label="Diabetes"
                     value={selectedRecord.diabetes ? "Sí" : "No"}
@@ -930,7 +933,7 @@ export default function DashboardPage() {
                     <ReportItem label="Especialidad" value={selectedRecord.physician_specialty} />
                     <ReportItem label="Variante" value={translateVariant(selectedRecord.model_variant)} />
                     <ReportItem
-                      label="Edad cardiovascular"
+                      label="Edad cardiovascular equivalente"
                       value={
                         selectedRecord.prevent_age !== null
                           ? `${selectedRecord.prevent_age.toFixed(1)} años`
@@ -941,6 +944,9 @@ export default function DashboardPage() {
                     <ReportItem label="ASCVD" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
                     <ReportItem label="HF" value={formatClinicalRisk(selectedRecord.hf_risk)} />
                   </div>
+                  <p className="print-metric-note">
+                    Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
+                  </p>
                   <div className="print-report-section print-report-technical-section">
                     <h2>Valores técnicos calculados</h2>
                     <p>CVD exacto: {formatResearchRisk(selectedRecord.cvd_risk)}</p>

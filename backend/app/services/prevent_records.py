@@ -52,7 +52,7 @@ PREVENT_EXPORT_HEADERS = [
     "riesgo_cvd_10y",
     "riesgo_ascvd_10y",
     "riesgo_ic_10y",
-    "edad_prevent",
+    "edad_cardiovascular_equivalente",
     "variante_modelo",
     "dominios_recomendacion",
     "base_lipidos",
@@ -708,7 +708,7 @@ def export_prevent_records_xlsx(
         "uacr",
         "hba1c",
         "sdi",
-        "edad_prevent",
+        "edad_cardiovascular_equivalente",
         *risk_headers,
     }
     for column_index, header in enumerate(PREVENT_EXPORT_HEADERS, start=1):

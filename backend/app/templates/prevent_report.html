@@ -163,6 +163,13 @@
         margin: 2px 0;
       }
 
+      .metric-note {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.4;
+      }
+
       .factor-list,
       .domain-list {
         margin: 0;
@@ -393,7 +400,7 @@
           </div>
         </div>
         <div class="row">
-          <div class="cell label">Edad cardiovascular estimada (PREVENT-Age)</div>
+          <div class="cell label">Edad cardiovascular equivalente</div>
           <div class="cell">
             {% if prevent_age is not none %}
             {{ "%.1f"|format(prevent_age) }} años
@@ -403,6 +410,9 @@
           </div>
         </div>
       </div>
+      <p class="metric-note">
+        Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
+      </p>
     </section>
 
     <section class="section technical-section">
