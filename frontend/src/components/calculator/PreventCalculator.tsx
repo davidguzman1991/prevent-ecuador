@@ -199,6 +199,78 @@ function getOutcomeWarnings(
   );
 }
 
+type InsufficientResultReason = "bmi" | "required" | null;
+
+function hasAllRiskOutcomesMissing(result: PreventResult): boolean {
+  return (
+    result.cvd_risk === null &&
+    result.ascvd_risk === null &&
+    result.hf_risk === null
+  );
+}
+
+function isMissingFieldWarning(
+  warning: PreventWarning | string,
+  field: string,
+): boolean {
+  const message = getWarningMessage(warning).toLowerCase();
+  const isMissingValue =
+    message.includes("faltante") ||
+    (isStructuredWarning(warning) &&
+      (warning.value === null ||
+        warning.value === undefined ||
+        warning.value === ""));
+
+  if (!isMissingValue) {
+    return false;
+  }
+
+  if (isStructuredWarning(warning)) {
+    return warning.field === field;
+  }
+
+  if (field === "bmi") {
+    return message.includes("bmi") || message.includes("imc");
+  }
+
+  return message.includes(field);
+}
+
+function hasMissingRequiredWarning(result: PreventResult): boolean {
+  return (result.warnings ?? []).some((warning) => {
+    const message = getWarningMessage(warning).toLowerCase();
+    return message.includes("faltante") && !isMissingFieldWarning(warning, "bmi");
+  });
+}
+
+function getInsufficientResultReason(result: PreventResult): InsufficientResultReason {
+  if (!hasAllRiskOutcomesMissing(result)) {
+    return null;
+  }
+
+  if (hasMissingRequiredWarning(result)) {
+    return "required";
+  }
+
+  if ((result.warnings ?? []).some((warning) => isMissingFieldWarning(warning, "bmi"))) {
+    return "bmi";
+  }
+
+  return null;
+}
+
+function getInsufficientResultMessage(reason: InsufficientResultReason): string | null {
+  if (reason === "bmi") {
+    return "Se requiere IMC (Índice de Masa Corporal) para completar la evaluación PREVENT.";
+  }
+
+  if (reason === "required") {
+    return "Complete las variables obligatorias para obtener una evaluación válida.";
+  }
+
+  return null;
+}
+
 function formatWarningDetail(warning: PreventWarning | string): string {
   if (!isStructuredWarning(warning)) {
     return warning;
@@ -338,6 +410,14 @@ export function PreventCalculator() {
   const showValidationBadge = (result?.engine_status ?? "validation") !== "validated";
   const variantHelperMessage = getVariantHelperMessage(form);
   const selectedOutcomeWarnings = result ? getOutcomeWarnings(result, riskType) : [];
+  const insufficientResultReason = result ? getInsufficientResultReason(result) : null;
+  const insufficientResultMessage =
+    getInsufficientResultMessage(insufficientResultReason);
+  const bmiWarning =
+    getFieldWarning(form, "bmi") ??
+    (insufficientResultReason === "bmi" && !form.bmi.trim()
+      ? "Se requiere IMC (Índice de Masa Corporal) para completar la evaluación PREVENT."
+      : null);
 
   const handleInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -839,7 +919,7 @@ export function PreventCalculator() {
                   onCalculatorChange={handleBmiCalculatorChange}
                   onCalculate={handleCalculateBmi}
                   validationRule={FIELD_VALIDATION_RULES.bmi}
-                  warning={getFieldWarning(form, "bmi")}
+                  warning={bmiWarning}
                 />
               </div>
             </FormSection>
@@ -1022,6 +1102,12 @@ export function PreventCalculator() {
             <RiskGauge
               percentage={selectedRiskPercentage}
               category={selectedPreventCategory}
+              isCalculated={Boolean(result)}
+              emptyStateLabel={
+                result && selectedRisk === null && insufficientResultReason
+                  ? "Información insuficiente"
+                  : undefined
+              }
               label={getRiskTypeShortLabel(riskType)}
             />
 
@@ -1032,7 +1118,7 @@ export function PreventCalculator() {
 
             <p className="prevent-risk-support">
               {result && selectedRisk === null
-                ? getMissingRiskMessage(result, riskType)
+                ? insufficientResultMessage ?? getMissingRiskMessage(result, riskType)
                 : "Probabilidad acumulada de evento ASCVD/IC."}
             </p>
 
@@ -1181,14 +1267,24 @@ export function PreventCalculator() {
 function RiskGauge({
   percentage,
   category,
+  isCalculated,
+  emptyStateLabel,
   label,
 }: {
   percentage: number | null;
   category: string | null;
+  isCalculated: boolean;
+  emptyStateLabel?: string;
   label: string;
 }) {
   const clampedPercentage = percentage === null ? 0 : Math.min(Math.max(percentage, 0), 100);
-  const categoryLabel = category ? translateRiskCategory(category) : "Pendiente";
+  const categoryLabel = category
+    ? translateRiskCategory(category)
+    : emptyStateLabel
+      ? emptyStateLabel
+    : isCalculated
+      ? "No calculable"
+      : "Pendiente";
   const categoryTone = category ?? "pending";
 
   return (
