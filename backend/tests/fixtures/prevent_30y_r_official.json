@@ -1,0 +1,158 @@
+[
+  {
+    "name": "base_female_official_example",
+    "variant": "base",
+    "payload": {
+      "sex": 1,
+      "age": 45,
+      "tc": 200,
+      "hdl": 60,
+      "sbp": 120,
+      "dm": 1,
+      "smoking": 0,
+      "bmi": 25,
+      "egfr": 95,
+      "bptreat": 0,
+      "statin": 0
+    },
+    "expected": {
+      "cvd_10y": 3.37941,
+      "ascvd_10y": 2.101978,
+      "hf_10y": 1.698138,
+      "cvd_30y": 20.649965,
+      "ascvd_30y": 11.996136,
+      "hf_30y": 12.794469
+    }
+  },
+  {
+    "name": "base_male_intermediate",
+    "variant": "base",
+    "payload": {
+      "sex": 0,
+      "age": 52,
+      "tc": 158,
+      "hdl": 29,
+      "sbp": 125,
+      "dm": 1,
+      "smoking": 0,
+      "bmi": 26,
+      "egfr": 82,
+      "bptreat": 0,
+      "statin": 0
+    },
+    "expected": {
+      "cvd_10y": 8.808541,
+      "ascvd_10y": 5.639618,
+      "hf_10y": 3.566107,
+      "cvd_30y": 36.536947,
+      "ascvd_30y": 23.814606,
+      "hf_30y": 19.944908
+    }
+  },
+  {
+    "name": "uacr_male",
+    "variant": "uacr",
+    "payload": {
+      "sex": 0,
+      "age": 52,
+      "tc": 210,
+      "hdl": 42,
+      "sbp": 138,
+      "dm": 1,
+      "smoking": 1,
+      "bmi": 31,
+      "egfr": 72,
+      "bptreat": 1,
+      "statin": 1,
+      "uacr": 120
+    },
+    "expected": {
+      "cvd_10y": 24.876989,
+      "ascvd_10y": 16.041174,
+      "hf_10y": 13.978295,
+      "cvd_30y": 58.650043,
+      "ascvd_30y": 41.957706,
+      "hf_30y": 43.558407
+    }
+  },
+  {
+    "name": "hba1c_female",
+    "variant": "hba1c",
+    "payload": {
+      "sex": 1,
+      "age": 55,
+      "tc": 188,
+      "hdl": 49,
+      "sbp": 132,
+      "dm": 1,
+      "smoking": 0,
+      "bmi": 29,
+      "egfr": 88,
+      "bptreat": 1,
+      "statin": 0,
+      "hba1c": 7.2
+    },
+    "expected": {
+      "cvd_10y": 10.463001,
+      "ascvd_10y": 5.81328,
+      "hf_10y": 5.314634,
+      "cvd_30y": 40.410753,
+      "ascvd_30y": 22.959438,
+      "hf_30y": 28.010037
+    }
+  },
+  {
+    "name": "sdi_male",
+    "variant": "sdi",
+    "payload": {
+      "sex": 0,
+      "age": 48,
+      "tc": 205,
+      "hdl": 45,
+      "sbp": 128,
+      "dm": 0,
+      "smoking": 1,
+      "bmi": 27,
+      "egfr": 93,
+      "bptreat": 0,
+      "statin": 0,
+      "sdi": 8
+    },
+    "expected": {
+      "cvd_10y": 5.177392,
+      "ascvd_10y": 3.520738,
+      "hf_10y": 1.989597,
+      "cvd_30y": 25.938453,
+      "ascvd_30y": 17.3387,
+      "hf_30y": 12.988768
+    }
+  },
+  {
+    "name": "full_female",
+    "variant": "full",
+    "payload": {
+      "sex": 1,
+      "age": 45,
+      "tc": 200,
+      "hdl": 60,
+      "sbp": 120,
+      "dm": 1,
+      "smoking": 0,
+      "bmi": 25,
+      "egfr": 95,
+      "bptreat": 0,
+      "statin": 0,
+      "uacr": 42,
+      "hba1c": 6.8,
+      "sdi": 9
+    },
+    "expected": {
+      "cvd_10y": 3.798919,
+      "ascvd_10y": 2.331312,
+      "hf_10y": 2.074582,
+      "cvd_30y": 20.873995,
+      "ascvd_30y": 12.103204,
+      "hf_30y": 13.986617
+    }
+  }
+]

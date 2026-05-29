@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 from app.services.prevent_ascvd import calculate_prevent_ascvd_from_inputs
 from app.services.prevent_coefficients import PREVENT_ENGINE_STATUS, PREVENT_METHOD_NOTE
+from app.services.prevent_30y import compute_prevent_30y
 from app.services.prevent_common import (
     build_input_summary,
     classify_risk,
@@ -1644,11 +1645,15 @@ def compute_prevent_10y(
         )
 
     if selected_variant == "uacr":
-        return selected_variant, prevent_uacr_10y(sanitized_data), warnings
-    if selected_variant == "hba1c":
-        return selected_variant, prevent_hba1c_10y(sanitized_data), warnings
-    if selected_variant == "sdi":
-        return selected_variant, prevent_sdi_10y(sanitized_data), warnings
-    if selected_variant == "full":
-        return selected_variant, prevent_full_10y(sanitized_data), warnings
-    return selected_variant, prevent_base_10y(sanitized_data), warnings
+        result = prevent_uacr_10y(sanitized_data)
+    elif selected_variant == "hba1c":
+        result = prevent_hba1c_10y(sanitized_data)
+    elif selected_variant == "sdi":
+        result = prevent_sdi_10y(sanitized_data)
+    elif selected_variant == "full":
+        result = prevent_full_10y(sanitized_data)
+    else:
+        result = prevent_base_10y(sanitized_data)
+
+    result.update(compute_prevent_30y(sanitized_data, selected_variant))
+    return selected_variant, result, warnings

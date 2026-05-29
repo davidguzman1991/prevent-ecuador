@@ -78,6 +78,9 @@ class PreventRecordResponse(PreventRecordBase):
     cvd_risk_10y: float | None = None
     ascvd_risk_10y: float | None = None
     hf_risk_10y: float | None = None
+    cvd_risk_30y: float | None = None
+    ascvd_risk_30y: float | None = None
+    hf_risk_30y: float | None = None
     cvd_category: str | None = None
     ascvd_category: str | None = None
     hf_category: str | None = None
@@ -102,6 +105,9 @@ class PreventRecordCreateResponse(BaseModel):
     cvd_risk: Optional[float]
     ascvd_risk: Optional[float]
     hf_risk: Optional[float]
+    cvd_risk_30y: Optional[float]
+    ascvd_risk_30y: Optional[float]
+    hf_risk_30y: Optional[float]
     prevent_age: float | None
     cvd_category: str | None
     ascvd_category: str | None
@@ -130,6 +136,9 @@ class PreventRecordListItem(BaseModel):
     cvd_risk: float | None
     ascvd_risk: float | None
     hf_risk: float | None
+    cvd_risk_30y: float | None
+    ascvd_risk_30y: float | None
+    hf_risk_30y: float | None
     model_variant: str | None
 
 
@@ -171,6 +180,9 @@ class PreventRecordDetailResponse(BaseModel):
     cvd_risk_10y: float | None
     ascvd_risk_10y: float | None
     hf_risk_10y: float | None
+    cvd_risk_30y: float | None
+    ascvd_risk_30y: float | None
+    hf_risk_30y: float | None
     cvd_category: str | None
     ascvd_category: str | None
     hf_category: str | None
@@ -185,6 +197,9 @@ class PreventRecordDetailResponse(BaseModel):
     cvd_risk: float | None
     ascvd_risk: float | None
     hf_risk: float | None
+    cvd_30y: float | None = None
+    ascvd_30y: float | None = None
+    hf_30y: float | None = None
     model_variant: str | None
     clinical_interpretation: dict[str, Any] | None = None
 

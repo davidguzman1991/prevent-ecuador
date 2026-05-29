@@ -52,6 +52,9 @@ PREVENT_EXPORT_HEADERS = [
     "riesgo_cvd_10y",
     "riesgo_ascvd_10y",
     "riesgo_ic_10y",
+    "riesgo_cvd_30y",
+    "riesgo_ascvd_30y",
+    "riesgo_ic_30y",
     "edad_cardiovascular_equivalente",
     "variante_modelo",
     "dominios_recomendacion",
@@ -208,6 +211,21 @@ def _build_prevent_export_row(record: PreventRecord) -> list[object]:
         if record.hf_risk_10y is not None
         else _result_payload_value(record, "hf_10y")
     )
+    cvd_risk_30y = (
+        record.cvd_risk_30y
+        if record.cvd_risk_30y is not None
+        else _result_payload_value(record, "cvd_30y")
+    )
+    ascvd_risk_30y = (
+        record.ascvd_risk_30y
+        if record.ascvd_risk_30y is not None
+        else _result_payload_value(record, "ascvd_30y")
+    )
+    hf_risk_30y = (
+        record.hf_risk_30y
+        if record.hf_risk_30y is not None
+        else _result_payload_value(record, "hf_30y")
+    )
     prevent_age = (
         record.prevent_age
         if record.prevent_age is not None
@@ -243,6 +261,15 @@ def _build_prevent_export_row(record: PreventRecord) -> list[object]:
         _format_exact_risk_for_csv(
             hf_risk if hf_risk is not None else extracted["hf_risk"],
         ),
+        _format_exact_risk_for_csv(
+            cvd_risk_30y if cvd_risk_30y is not None else extracted["cvd_30y"],
+        ),
+        _format_exact_risk_for_csv(
+            ascvd_risk_30y if ascvd_risk_30y is not None else extracted["ascvd_30y"],
+        ),
+        _format_exact_risk_for_csv(
+            hf_risk_30y if hf_risk_30y is not None else extracted["hf_30y"],
+        ),
         float(prevent_age) if prevent_age is not None else None,
         model_variant or extracted["model_variant"],
         traceability["dominios_recomendacion"],
@@ -274,6 +301,15 @@ def _extract_record_results(record: PreventRecord) -> dict[str, float | str | No
         "hf_risk": record.hf_risk_10y
         if record.hf_risk_10y is not None
         else results.get("hf_10y"),
+        "cvd_30y": record.cvd_risk_30y
+        if record.cvd_risk_30y is not None
+        else results.get("cvd_30y"),
+        "ascvd_30y": record.ascvd_risk_30y
+        if record.ascvd_risk_30y is not None
+        else results.get("ascvd_30y"),
+        "hf_30y": record.hf_risk_30y
+        if record.hf_risk_30y is not None
+        else results.get("hf_30y"),
         "prevent_age": record.prevent_age
         if record.prevent_age is not None
         else results.get("prevent_age"),
@@ -361,10 +397,13 @@ def create_prevent_record(
     invalid_outcomes = invalid_outcomes_from_warnings(validation_warnings)
     if "cvd" in invalid_outcomes:
         result["cvd_10y"] = None
+        result["cvd_30y"] = None
     if "ascvd" in invalid_outcomes:
         result["ascvd_10y"] = None
+        result["ascvd_30y"] = None
     if "hf" in invalid_outcomes:
         result["hf_10y"] = None
+        result["hf_30y"] = None
     combined_warnings = [
         *_build_engine_warnings(warnings),
         *validation_warnings,
@@ -380,6 +419,9 @@ def create_prevent_record(
     cvd_risk = result["cvd_10y"]
     ascvd_risk = result["ascvd_10y"]
     hf_risk = result["hf_10y"]
+    cvd_risk_30y = result["cvd_30y"]
+    ascvd_risk_30y = result["ascvd_30y"]
+    hf_risk_30y = result["hf_30y"]
     prevent_age = calculate_prevent_age(cvd_risk, engine_input.get("sex"))
     cvd_category = classify_risk(cvd_risk) if cvd_risk is not None else None
     ascvd_category = classify_risk(ascvd_risk) if ascvd_risk is not None else None
@@ -389,6 +431,9 @@ def create_prevent_record(
             "cvd_risk": cvd_risk,
             "ascvd_risk": ascvd_risk,
             "hf_risk": hf_risk,
+            "cvd_risk_30y": cvd_risk_30y,
+            "ascvd_risk_30y": ascvd_risk_30y,
+            "hf_risk_30y": hf_risk_30y,
             "prevent_age": prevent_age,
             "model_variant": model_variant,
         },
@@ -441,6 +486,9 @@ def create_prevent_record(
         cvd_risk_10y=cvd_risk,
         ascvd_risk_10y=ascvd_risk,
         hf_risk_10y=hf_risk,
+        cvd_risk_30y=cvd_risk_30y,
+        ascvd_risk_30y=ascvd_risk_30y,
+        hf_risk_30y=hf_risk_30y,
         cvd_category=cvd_category,
         ascvd_category=ascvd_category,
         hf_category=hf_category,
@@ -465,6 +513,9 @@ def create_prevent_record(
             "cvd_risk": cvd_risk,
             "ascvd_risk": ascvd_risk,
             "hf_risk": hf_risk,
+            "cvd_risk_30y": cvd_risk_30y,
+            "ascvd_risk_30y": ascvd_risk_30y,
+            "hf_risk_30y": hf_risk_30y,
             "prevent_age": prevent_age,
             "model_variant": model_variant,
             "warnings": combined_warnings,
@@ -476,6 +527,9 @@ def create_prevent_record(
         "cvd_risk": cvd_risk,
         "ascvd_risk": ascvd_risk,
         "hf_risk": hf_risk,
+        "cvd_risk_30y": cvd_risk_30y,
+        "ascvd_risk_30y": ascvd_risk_30y,
+        "hf_risk_30y": hf_risk_30y,
         "prevent_age": prevent_age,
         "cvd_category": cvd_category,
         "ascvd_category": ascvd_category,
@@ -496,6 +550,9 @@ def create_prevent_record(
         cvd_risk=cvd_risk,
         ascvd_risk=ascvd_risk,
         hf_risk=hf_risk,
+        cvd_risk_30y=cvd_risk_30y,
+        ascvd_risk_30y=ascvd_risk_30y,
+        hf_risk_30y=hf_risk_30y,
         prevent_age=prevent_age,
         cvd_category=cvd_category,
         ascvd_category=ascvd_category,
@@ -581,6 +638,9 @@ def list_prevent_records(
                 cvd_risk=extracted["cvd_risk"],
                 ascvd_risk=extracted["ascvd_risk"],
                 hf_risk=extracted["hf_risk"],
+                cvd_risk_30y=extracted["cvd_30y"],
+                ascvd_risk_30y=extracted["ascvd_30y"],
+                hf_risk_30y=extracted["hf_30y"],
                 model_variant=extracted["model_variant"],
             ),
         )
@@ -633,6 +693,9 @@ def get_prevent_record_detail(
         cvd_risk_10y=record.cvd_risk_10y,
         ascvd_risk_10y=record.ascvd_risk_10y,
         hf_risk_10y=record.hf_risk_10y,
+        cvd_risk_30y=extracted["cvd_30y"],
+        ascvd_risk_30y=extracted["ascvd_30y"],
+        hf_risk_30y=extracted["hf_30y"],
         cvd_category=record.cvd_category,
         ascvd_category=record.ascvd_category,
         hf_category=record.hf_category,
@@ -647,6 +710,9 @@ def get_prevent_record_detail(
         cvd_risk=extracted["cvd_risk"],
         ascvd_risk=extracted["ascvd_risk"],
         hf_risk=extracted["hf_risk"],
+        cvd_30y=extracted["cvd_30y"],
+        ascvd_30y=extracted["ascvd_30y"],
+        hf_30y=extracted["hf_30y"],
         model_variant=extracted["model_variant"],
         clinical_interpretation=_clinical_interpretation_from_record(record),
     )
@@ -698,7 +764,14 @@ def export_prevent_records_xlsx(
         cell.fill = header_fill
         cell.alignment = Alignment(horizontal="center")
 
-    risk_headers = {"riesgo_cvd_10y", "riesgo_ascvd_10y", "riesgo_ic_10y"}
+    risk_headers = {
+        "riesgo_cvd_10y",
+        "riesgo_ascvd_10y",
+        "riesgo_ic_10y",
+        "riesgo_cvd_30y",
+        "riesgo_ascvd_30y",
+        "riesgo_ic_30y",
+    }
     decimal_headers = {
         "colesterol_total",
         "hdl",
