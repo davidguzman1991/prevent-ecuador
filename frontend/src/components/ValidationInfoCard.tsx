@@ -1,47 +1,33 @@
 "use client";
 
+import Link from "next/link";
+
 export function ValidationInfoCard() {
   return (
     <section className="prevent-validation-card" id="validacion" aria-labelledby="validation-title">
       <div className="prevent-validation-card-header">
-        <span className="prevent-validation-kicker">Respaldo técnico</span>
-        <h3 id="validation-title">Validación técnica</h3>
+        <span className="prevent-validation-kicker">Validación científica</span>
+        <h3 id="validation-title">AHAprevent R v1.0.0</h3>
       </div>
 
       <ul className="prevent-validation-list" aria-label="Elementos de validación técnica">
         <li>
           <ValidationCheckIcon />
-          <span>
-            Implementación basada en ecuaciones PREVENT publicadas por la American Heart
-            Association (AHA).
-          </span>
+          <span>Validado contra AHAprevent R v1.0.0</span>
         </li>
         <li>
           <ValidationCheckIcon />
-          <span>Validación realizada contra:</span>
+          <span>500 casos auditados</span>
+        </li>
+        <li>
+          <ValidationCheckIcon />
+          <span>Concordancia numérica completa</span>
         </li>
       </ul>
 
-      <div className="prevent-validation-evidence" aria-label="Fuentes de validación">
-        <span>paquete oficial R PREVENT-AHA</span>
-        <span>calculadora web PREVENT</span>
-      </div>
-
-      <div className="prevent-validation-subsection">
-        <span className="prevent-validation-label">Concordancia observada</span>
-        <ul className="prevent-validation-mini-list">
-          <li>riesgo cardiovascular global</li>
-          <li>ASCVD</li>
-          <li>insuficiencia cardíaca</li>
-        </ul>
-      </div>
-
-      <div className="prevent-validation-subsection prevent-validation-credits">
-        <span className="prevent-validation-label">Desarrollo</span>
-        <strong>Dr. David Guzmán</strong>
-        <p>Médico • Investigador • Desarrollador Clínico</p>
-        <span className="prevent-validation-group">ANOVA Research Group</span>
-      </div>
+      <Link href="/metodologia" className="prevent-validation-link">
+        Ver metodología completa
+      </Link>
     </section>
   );
 }

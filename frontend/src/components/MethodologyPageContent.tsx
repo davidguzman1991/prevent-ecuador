@@ -345,7 +345,7 @@ export function MethodologyPageContent() {
         </div>
       </section>
 
-      <section className="methodology-section">
+      <section className="methodology-section" id="privacidad">
         <SectionHeading
           title="Privacidad y uso de datos"
           description="Minimización de datos y análisis agregado para investigación."

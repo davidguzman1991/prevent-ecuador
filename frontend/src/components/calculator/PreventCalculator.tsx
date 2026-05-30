@@ -811,24 +811,18 @@ export function PreventCalculator() {
           <div className="prevent-brand-mark">PE</div>
           <nav className="prevent-side-nav">
             <a href="#ingreso" className="prevent-side-link is-active">
-              <span>01</span>
-              Ingreso de datos
+              Calculadora
             </a>
             <a href="#resultados" className="prevent-side-link">
-              <span>02</span>
               Resultados
             </a>
-            <a href="#validacion" className="prevent-side-link">
-              <span>03</span>
-              Validación
-            </a>
+            <Link href="/metodologia" className="prevent-side-link">
+              Metodología
+            </Link>
           </nav>
           <div className="prevent-sidebar-actions">
             <Link className="prevent-dashboard-link" href="/dashboard">
               Panel clínico
-            </Link>
-            <Link className="prevent-dashboard-link prevent-secondary-link" href="/metodologia">
-              Metodología
             </Link>
           </div>
           <div className="prevent-mobile-options">
@@ -846,6 +840,20 @@ export function PreventCalculator() {
                 id="prevent-mobile-options-menu"
                 className="prevent-mobile-options-menu"
               >
+                <a
+                  className="prevent-mobile-options-link"
+                  href="#ingreso"
+                  onClick={() => setIsMobileOptionsOpen(false)}
+                >
+                  Calculadora
+                </a>
+                <a
+                  className="prevent-mobile-options-link"
+                  href="#resultados"
+                  onClick={() => setIsMobileOptionsOpen(false)}
+                >
+                  Resultados
+                </a>
                 <Link
                   className="prevent-mobile-options-link"
                   href="/dashboard"
@@ -868,7 +876,18 @@ export function PreventCalculator() {
         <section className="prevent-main-column" id="ingreso">
           <header className="prevent-hero-card">
             <div className="prevent-hero-grid">
-              <div className="flex h-full w-full items-center justify-center py-6">
+              <div className="prevent-hero-text">
+                <span className="prevent-kicker">Plataforma científica validada</span>
+                <h1 className="prevent-title">
+                  Estratificación cardio-reno-metabólica
+                </h1>
+                <p className="prevent-copy">
+                  Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca
+                  a 10 y 30 años, con captura estructurada para investigación
+                  poblacional.
+                </p>
+              </div>
+              <div className="prevent-hero-logo">
                 <Image
                   src="/LOGO PREVENT.png"
                   alt="PREVENT Ecuador"
@@ -1256,6 +1275,7 @@ export function PreventCalculator() {
         </section>
 
         <aside className="prevent-results-column" id="resultados" ref={resultsRef}>
+          {result ? (
           <section className="prevent-result-card">
             <div className="prevent-panel-header">
               <span className="prevent-panel-badge">RESULTADOS Y EVALUACIÓN</span>
@@ -1386,6 +1406,11 @@ export function PreventCalculator() {
               </p>
             ) : null}
           </section>
+          ) : (
+            <section className="prevent-result-card prevent-validation-only">
+              <ValidationInfoCard />
+            </section>
+          )}
         </aside>
 
       </div>
