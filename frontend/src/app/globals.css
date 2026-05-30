@@ -1822,6 +1822,39 @@ button {
   line-height: 1.45;
 }
 
+.methodology-validation-stamp {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(33, 150, 83, 0.2);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(239, 250, 244, 0.96), rgba(255, 255, 255, 0.96));
+  box-shadow: var(--shadow-sm);
+}
+
+.methodology-validation-stamp span,
+.methodology-validation-banner span,
+.methodology-metric-card span {
+  color: #166534;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.methodology-validation-stamp strong {
+  color: #14532d;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.methodology-validation-stamp p {
+  margin: 0;
+  color: #3f5f4c;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
 .methodology-hero-link {
   display: inline-flex;
   align-items: center;
@@ -1887,6 +1920,14 @@ button {
   gap: 12px;
 }
 
+.methodology-card-prose h3 {
+  margin: 0;
+  color: #12324a;
+  font-size: 1.12rem;
+  font-weight: 820;
+  letter-spacing: -0.01em;
+}
+
 .methodology-card-prose p,
 .methodology-credits-card p,
 .methodology-credits-card span {
@@ -1922,6 +1963,10 @@ button {
 
 .methodology-grid-four {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.methodology-stack-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .methodology-grid-split {
@@ -2014,6 +2059,116 @@ button {
 
 .methodology-reference-list li::marker {
   color: var(--primary);
+}
+
+.methodology-badge-row,
+.methodology-inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.methodology-badge,
+.methodology-inline-list li {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(46, 139, 192, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #12324a;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.methodology-validation-banner {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid rgba(33, 150, 83, 0.22);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(234, 252, 242, 0.98), rgba(255, 255, 255, 0.98));
+  box-shadow: var(--shadow-sm);
+}
+
+.methodology-validation-banner strong {
+  color: #14532d;
+  font-size: clamp(1.2rem, 2.5vw, 1.75rem);
+  font-weight: 860;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.methodology-validation-banner p {
+  max-width: 72ch;
+  margin: 0;
+  color: #3f5f4c;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.methodology-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.methodology-metric-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.methodology-metric-card strong {
+  color: #12324a;
+  font-size: 1.35rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.methodology-roadmap {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.methodology-roadmap-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.methodology-roadmap-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.methodology-roadmap-header h3 {
+  margin: 10px 0 0;
+  color: #12324a;
+  font-size: 1.05rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.methodology-roadmap-header > strong {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(220, 252, 231, 0.86);
+  color: #166534;
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .print-report {
@@ -2758,8 +2913,14 @@ button {
 
   .methodology-hero,
   .methodology-grid-four,
-  .methodology-grid-split {
+  .methodology-stack-grid,
+  .methodology-grid-split,
+  .methodology-roadmap {
     grid-template-columns: 1fr;
+  }
+
+  .methodology-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dashboard-layout {
@@ -2917,10 +3078,21 @@ button {
   }
 
   .methodology-hero-stat,
+  .methodology-validation-stamp,
+  .methodology-validation-banner,
+  .methodology-metric-card,
   .methodology-card,
   .methodology-alert-card {
     padding: 16px;
     border-radius: 18px;
+  }
+
+  .methodology-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .methodology-roadmap-header {
+    flex-direction: column;
   }
 
   .methodology-table {

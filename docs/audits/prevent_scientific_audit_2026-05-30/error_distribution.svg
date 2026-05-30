@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620">
+<rect width="100%" height="100%" fill="white"/>
+<line x1="70" y1="550" x2="930" y2="550" stroke="#333"/>
+<line x1="70" y1="550" x2="70" y2="70" stroke="#333"/>
+<rect x="70.00" y="70.00" width="27.67" height="480.00" fill="#1b75bb" opacity="0.75"/>
+<rect x="98.67" y="268.93" width="27.67" height="281.07" fill="#1b75bb" opacity="0.75"/>
+<rect x="127.33" y="449.03" width="27.67" height="100.97" fill="#1b75bb" opacity="0.75"/>
+<rect x="156.00" y="546.23" width="27.67" height="3.77" fill="#1b75bb" opacity="0.75"/>
+<rect x="184.67" y="509.31" width="27.67" height="40.69" fill="#1b75bb" opacity="0.75"/>
+<rect x="213.33" y="391.76" width="27.67" height="158.24" fill="#1b75bb" opacity="0.75"/>
+<rect x="242.00" y="519.86" width="27.67" height="30.14" fill="#1b75bb" opacity="0.75"/>
+<rect x="270.67" y="544.73" width="27.67" height="5.27" fill="#1b75bb" opacity="0.75"/>
+<rect x="299.33" y="454.30" width="27.67" height="95.70" fill="#1b75bb" opacity="0.75"/>
+<rect x="328.00" y="516.84" width="27.67" height="33.16" fill="#1b75bb" opacity="0.75"/>
+<rect x="356.67" y="382.72" width="27.67" height="167.28" fill="#1b75bb" opacity="0.75"/>
+<rect x="385.33" y="542.46" width="27.67" height="7.54" fill="#1b75bb" opacity="0.75"/>
+<rect x="414.00" y="512.32" width="27.67" height="37.68" fill="#1b75bb" opacity="0.75"/>
+<rect x="442.67" y="475.40" width="27.67" height="74.60" fill="#1b75bb" opacity="0.75"/>
+<rect x="471.33" y="546.23" width="27.67" height="3.77" fill="#1b75bb" opacity="0.75"/>
+<rect x="500.00" y="515.34" width="27.67" height="34.66" fill="#1b75bb" opacity="0.75"/>
+<rect x="528.67" y="408.34" width="27.67" height="141.66" fill="#1b75bb" opacity="0.75"/>
+<rect x="557.33" y="507.80" width="27.67" height="42.20" fill="#1b75bb" opacity="0.75"/>
+<rect x="586.00" y="544.73" width="27.67" height="5.27" fill="#1b75bb" opacity="0.75"/>
+<rect x="614.67" y="501.02" width="27.67" height="48.98" fill="#1b75bb" opacity="0.75"/>
+<rect x="643.33" y="547.74" width="27.67" height="2.26" fill="#1b75bb" opacity="0.75"/>
+<rect x="672.00" y="540.96" width="27.67" height="9.04" fill="#1b75bb" opacity="0.75"/>
+<rect x="700.67" y="550.00" width="27.67" height="0.00" fill="#1b75bb" opacity="0.75"/>
+<rect x="729.33" y="548.49" width="27.67" height="1.51" fill="#1b75bb" opacity="0.75"/>
+<rect x="758.00" y="549.25" width="27.67" height="0.75" fill="#1b75bb" opacity="0.75"/>
+<rect x="786.67" y="550.00" width="27.67" height="0.00" fill="#1b75bb" opacity="0.75"/>
+<rect x="815.33" y="550.00" width="27.67" height="0.00" fill="#1b75bb" opacity="0.75"/>
+<rect x="844.00" y="548.49" width="27.67" height="1.51" fill="#1b75bb" opacity="0.75"/>
+<rect x="872.67" y="550.00" width="27.67" height="0.00" fill="#1b75bb" opacity="0.75"/>
+<rect x="901.33" y="549.25" width="27.67" height="0.75" fill="#1b75bb" opacity="0.75"/>
+<text x="500" y="32" text-anchor="middle" font-family="Arial" font-size="20">Distribución de error absoluto</text>
+<text x="500.0" y="602" text-anchor="middle" font-family="Arial" font-size="14">Error absoluto porcentual; máximo observado 7.81597009336e-14</text>
+<text x="20" y="310.0" transform="rotate(-90 20,310.0)" text-anchor="middle" font-family="Arial" font-size="14">Frecuencia</text>
+</svg>

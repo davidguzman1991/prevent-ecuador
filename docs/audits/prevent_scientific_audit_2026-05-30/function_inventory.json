@@ -1,0 +1,28 @@
+{
+  "R exported": [
+    "prevent_base",
+    "prevent_uacr",
+    "prevent_hba1c",
+    "prevent_sdi",
+    "prevent_full"
+  ],
+  "R internals": [
+    "pred_risk_base",
+    "pred_risk_uacr",
+    "pred_risk_hba1c",
+    "pred_risk_sdi",
+    "pred_risk_full",
+    "sdicat",
+    "mmol_conversion",
+    "adjust"
+  ],
+  "FastAPI equivalent": [
+    "compute_prevent_10y",
+    "prevent_base_10y",
+    "prevent_uacr_10y",
+    "prevent_hba1c_10y",
+    "prevent_sdi_10y",
+    "prevent_full_10y",
+    "compute_prevent_30y"
+  ]
+}

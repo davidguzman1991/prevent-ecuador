@@ -1,8 +1,17 @@
 import Link from "next/link";
 import { ContactCard } from "@/components/ContactCard";
 
+const HERO_BADGES = [
+  "PREVENT 10 años",
+  "PREVENT 30 años",
+  "CVD",
+  "ASCVD",
+  "HF",
+  "Validación científica",
+] as const;
+
 const CLINICAL_VARIABLES = [
-  ["Edad", "30–79 años"],
+  ["Edad", "30-79 años"],
   ["Sexo", "Masculino / Femenino"],
   ["PAS", "Presión arterial sistólica"],
   ["Colesterol total", "mg/dL"],
@@ -15,50 +24,132 @@ const CLINICAL_VARIABLES = [
   ["Tratamiento antihipertensivo", "Sí / No"],
 ] as const;
 
+const OUTCOMES = [
+  ["CVD", "Riesgo cardiovascular global"],
+  ["ASCVD", "Riesgo aterosclerótico cardiovascular"],
+  ["HF", "Riesgo de insuficiencia cardíaca"],
+] as const;
+
 const IMPLEMENTATION_STACK = [
   {
     title: "Frontend",
-    items: ["Next.js", "TypeScript", "React", "TailwindCSS"],
+    items: ["Next.js", "React", "TypeScript", "TailwindCSS"],
   },
   {
     title: "Backend",
-    items: ["FastAPI", "PostgreSQL", "SQLAlchemy"],
+    items: ["FastAPI", "SQLAlchemy"],
+  },
+  {
+    title: "Base de datos",
+    items: ["PostgreSQL", "Supabase"],
   },
   {
     title: "Infraestructura",
-    items: ["Vercel", "PostgreSQL cloud"],
+    items: ["Vercel", "Supabase"],
   },
   {
     title: "Motor",
-    items: ["implementación basada en paquete oficial R PREVENT-AHA"],
+    items: ["Implementación independiente validada contra AHAprevent R"],
   },
 ] as const;
 
-const VALIDATION_RESULTS = [
-  ["CVD 10 años", "8.81%", "8.8%"],
-  ["ASCVD 10 años", "5.64%", "5.6%"],
-  ["HF 10 años", "3.57%", "3.6%"],
+const VALIDATION_METRICS = [
+  ["Pacientes sintéticos evaluados", "500"],
+  ["Pearson", "1.0000"],
+  ["Spearman", "1.0000"],
+  ["Casos discordantes > 1e-6", "0"],
+  ["Error absoluto promedio", "≈ 10^-14"],
+  ["Error máximo", "≈ 10^-14"],
+] as const;
+
+const EPIDEMIOLOGY_GROUPS = [
+  {
+    title: "Geografía",
+    items: ["Provincia", "Cantón", "Zona urbana/rural", "Fuente geográfica"],
+  },
+  {
+    title: "Determinantes Sociales de Salud",
+    items: [
+      "Cobertura sanitaria",
+      "Nivel educativo",
+      "Situación laboral",
+      "Etnia",
+      "Nivel socioeconómico percibido",
+    ],
+  },
+] as const;
+
+const EPIDEMIOLOGY_USES = [
+  "investigación",
+  "análisis poblacional",
+  "epidemiología territorial",
+  "futuros indicadores PEI",
 ] as const;
 
 const LIMITATIONS = [
-  "No reemplaza juicio clínico.",
+  "No reemplaza el juicio clínico.",
   "No constituye diagnóstico médico.",
-  "Basado en cohortes internacionales.",
-  "Puede no representar completamente poblaciones latinoamericanas.",
-  "Herramienta orientada a apoyo clínico.",
+  "Está basado en cohortes internacionales.",
+  "La validación matemática no reemplaza validación clínica prospectiva.",
+  "Los resultados deben interpretarse dentro del contexto clínico individual.",
 ] as const;
 
-const FUTURE_LINES = [
-  "integración cardio-reno-metabólica avanzada,",
-  "interpretación automatizada basada en guías,",
-  "soporte clínico expandido,",
-  "módulos educativos,",
-  "validación en población latinoamericana.",
+const PRIVACY_POINTS = [
+  "No se requiere GPS.",
+  "No se requiere dirección exacta.",
+  "Se prioriza la minimización de datos.",
+  "Los análisis epidemiológicos se realizan mediante variables agregadas.",
+] as const;
+
+const ROADMAP = [
+  {
+    title: "PREVENT Ecuador V1",
+    status: "Finalizado",
+    done: true,
+    items: [
+      "Motor PREVENT validado",
+      "Riesgo 10 y 30 años",
+      "Dashboard clínico",
+      "Geografía",
+      "DSS",
+      "Exportaciones",
+    ],
+  },
+  {
+    title: "PREVENT Ecuador V1.5",
+    status: "Próxima versión",
+    done: false,
+    items: [
+      "Usuarios",
+      "Roles",
+      "Perfil médico",
+      "Instituciones",
+      "Auditoría de trazabilidad",
+    ],
+  },
+  {
+    title: "PREVENT Ecuador V2",
+    status: "Planificada",
+    done: false,
+    items: [
+      "Dashboard epidemiológico",
+      "Prevent Ecuador Index (PEI)",
+      "API institucional",
+      "Reportes avanzados",
+    ],
+  },
+  {
+    title: "PREVENT Ecuador V3",
+    status: "Futura",
+    done: false,
+    items: ["Aplicación móvil", "Integraciones externas"],
+  },
 ] as const;
 
 const REFERENCES = [
   "Khan SS, et al. PREVENT equations for cardiovascular risk prediction. Circulation. 2024.",
   "American Heart Association. PREVENT Risk Calculator.",
+  "AHAprevent R v1.0.0. Paquete oficial de referencia para ecuaciones PREVENT.",
   "Inker LA, et al. CKD-EPI 2021 equation for estimated glomerular filtration rate. N Engl J Med. 2021.",
 ] as const;
 
@@ -69,22 +160,34 @@ export function MethodologyPageContent() {
         <div className="methodology-hero-copy">
           <span className="methodology-kicker">
             <MedicalPulseIcon />
-            PREVENT Ecuador
+            PREVENT Ecuador V1
           </span>
-          <h1>Metodología y Validación</h1>
+          <h1>Metodología, Validación y Transparencia</h1>
           <p className="methodology-hero-subtitle">
-            Implementación clínica independiente basada en ecuaciones PREVENT
+            PREVENT Ecuador es una plataforma clínica digital de estratificación
+            de riesgo cardio-reno-metabólico basada en las ecuaciones PREVENT
             publicadas por la American Heart Association (AHA).
           </p>
+          <div className="methodology-badge-row" aria-label="Alcance científico">
+            {HERO_BADGES.map((badge) => (
+              <span className="methodology-badge" key={badge}>
+                {badge}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="methodology-hero-panel">
+          <div className="methodology-validation-stamp">
+            <span>Estado científico</span>
+            <strong>VALIDADO CONTRA AHAprevent R v1.0.0</strong>
+            <p>
+              Auditoría computacional con 500 pacientes sintéticos clínicamente
+              válidos y concordancia numérica completa.
+            </p>
+          </div>
           <div className="methodology-hero-stat">
             <span>Desenlaces integrados</span>
             <strong>CVD • ASCVD • HF</strong>
-          </div>
-          <div className="methodology-hero-stat">
-            <span>Validación técnica</span>
-            <strong>R PREVENT-AHA + calculadora web PREVENT</strong>
           </div>
           <Link href="/" className="methodology-hero-link">
             Volver a la calculadora
@@ -94,54 +197,45 @@ export function MethodologyPageContent() {
 
       <section className="methodology-section methodology-intro">
         <p>
-          PREVENT Ecuador es una plataforma clínica digital orientada a la
-          estratificación de riesgo cardiovascular y apoyo a la toma de decisiones
-          médicas, basada en las ecuaciones PREVENT publicadas por la American Heart
-          Association (AHA).
-        </p>
-        <p>
-          El proyecto surge con el objetivo de acercar herramientas modernas de
-          evaluación cardiovascular a un entorno clínico más accesible, intuitivo y
-          adaptado a la práctica médica cotidiana en Latinoamérica.
-        </p>
-        <p>
-          PREVENT Ecuador no constituye una herramienta diagnóstica autónoma ni
-          reemplaza el juicio clínico profesional. Su propósito es complementar la
-          valoración médica mediante la estimación estructurada de riesgo
-          cardiovascular a partir de variables clínicas ampliamente utilizadas.
+          La implementación ha sido validada contra el paquete oficial
+          AHAprevent R v1.0.0 mediante auditoría computacional independiente.
+          Esta página consolida la metodología científica, la validación técnica
+          y las capas de transparencia epidemiológica de PREVENT Ecuador V1.
         </p>
       </section>
 
       <section className="methodology-section">
         <SectionHeading
           title="Base científica del modelo"
-          description="Fundamento conceptual del motor clínico implementado."
+          description="Fundamento clínico y estadístico de los desenlaces PREVENT implementados."
         />
-        <div className="methodology-card methodology-card-prose">
-          <p>
-            El motor de cálculo implementado en PREVENT Ecuador se basa en las
-            ecuaciones PREVENT desarrolladas por la American Heart Association
-            (AHA), publicadas por Khan et al. en 2024.
-          </p>
-          <p>
-            Estas ecuaciones fueron diseñadas para estimar riesgo cardiovascular
-            mediante modelos contemporáneos de predicción clínica, incorporando
-            variables metabólicas, renales y cardiovasculares relevantes.
-          </p>
-          <p>El sistema permite calcular:</p>
-          <ul className="methodology-list">
-            <li>Riesgo cardiovascular global (CVD)</li>
-            <li>Riesgo aterosclerótico cardiovascular (ASCVD)</li>
-            <li>Riesgo de insuficiencia cardíaca (HF)</li>
-          </ul>
-          <p>en horizontes temporales de 10 y 30 años.</p>
+        <div className="methodology-grid methodology-grid-split">
+          <div className="methodology-card methodology-card-prose">
+            <p>
+              El motor de cálculo se basa en las ecuaciones PREVENT publicadas por
+              la American Heart Association y descritas por Khan et al. en 2024.
+              Estas ecuaciones integran variables cardiovasculares, renales y
+              metabólicas para estimar riesgo clínico contemporáneo.
+            </p>
+            <p>
+              PREVENT Ecuador estima riesgos en horizontes de 10 y 30 años,
+              respetando los rangos oficiales aplicables para cada horizonte.
+            </p>
+          </div>
+          <div className="methodology-card methodology-table-card">
+            <ResponsiveTable headers={["Desenlace", "Descripción"]} rows={OUTCOMES} />
+            <p className="methodology-table-note">
+              CVD, ASCVD y HF se reportan cuando el perfil clínico está dentro
+              de los rangos validados por PREVENT.
+            </p>
+          </div>
         </div>
       </section>
 
       <section className="methodology-section">
         <SectionHeading
           title="Variables clínicas"
-          description="Conjunto principal de variables utilizadas en la estratificación visible del riesgo."
+          description="Variables usadas por el motor PREVENT para la estimación individual del riesgo."
         />
         <div className="methodology-card methodology-table-card">
           <ResponsiveTable
@@ -156,10 +250,10 @@ export function MethodologyPageContent() {
 
       <section className="methodology-section">
         <SectionHeading
-          title="Implementación técnica"
-          description="Arquitectura tecnológica del sistema."
+          title="Implementación tecnológica"
+          description="Arquitectura del sistema clínico y de datos."
         />
-        <div className="methodology-grid methodology-grid-four">
+        <div className="methodology-grid methodology-stack-grid">
           {IMPLEMENTATION_STACK.map((group) => (
             <article className="methodology-card methodology-stack-card" key={group.title}>
               <span className="methodology-card-label">{group.title}</span>
@@ -175,41 +269,72 @@ export function MethodologyPageContent() {
 
       <section className="methodology-section">
         <SectionHeading
-          title="Validación técnica"
-          description="Contraste directo con la implementación de referencia."
+          title="Validación científica"
+          description="Concordancia matemática contra la implementación oficial de referencia."
         />
+        <div className="methodology-validation-banner" role="status">
+          <span>VALIDADO</span>
+          <strong>VALIDADO CONTRA AHAprevent R v1.0.0</strong>
+          <p>
+            Concordancia numérica completa dentro de tolerancia &lt; 1e-5 puntos
+            porcentuales.
+          </p>
+        </div>
+        <div className="methodology-card methodology-card-prose">
+          <h3>Validación contra AHAprevent oficial v1.0.0</h3>
+          <p>
+            Se comparó PREVENT Ecuador contra la implementación oficial
+            AHAprevent R utilizando 500 pacientes sintéticos clínicamente válidos.
+            La comparación incluyó CVD, ASCVD y HF a 10 y 30 años, cuando el
+            horizonte era aplicable.
+          </p>
+        </div>
+        <div className="methodology-metric-grid">
+          {VALIDATION_METRICS.map(([label, value]) => (
+            <div className="methodology-metric-card" key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="methodology-section">
+        <SectionHeading
+          title="Capa epidemiológica"
+          description="Variables poblacionales para investigación que no modifican el algoritmo PREVENT."
+        />
+        <div className="methodology-grid methodology-grid-split">
+          {EPIDEMIOLOGY_GROUPS.map((group) => (
+            <article className="methodology-card methodology-stack-card" key={group.title}>
+              <span className="methodology-card-label">{group.title}</span>
+              <ul className="methodology-list methodology-list-compact">
+                {group.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
         <div className="methodology-card methodology-card-prose">
           <p>
-            La implementación utilizada en PREVENT Ecuador fue contrastada
-            directamente contra el paquete oficial R PREVENT-AHA.
+            Estas variables se utilizan para investigación, análisis poblacional,
+            epidemiología territorial y futuros indicadores PEI. No afectan el
+            cálculo clínico individual ni cambian ecuaciones, coeficientes o
+            resultados PREVENT.
           </p>
-          <p>
-            Se realizaron pruebas de concordancia utilizando casos clínicos
-            simulados, comparando:
-          </p>
-          <ul className="methodology-list">
-            <li>Riesgo cardiovascular global (CVD)</li>
-            <li>Riesgo aterosclerótico (ASCVD)</li>
-            <li>Riesgo de insuficiencia cardíaca (HF)</li>
+          <ul className="methodology-inline-list">
+            {EPIDEMIOLOGY_USES.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
-          <p>Observándose concordancia numérica en los resultados obtenidos.</p>
-        </div>
-        <div className="methodology-card methodology-table-card">
-          <ResponsiveTable
-            headers={["Resultado", "PREVENT R oficial", "PREVENT Ecuador"]}
-            rows={VALIDATION_RESULTS}
-          />
-          <p className="methodology-table-note">
-            Las diferencias observadas corresponden a redondeo visual de
-            resultados.
-          </p>
         </div>
       </section>
 
       <section className="methodology-section">
         <SectionHeading
           title="Limitaciones"
-          description="Consideraciones clínicas e interpretativas para el uso responsable de la plataforma."
+          description="Consideraciones clínicas para el uso responsable de la plataforma."
         />
         <div className="methodology-alert-card">
           <ul className="methodology-list">
@@ -223,55 +348,57 @@ export function MethodologyPageContent() {
       <section className="methodology-section">
         <SectionHeading
           title="Privacidad y uso de datos"
-          description="Marco general de uso responsable de la información clínica."
+          description="Minimización de datos y análisis agregado para investigación."
         />
-        <div className="methodology-card methodology-card-prose">
-          <p>
-            PREVENT Ecuador prioriza el manejo responsable de información clínica.
-          </p>
-          <p>
-            La plataforma puede almacenar variables clínicas anonimizadas con fines:
-          </p>
-          <ul className="methodology-list">
-            <li>analíticos,</li>
-            <li>epidemiológicos,</li>
-            <li>académicos,</li>
-            <li>y de mejora del sistema.</li>
-          </ul>
-          <p>
-            No se recomienda el ingreso de información identificatoria sensible sin
-            consentimiento institucional correspondiente.
-          </p>
+        <div className="methodology-grid methodology-grid-split">
+          <div className="methodology-card methodology-card-prose">
+            <p>
+              PREVENT Ecuador prioriza el manejo responsable de información
+              clínica. La plataforma puede almacenar variables clínicas y
+              poblacionales con fines analíticos, epidemiológicos, académicos y
+              de mejora del sistema.
+            </p>
+            <p>
+              No se recomienda el ingreso de información identificatoria sensible
+              sin consentimiento institucional correspondiente.
+            </p>
+          </div>
+          <div className="methodology-card">
+            <ul className="methodology-list">
+              {PRIVACY_POINTS.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
       <section className="methodology-section">
         <SectionHeading
-          title="Futuro del proyecto"
-          description="Líneas previsibles de crecimiento clínico y académico."
+          title="Roadmap del proyecto"
+          description="Evolución prevista de la plataforma clínica y epidemiológica."
         />
-        <div className="methodology-card">
-          <ul className="methodology-list methodology-list-spacious">
-            {FUTURE_LINES.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+        <div className="methodology-roadmap">
+          {ROADMAP.map((phase) => (
+            <article className="methodology-card methodology-roadmap-card" key={phase.title}>
+              <div className="methodology-roadmap-header">
+                <div>
+                  <span className="methodology-card-label">{phase.status}</span>
+                  <h3>{phase.title}</h3>
+                </div>
+                {phase.done ? <strong>Finalizado</strong> : null}
+              </div>
+              <ul className="methodology-list methodology-list-compact">
+                {phase.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </section>
 
       <section className="methodology-grid methodology-grid-split">
-        <div className="methodology-section">
-          <SectionHeading
-            title="Desarrollo"
-            description="Autoría y liderazgo clínico del proyecto."
-          />
-          <div className="methodology-card methodology-credits-card">
-            <strong>Dr. David Guzmán</strong>
-            <p>Médico • Investigador • Desarrollador Clínico</p>
-            <span>ANOVA Research Group</span>
-          </div>
-        </div>
-
         <div className="methodology-section">
           <SectionHeading
             title="Referencias"
@@ -283,6 +410,19 @@ export function MethodologyPageContent() {
                 <li key={reference}>{reference}</li>
               ))}
             </ol>
+          </div>
+        </div>
+
+        <div className="methodology-section">
+          <SectionHeading
+            title="Desarrollo"
+            description="Autoría clínica, científica y técnica del proyecto."
+          />
+          <div className="methodology-card methodology-credits-card">
+            <strong>Dr. David Guzmán</strong>
+            <p>Autor clínico y desarrollador principal de PREVENT Ecuador.</p>
+            <span>Médico • Investigador • Desarrollador Clínico</span>
+            <span>ANOVA Research Group</span>
           </div>
         </div>
       </section>
