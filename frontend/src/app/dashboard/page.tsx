@@ -41,6 +41,12 @@ type DashboardListItem = {
   cvd_risk: number | null;
   ascvd_risk: number | null;
   hf_risk: number | null;
+  cvd_risk_30y?: number | null;
+  ascvd_risk_30y?: number | null;
+  hf_risk_30y?: number | null;
+  cvd_30y?: number | null;
+  ascvd_30y?: number | null;
+  hf_30y?: number | null;
   model_variant: string | null;
 };
 
@@ -88,6 +94,12 @@ type DashboardDetail = {
   cvd_risk: number | null;
   ascvd_risk: number | null;
   hf_risk: number | null;
+  cvd_risk_30y?: number | null;
+  ascvd_risk_30y?: number | null;
+  hf_risk_30y?: number | null;
+  cvd_30y?: number | null;
+  ascvd_30y?: number | null;
+  hf_30y?: number | null;
   prevent_age: number | null;
   model_variant: string | null;
 };
@@ -155,6 +167,30 @@ function translateVariant(variant: string | null): string {
   if (variant === "full") return "FULL";
   if (variant === "base") return "Base";
   return "No especificado";
+}
+
+type RiskMetric = "cvd" | "ascvd" | "hf";
+type RecordWithThirtyYearRisk = DashboardListItem | DashboardDetail;
+
+function getThirtyYearRisk(
+  record: RecordWithThirtyYearRisk,
+  metric: RiskMetric,
+): number | null {
+  if (metric === "cvd") {
+    return record.cvd_risk_30y ?? record.cvd_30y ?? null;
+  }
+  if (metric === "ascvd") {
+    return record.ascvd_risk_30y ?? record.ascvd_30y ?? null;
+  }
+  return record.hf_risk_30y ?? record.hf_30y ?? null;
+}
+
+function formatThirtyYearClinicalRisk(risk: number | null): string {
+  return risk === null ? "No aplica" : formatClinicalRisk(risk);
+}
+
+function formatThirtyYearResearchRisk(risk: number | null): string {
+  return risk === null ? "No aplica" : formatResearchRisk(risk);
 }
 
 export default function DashboardPage() {
@@ -666,9 +702,24 @@ export default function DashboardPage() {
                     <td>{translateSex(record.patient_sex)}</td>
                     <td>{record.physician_name}</td>
                     <td><ArchiveBadge isDeleted={record.is_deleted} /></td>
-                    <td><RiskCell risk={record.cvd_risk} /></td>
-                    <td><RiskCell risk={record.ascvd_risk} /></td>
-                    <td><RiskCell risk={record.hf_risk} /></td>
+                    <td>
+                      <RiskCell
+                        risk10y={record.cvd_risk}
+                        risk30y={getThirtyYearRisk(record, "cvd")}
+                      />
+                    </td>
+                    <td>
+                      <RiskCell
+                        risk10y={record.ascvd_risk}
+                        risk30y={getThirtyYearRisk(record, "ascvd")}
+                      />
+                    </td>
+                    <td>
+                      <RiskCell
+                        risk10y={record.hf_risk}
+                        risk30y={getThirtyYearRisk(record, "hf")}
+                      />
+                    </td>
                     <td>{translateVariant(record.model_variant)}</td>
                   </tr>
                 ))}
@@ -760,9 +811,21 @@ export default function DashboardPage() {
                   />
                   <DetailItem label="Edad" value={String(selectedRecord.patient_age)} />
                   <DetailItem label="Modelo" value={translateVariant(selectedRecord.model_variant)} />
-                  <DetailItem label="CVD" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
-                  <DetailItem label="ASCVD" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
-                  <DetailItem label="HF" value={formatClinicalRisk(selectedRecord.hf_risk)} />
+                  <DetailItem label="CVD 10a" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
+                  <DetailItem
+                    label="CVD 30a"
+                    value={formatThirtyYearClinicalRisk(getThirtyYearRisk(selectedRecord, "cvd"))}
+                  />
+                  <DetailItem label="ASCVD 10a" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
+                  <DetailItem
+                    label="ASCVD 30a"
+                    value={formatThirtyYearClinicalRisk(getThirtyYearRisk(selectedRecord, "ascvd"))}
+                  />
+                  <DetailItem label="HF 10a" value={formatClinicalRisk(selectedRecord.hf_risk)} />
+                  <DetailItem
+                    label="HF 30a"
+                    value={formatThirtyYearClinicalRisk(getThirtyYearRisk(selectedRecord, "hf"))}
+                  />
                   <DetailItem
                     label="Edad cardiovascular equivalente"
                     value={
@@ -864,9 +927,21 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="dashboard-research-grid">
-                    <DetailItem label="CVD exacto" value={formatResearchRisk(selectedRecord.cvd_risk)} />
-                    <DetailItem label="ASCVD exacto" value={formatResearchRisk(selectedRecord.ascvd_risk)} />
-                    <DetailItem label="HF exacto" value={formatResearchRisk(selectedRecord.hf_risk)} />
+                    <DetailItem label="CVD 10y completo" value={formatResearchRisk(selectedRecord.cvd_risk)} />
+                    <DetailItem
+                      label="CVD 30y completo"
+                      value={formatThirtyYearResearchRisk(getThirtyYearRisk(selectedRecord, "cvd"))}
+                    />
+                    <DetailItem label="ASCVD 10y completo" value={formatResearchRisk(selectedRecord.ascvd_risk)} />
+                    <DetailItem
+                      label="ASCVD 30y completo"
+                      value={formatThirtyYearResearchRisk(getThirtyYearRisk(selectedRecord, "ascvd"))}
+                    />
+                    <DetailItem label="HF 10y completo" value={formatResearchRisk(selectedRecord.hf_risk)} />
+                    <DetailItem
+                      label="HF 30y completo"
+                      value={formatThirtyYearResearchRisk(getThirtyYearRisk(selectedRecord, "hf"))}
+                    />
                   </div>
                 </div>
 
@@ -940,18 +1015,33 @@ export default function DashboardPage() {
                           : "No calculada"
                       }
                     />
-                    <ReportItem label="Riesgo global" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
-                    <ReportItem label="ASCVD" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
-                    <ReportItem label="HF" value={formatClinicalRisk(selectedRecord.hf_risk)} />
+                    <ReportItem label="Riesgo global 10a" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
+                    <ReportItem
+                      label="Riesgo global 30a"
+                      value={formatThirtyYearClinicalRisk(getThirtyYearRisk(selectedRecord, "cvd"))}
+                    />
+                    <ReportItem label="ASCVD 10a" value={formatClinicalRisk(selectedRecord.ascvd_risk)} />
+                    <ReportItem
+                      label="ASCVD 30a"
+                      value={formatThirtyYearClinicalRisk(getThirtyYearRisk(selectedRecord, "ascvd"))}
+                    />
+                    <ReportItem label="HF 10a" value={formatClinicalRisk(selectedRecord.hf_risk)} />
+                    <ReportItem
+                      label="HF 30a"
+                      value={formatThirtyYearClinicalRisk(getThirtyYearRisk(selectedRecord, "hf"))}
+                    />
                   </div>
                   <p className="print-metric-note">
                     Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
                   </p>
                   <div className="print-report-section print-report-technical-section">
                     <h2>Valores técnicos calculados</h2>
-                    <p>CVD exacto: {formatResearchRisk(selectedRecord.cvd_risk)}</p>
-                    <p>ASCVD exacto: {formatResearchRisk(selectedRecord.ascvd_risk)}</p>
-                    <p>HF exacto: {formatResearchRisk(selectedRecord.hf_risk)}</p>
+                    <p>CVD 10y completo: {formatResearchRisk(selectedRecord.cvd_risk)}</p>
+                    <p>CVD 30y completo: {formatThirtyYearResearchRisk(getThirtyYearRisk(selectedRecord, "cvd"))}</p>
+                    <p>ASCVD 10y completo: {formatResearchRisk(selectedRecord.ascvd_risk)}</p>
+                    <p>ASCVD 30y completo: {formatThirtyYearResearchRisk(getThirtyYearRisk(selectedRecord, "ascvd"))}</p>
+                    <p>HF 10y completo: {formatResearchRisk(selectedRecord.hf_risk)}</p>
+                    <p>HF 30y completo: {formatThirtyYearResearchRisk(getThirtyYearRisk(selectedRecord, "hf"))}</p>
                   </div>
                   <p className="print-disclaimer">
                     Herramienta de apoyo a la decisión clínica. No reemplaza la valoración médica integral ni el juicio clínico profesional.
@@ -991,11 +1081,17 @@ function Field({ label, name, type, value, onChange, placeholder }: FieldProps) 
   );
 }
 
-function RiskCell({ risk }: { risk: number | null }) {
+function RiskCell({
+  risk10y,
+  risk30y,
+}: {
+  risk10y: number | null;
+  risk30y: number | null;
+}) {
   return (
     <span className="dashboard-risk-cell">
-      <strong>{formatClinicalRisk(risk)}</strong>
-      <small>{formatResearchRisk(risk)}</small>
+      <strong>10a: {formatClinicalRisk(risk10y)}</strong>
+      <small>30a: {formatThirtyYearClinicalRisk(risk30y)}</small>
     </span>
   );
 }
