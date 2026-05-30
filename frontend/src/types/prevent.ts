@@ -38,6 +38,9 @@ export type PreventResult = {
   cvd_risk_30y: number | null;
   ascvd_risk_30y: number | null;
   hf_risk_30y: number | null;
+  cvd_30y?: number | null;
+  ascvd_30y?: number | null;
+  hf_30y?: number | null;
   prevent_age: number | null;
   cvd_category: string | null;
   ascvd_category: string | null;

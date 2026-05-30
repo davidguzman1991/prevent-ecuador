@@ -369,6 +369,16 @@ function getRiskTypeShortLabel(riskType: RiskType): string {
   return "Insuficiencia cardíaca";
 }
 
+function getThirtyYearRisk(result: PreventResult, riskType: RiskType): number | null {
+  if (riskType === "cvd") {
+    return result.cvd_risk_30y ?? result.cvd_30y ?? null;
+  }
+  if (riskType === "ascvd") {
+    return result.ascvd_risk_30y ?? result.ascvd_30y ?? null;
+  }
+  return result.hf_risk_30y ?? result.hf_30y ?? null;
+}
+
 function getMissingRiskMessage(
   result: PreventResult,
   riskType: RiskType,
@@ -410,11 +420,7 @@ export function PreventCalculator() {
         : result.hf_risk
     : null;
   const selectedThirtyYearRisk = result
-    ? riskType === "cvd"
-      ? result.cvd_risk_30y
-      : riskType === "ascvd"
-        ? result.ascvd_risk_30y
-        : result.hf_risk_30y
+    ? getThirtyYearRisk(result, riskType)
     : null;
   const selectedRiskPercentage = selectedRisk;
   const selectedPreventCategory = getPreventRiskCategory(selectedRisk);
@@ -683,13 +689,13 @@ export function PreventCalculator() {
       console.debug("PREVENT risk used for badges", {
         defaultTab: "cvd",
         cvdRisk: data.cvd_risk,
-        cvdRisk30y: data.cvd_risk_30y,
+        cvdRisk30y: getThirtyYearRisk(data, "cvd"),
         cvdCategory: data.cvd_category,
         ascvdRisk: data.ascvd_risk,
-        ascvdRisk30y: data.ascvd_risk_30y,
+        ascvdRisk30y: getThirtyYearRisk(data, "ascvd"),
         ascvdCategory: data.ascvd_category,
         hfRisk: data.hf_risk,
-        hfRisk30y: data.hf_risk_30y,
+        hfRisk30y: getThirtyYearRisk(data, "hf"),
         hfCategory: data.hf_category,
         clinicalRiskCategory: data.clinical_interpretation?.risk_category ?? null,
         lipidAscvdBasis:
@@ -1229,17 +1235,17 @@ export function PreventCalculator() {
               <PrintResultCard
                 label="Riesgo global"
                 value={`10 años: ${formatRiskValue(result.cvd_risk, "cvd")}`}
-                secondary={`30 años: ${formatThirtyYearRiskValue(result.cvd_risk_30y)}`}
+                secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "cvd"))}`}
               />
               <PrintResultCard
                 label="ASCVD"
                 value={`10 años: ${formatRiskValue(result.ascvd_risk, "ascvd")}`}
-                secondary={`30 años: ${formatThirtyYearRiskValue(result.ascvd_risk_30y)}`}
+                secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "ascvd"))}`}
               />
               <PrintResultCard
                 label="HF"
                 value={`10 años: ${formatRiskValue(result.hf_risk, "hf")}`}
-                secondary={`30 años: ${formatThirtyYearRiskValue(result.hf_risk_30y)}`}
+                secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "hf"))}`}
               />
               <PrintResultCard label="Edad cardiovascular equivalente" value={formatPreventAge(result.prevent_age)} />
             </div>
@@ -1275,9 +1281,9 @@ export function PreventCalculator() {
             <p>CVD 10 años exacto: {formatResearchRisk(result.cvd_risk)}</p>
             <p>ASCVD 10 años exacto: {formatResearchRisk(result.ascvd_risk)}</p>
             <p>HF 10 años exacto: {formatResearchRisk(result.hf_risk)}</p>
-            <p>CVD 30 años exacto: {formatResearchRisk(result.cvd_risk_30y)}</p>
-            <p>ASCVD 30 años exacto: {formatResearchRisk(result.ascvd_risk_30y)}</p>
-            <p>HF 30 años exacto: {formatResearchRisk(result.hf_risk_30y)}</p>
+            <p>CVD 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "cvd"))}</p>
+            <p>ASCVD 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "ascvd"))}</p>
+            <p>HF 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "hf"))}</p>
           </section>
 
           <footer className="print-clinical-footer">
