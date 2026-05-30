@@ -11,6 +11,10 @@ import { useRouter } from "next/navigation";
 
 import { DashboardOverview } from "@/components/DashboardOverview";
 import { PinGate } from "@/components/PinGate";
+import {
+  ECUADOR_PROVINCES,
+  getCantonsByProvinceCode,
+} from "@/lib/ecuadorGeo";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 
 const getApiBaseUrl = () => {
@@ -38,6 +42,12 @@ type DashboardListItem = {
   physician_name: string;
   diabetes: boolean;
   smoker: boolean;
+  patient_province_code?: string | null;
+  patient_province_name?: string | null;
+  patient_canton_code?: string | null;
+  patient_canton_name?: string | null;
+  patient_area_type?: string | null;
+  patient_geo_source?: string | null;
   cvd_risk: number | null;
   ascvd_risk: number | null;
   hf_risk: number | null;
@@ -69,6 +79,12 @@ type DashboardDetail = {
   patient_sex: string;
   patient_country: string;
   patient_province: string | null;
+  patient_province_code?: string | null;
+  patient_province_name?: string | null;
+  patient_canton_code?: string | null;
+  patient_canton_name?: string | null;
+  patient_area_type?: string | null;
+  patient_geo_source?: string | null;
   total_cholesterol: number | null;
   hdl_cholesterol: number | null;
   ldl_cholesterol: number | null;
@@ -110,6 +126,9 @@ type DashboardFilters = {
   physician_name: string;
   diabetes: "all" | "true" | "false";
   smoker: "all" | "true" | "false";
+  patient_province_code: string;
+  patient_canton_code: string;
+  patient_area_type: "all" | "urban" | "rural" | "unknown";
   model_variant: "all" | "base" | "uacr" | "hba1c" | "sdi" | "full";
   record_status: "active" | "archived" | "all";
 };
@@ -120,6 +139,9 @@ const initialFilters: DashboardFilters = {
   physician_name: "",
   diabetes: "all",
   smoker: "all",
+  patient_province_code: "",
+  patient_canton_code: "",
+  patient_area_type: "all",
   model_variant: "all",
   record_status: "active",
 };
@@ -137,6 +159,15 @@ function buildQueryString(
   }
   if (filters.diabetes !== "all") params.set("diabetes", filters.diabetes);
   if (filters.smoker !== "all") params.set("smoker", filters.smoker);
+  if (filters.patient_province_code) {
+    params.set("patient_province_code", filters.patient_province_code);
+  }
+  if (filters.patient_canton_code) {
+    params.set("patient_canton_code", filters.patient_canton_code);
+  }
+  if (filters.patient_area_type !== "all") {
+    params.set("patient_area_type", filters.patient_area_type);
+  }
   if (filters.model_variant !== "all") {
     params.set("model_variant", filters.model_variant);
   }
@@ -167,6 +198,64 @@ function translateVariant(variant: string | null): string {
   if (variant === "full") return "FULL";
   if (variant === "base") return "Base";
   return "No especificado";
+}
+
+function translateAreaType(areaType: string | null | undefined): string {
+  if (areaType === "urban") return "Urbana";
+  if (areaType === "rural") return "Rural";
+  if (areaType === "unknown") return "No especificada";
+  return "No especificada";
+}
+
+function translateGeoSource(source: string | null | undefined): string {
+  if (source === "self_reported") return "Reportado por paciente";
+  if (source === "clinic_assigned") return "Asignado por clínica";
+  if (source === "imported") return "Importado";
+  if (source === "unknown") return "No especificada";
+  return "No especificada";
+}
+
+type RecordWithGeography = {
+  patient_province?: string | null;
+  patient_province_code?: string | null;
+  patient_province_name?: string | null;
+  patient_canton_code?: string | null;
+  patient_canton_name?: string | null;
+};
+
+function getProvinceLabel(record: RecordWithGeography): string {
+  const catalogProvince = ECUADOR_PROVINCES.find(
+    (province) => province.code === record.patient_province_code,
+  );
+  return (
+    record.patient_province_name ||
+    catalogProvince?.name ||
+    record.patient_province ||
+    "No especificada"
+  );
+}
+
+function getCantonLabel(record: RecordWithGeography): string {
+  const catalogCanton = getCantonsByProvinceCode(record.patient_province_code ?? "").find(
+    (canton) => canton.code === record.patient_canton_code,
+  );
+  return record.patient_canton_name || catalogCanton?.name || "No especificado";
+}
+
+function formatGeoWithCode(label: string, code: string | null | undefined): string {
+  return code ? `${label} (${code})` : label;
+}
+
+function formatPatientLocation(record: RecordWithGeography): string {
+  const province = getProvinceLabel(record);
+  const canton = getCantonLabel(record);
+  if (province === "No especificada" && canton === "No especificado") {
+    return "No especificada";
+  }
+  if (canton === "No especificado") {
+    return province;
+  }
+  return `${province} / ${canton}`;
 }
 
 type RiskMetric = "cvd" | "ascvd" | "hf";
@@ -219,6 +308,10 @@ export default function DashboardPage() {
   const totalPages = useMemo(
     () => Math.max(Math.ceil(total / pageSize), 1),
     [pageSize, total],
+  );
+  const filterCantonOptions = useMemo(
+    () => getCantonsByProvinceCode(filters.patient_province_code),
+    [filters.patient_province_code],
   );
 
   const getAdminHeaders = (key = adminApiKey) => ({
@@ -351,7 +444,11 @@ export default function DashboardPage() {
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target;
-    setFilters((current) => ({ ...current, [name]: value }));
+    setFilters((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === "patient_province_code" ? { patient_canton_code: "" } : {}),
+    }));
   };
 
   const handleApplyFilters = async (event: FormEvent<HTMLFormElement>) => {
@@ -601,6 +698,50 @@ export default function DashboardPage() {
                 ]}
               />
               <SelectField
+                label="Provincia"
+                name="patient_province_code"
+                value={filters.patient_province_code}
+                onChange={handleFilterChange}
+                options={[
+                  { label: "Todas", value: "" },
+                  ...ECUADOR_PROVINCES.map((province) => ({
+                    label: province.name,
+                    value: province.code,
+                  })),
+                ]}
+              />
+              <SelectField
+                label="Cantón"
+                name="patient_canton_code"
+                value={filters.patient_canton_code}
+                onChange={handleFilterChange}
+                disabled={!filters.patient_province_code}
+                options={[
+                  {
+                    label: filters.patient_province_code
+                      ? "Todos"
+                      : "Seleccione provincia",
+                    value: "",
+                  },
+                  ...filterCantonOptions.map((canton) => ({
+                    label: canton.name,
+                    value: canton.code,
+                  })),
+                ]}
+              />
+              <SelectField
+                label="Zona"
+                name="patient_area_type"
+                value={filters.patient_area_type}
+                onChange={handleFilterChange}
+                options={[
+                  { label: "Todas", value: "all" },
+                  { label: "Urbana", value: "urban" },
+                  { label: "Rural", value: "rural" },
+                  { label: "No especificada", value: "unknown" },
+                ]}
+              />
+              <SelectField
                 label="Modelo"
                 name="model_variant"
                 value={filters.model_variant}
@@ -677,6 +818,7 @@ export default function DashboardPage() {
                   <th>Sexo</th>
                   <th>Médico</th>
                   <th>Estado</th>
+                  <th>Ubicación</th>
                   <th>Riesgo CVD</th>
                   <th>Riesgo ASCVD</th>
                   <th>Riesgo HF</th>
@@ -686,7 +828,7 @@ export default function DashboardPage() {
               <tbody>
                 {records.length === 0 && !isLoading ? (
                   <tr>
-                    <td colSpan={9} className="dashboard-empty">
+                    <td colSpan={10} className="dashboard-empty">
                       No hay registros para los filtros seleccionados.
                     </td>
                   </tr>
@@ -702,6 +844,7 @@ export default function DashboardPage() {
                     <td>{translateSex(record.patient_sex)}</td>
                     <td>{record.physician_name}</td>
                     <td><ArchiveBadge isDeleted={record.is_deleted} /></td>
+                    <td>{formatPatientLocation(record)}</td>
                     <td>
                       <RiskCell
                         risk10y={record.cvd_risk}
@@ -811,6 +954,28 @@ export default function DashboardPage() {
                   />
                   <DetailItem label="Edad" value={String(selectedRecord.patient_age)} />
                   <DetailItem label="Modelo" value={translateVariant(selectedRecord.model_variant)} />
+                  <DetailItem
+                    label="Provincia del paciente"
+                    value={formatGeoWithCode(
+                      getProvinceLabel(selectedRecord),
+                      selectedRecord.patient_province_code,
+                    )}
+                  />
+                  <DetailItem
+                    label="Cantón del paciente"
+                    value={formatGeoWithCode(
+                      getCantonLabel(selectedRecord),
+                      selectedRecord.patient_canton_code,
+                    )}
+                  />
+                  <DetailItem
+                    label="Zona de residencia"
+                    value={translateAreaType(selectedRecord.patient_area_type)}
+                  />
+                  <DetailItem
+                    label="Fuente geográfica"
+                    value={translateGeoSource(selectedRecord.patient_geo_source)}
+                  />
                   <DetailItem label="CVD 10a" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
                   <DetailItem
                     label="CVD 30a"
@@ -963,6 +1128,28 @@ export default function DashboardPage() {
                     <ReportItem label="Edad" value={`${selectedRecord.patient_age} años`} />
                     <ReportItem label="Sexo" value={translateSex(selectedRecord.patient_sex)} />
                     <ReportItem
+                      label="Provincia"
+                      value={formatGeoWithCode(
+                        getProvinceLabel(selectedRecord),
+                        selectedRecord.patient_province_code,
+                      )}
+                    />
+                    <ReportItem
+                      label="Cantón"
+                      value={formatGeoWithCode(
+                        getCantonLabel(selectedRecord),
+                        selectedRecord.patient_canton_code,
+                      )}
+                    />
+                    <ReportItem
+                      label="Zona"
+                      value={translateAreaType(selectedRecord.patient_area_type)}
+                    />
+                    <ReportItem
+                      label="Fuente geográfica"
+                      value={translateGeoSource(selectedRecord.patient_geo_source)}
+                    />
+                    <ReportItem
                       label="Colesterol total"
                       value={
                         selectedRecord.total_cholesterol !== null
@@ -1110,13 +1297,27 @@ type SelectFieldProps = {
   value: string;
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   options: Array<{ label: string; value: string }>;
+  disabled?: boolean;
 };
 
-function SelectField({ label, name, value, onChange, options }: SelectFieldProps) {
+function SelectField({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  disabled,
+}: SelectFieldProps) {
   return (
     <label className="prevent-field">
       <span className="prevent-field-label">{label}</span>
-      <select className="prevent-input" name={name} value={value} onChange={onChange}>
+      <select
+        className="prevent-input"
+        name={name}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+      >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

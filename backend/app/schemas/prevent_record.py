@@ -4,7 +4,11 @@ from datetime import date, datetime
 from typing import Any, Literal, Optional
 from uuid import UUID
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+
+
+PatientAreaType = Literal["urban", "rural", "unknown"]
+PatientGeoSource = Literal["self_reported", "clinic_assigned", "imported", "unknown"]
 
 
 class PreventRecordBase(BaseModel):
@@ -22,6 +26,12 @@ class PreventRecordBase(BaseModel):
     )
     patient_country: str = "Ecuador"
     patient_province: str | None = None
+    patient_province_code: str | None = None
+    patient_province_name: str | None = None
+    patient_canton_code: str | None = None
+    patient_canton_name: str | None = None
+    patient_area_type: PatientAreaType | None = None
+    patient_geo_source: PatientGeoSource | None = None
 
     total_cholesterol: float | None = None
     hdl_cholesterol: float | None = Field(
@@ -62,6 +72,18 @@ class PreventRecordBase(BaseModel):
 
     notes: str | None = None
     input_payload_json: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def validate_patient_geography(self) -> "PreventRecordBase":
+        if self.patient_canton_code and not self.patient_province_code:
+            raise ValueError("patient_canton_code requires patient_province_code")
+        if self.patient_canton_code and not self.patient_canton_name:
+            raise ValueError("patient_canton_code requires patient_canton_name")
+        if self.patient_province_code and not self.patient_province_name:
+            raise ValueError("patient_province_code requires patient_province_name")
+        if self.patient_province is None and self.patient_province_name is not None:
+            self.patient_province = self.patient_province_name
+        return self
 
 
 class PreventRecordCreate(PreventRecordBase):
@@ -121,6 +143,12 @@ class PreventRecordCreateResponse(BaseModel):
     clinical_interpretation: dict[str, Any] | None = None
     debug: dict[str, Any] | None = None
     message: str
+    patient_province_code: str | None = None
+    patient_province_name: str | None = None
+    patient_canton_code: str | None = None
+    patient_canton_name: str | None = None
+    patient_area_type: PatientAreaType | None = None
+    patient_geo_source: PatientGeoSource | None = None
 
 
 class PreventRecordListItem(BaseModel):
@@ -133,6 +161,12 @@ class PreventRecordListItem(BaseModel):
     physician_name: str
     diabetes: bool
     smoker: bool
+    patient_province_code: str | None = None
+    patient_province_name: str | None = None
+    patient_canton_code: str | None = None
+    patient_canton_name: str | None = None
+    patient_area_type: PatientAreaType | None = None
+    patient_geo_source: PatientGeoSource | None = None
     cvd_risk: float | None
     ascvd_risk: float | None
     hf_risk: float | None
@@ -161,6 +195,12 @@ class PreventRecordDetailResponse(BaseModel):
     patient_sex: str
     patient_country: str
     patient_province: str | None
+    patient_province_code: str | None
+    patient_province_name: str | None
+    patient_canton_code: str | None
+    patient_canton_name: str | None
+    patient_area_type: PatientAreaType | None
+    patient_geo_source: PatientGeoSource | None
     total_cholesterol: float | None
     hdl_cholesterol: float | None
     ldl_cholesterol: float | None
@@ -210,6 +250,10 @@ class PreventRecordListFilters(BaseModel):
     physician_name: str | None = None
     diabetes: bool | None = None
     smoker: bool | None = None
+    patient_province_code: str | None = None
+    patient_canton_code: str | None = None
+    patient_area_type: PatientAreaType | None = None
+    patient_geo_source: PatientGeoSource | None = None
     model_variant: Literal["base", "uacr", "hba1c", "sdi", "full"] | None = None
     record_status: Literal["active", "archived", "all"] = "active"
     page: int = 1

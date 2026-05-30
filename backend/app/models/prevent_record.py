@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -14,7 +14,18 @@ from app.core.database import Base
 
 class PreventRecord(Base):
     __tablename__ = "prevent_records"
-    __table_args__ = {"schema": "public"}
+    __table_args__ = (
+        CheckConstraint(
+            "patient_area_type IS NULL OR patient_area_type IN ('urban', 'rural', 'unknown')",
+            name="ck_prevent_records_patient_area_type",
+        ),
+        CheckConstraint(
+            "patient_geo_source IS NULL OR patient_geo_source IN "
+            "('self_reported', 'clinic_assigned', 'imported', 'unknown')",
+            name="ck_prevent_records_patient_geo_source",
+        ),
+        {"schema": "public"},
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -52,6 +63,12 @@ class PreventRecord(Base):
         server_default=text("'Ecuador'"),
     )
     patient_province: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    patient_province_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    patient_province_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    patient_canton_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    patient_canton_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    patient_area_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    patient_geo_source: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     total_cholesterol: Mapped[float | None] = mapped_column(Float, nullable=True)
     hdl_cholesterol: Mapped[float | None] = mapped_column(Float, nullable=True)

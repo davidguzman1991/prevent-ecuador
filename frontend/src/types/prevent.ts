@@ -1,6 +1,8 @@
 export type RiskType = "cvd" | "ascvd" | "hf";
 
 export type ModelVariant = "auto" | "base" | "uacr" | "hba1c" | "sdi" | "full";
+export type PatientAreaType = "urban" | "rural" | "unknown";
+export type PatientGeoSource = "self_reported" | "clinic_assigned" | "imported" | "unknown";
 
 export type ValidatedFieldName =
   | "age"
@@ -26,6 +28,10 @@ export type FormState = {
   smoker: boolean;
   antihypertensive_use: boolean;
   statin_use: boolean;
+  patient_province_code: string;
+  patient_canton_code: string;
+  patient_area_type: PatientAreaType;
+  patient_geo_source: PatientGeoSource;
   physician_name: string;
   physician_specialty: string;
 };

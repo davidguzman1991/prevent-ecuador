@@ -7,6 +7,10 @@ import { PrivacyConsentModal } from "@/components/PrivacyConsentModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ValidationInfoCard } from "@/components/ValidationInfoCard";
 import { FormSection } from "@/components/calculator/FormSection";
+import {
+  ECUADOR_PROVINCES,
+  getCantonsByProvinceCode,
+} from "@/lib/ecuadorGeo";
 import { getApiBaseUrl } from "@/lib/api";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 import type {
@@ -106,6 +110,10 @@ const initialFormState: FormState = {
   smoker: false,
   antihypertensive_use: false,
   statin_use: false,
+  patient_province_code: "",
+  patient_canton_code: "",
+  patient_area_type: "unknown",
+  patient_geo_source: "self_reported",
   physician_name: "",
   physician_specialty: "",
 };
@@ -419,6 +427,13 @@ export function PreventCalculator() {
         ? result.ascvd_risk
         : result.hf_risk
     : null;
+  const selectedProvince = ECUADOR_PROVINCES.find(
+    (province) => province.code === form.patient_province_code,
+  );
+  const cantonOptions = getCantonsByProvinceCode(form.patient_province_code);
+  const selectedCanton = cantonOptions.find(
+    (canton) => canton.code === form.patient_canton_code,
+  );
   const selectedThirtyYearRisk = result
     ? getThirtyYearRisk(result, riskType)
     : null;
@@ -458,6 +473,33 @@ export function PreventCalculator() {
     if (result) {
       console.debug("PREVENT previous result cleared after visible form change", {
         changedField: name,
+        previousRecordId: recordId,
+        previousResult: result,
+      });
+      setResult(null);
+      setRecordId(null);
+      setRiskType("cvd");
+      setHasUncalculatedChanges(true);
+      setSubmitFeedback("");
+    }
+  };
+
+  const handleProvinceChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextFormState = {
+      ...form,
+      patient_province_code: event.target.value,
+      patient_canton_code: "",
+    } as FormState;
+
+    setForm(nextFormState);
+    console.debug("PREVENT formState visible", {
+      changedField: "patient_province_code",
+      formState: nextFormState,
+    });
+
+    if (result) {
+      console.debug("PREVENT previous result cleared after visible form change", {
+        changedField: "patient_province_code",
         previousRecordId: recordId,
         previousResult: result,
       });
@@ -662,7 +704,17 @@ export function PreventCalculator() {
       statin_use: form.statin_use,
       physician_name: form.physician_name.trim(),
       physician_specialty: form.physician_specialty.trim(),
+      patient_area_type: form.patient_area_type,
+      patient_geo_source: form.patient_geo_source,
     };
+    if (selectedProvince) {
+      payload.patient_province_code = selectedProvince.code;
+      payload.patient_province_name = selectedProvince.name;
+    }
+    if (selectedCanton) {
+      payload.patient_canton_code = selectedCanton.code;
+      payload.patient_canton_name = selectedCanton.name;
+    }
     if (manualVariantSelection && form.model_variant !== "auto") {
       payload.model_variant = form.model_variant;
     }
@@ -974,6 +1026,69 @@ export function PreventCalculator() {
                   name="statin_use"
                   checked={form.statin_use}
                   onChange={handleInputChange}
+                />
+              </div>
+            </FormSection>
+
+            <FormSection
+              title="Datos geográficos para análisis poblacional"
+              description="Estos datos permiten analizar la distribución territorial del riesgo cardio-reno-metabólico. No reemplazan la evaluación clínica individual."
+            >
+              <div className="prevent-form-grid">
+                <SelectField
+                  label="Provincia del paciente"
+                  name="patient_province_code"
+                  value={form.patient_province_code}
+                  onChange={handleProvinceChange}
+                  options={[
+                    { label: "No especificada", value: "" },
+                    ...ECUADOR_PROVINCES.map((province) => ({
+                      label: province.name,
+                      value: province.code,
+                    })),
+                  ]}
+                />
+                <SelectField
+                  label="Cantón del paciente"
+                  name="patient_canton_code"
+                  value={form.patient_canton_code}
+                  onChange={handleInputChange}
+                  disabled={!form.patient_province_code}
+                  options={[
+                    {
+                      label: form.patient_province_code
+                        ? "No especificado"
+                        : "Seleccione provincia primero",
+                      value: "",
+                    },
+                    ...cantonOptions.map((canton) => ({
+                      label: canton.name,
+                      value: canton.code,
+                    })),
+                  ]}
+                />
+                <SelectField
+                  label="Zona de residencia"
+                  name="patient_area_type"
+                  value={form.patient_area_type}
+                  onChange={handleInputChange}
+                  options={[
+                    { label: "No especificado", value: "unknown" },
+                    { label: "Urbana", value: "urban" },
+                    { label: "Rural", value: "rural" },
+                  ]}
+                />
+                <SelectField
+                  label="Fuente del dato geográfico"
+                  name="patient_geo_source"
+                  value={form.patient_geo_source}
+                  onChange={handleInputChange}
+                  options={[
+                    { label: "Reportado por paciente", value: "self_reported" },
+                    { label: "Asignado por clínica", value: "clinic_assigned" },
+                    { label: "Importado", value: "imported" },
+                    { label: "No especificado", value: "unknown" },
+                  ]}
                 />
               </div>
             </FormSection>
@@ -1896,6 +2011,7 @@ type SelectFieldProps = {
   help?: string;
   options: Array<{ label: string; value: string }>;
   required?: boolean;
+  disabled?: boolean;
 };
 
 function SelectField({
@@ -1906,6 +2022,7 @@ function SelectField({
   help,
   options,
   required,
+  disabled,
 }: SelectFieldProps) {
   return (
     <label className="prevent-field">
@@ -1920,6 +2037,7 @@ function SelectField({
           value={value}
           onChange={onChange}
           required={required}
+          disabled={disabled}
         >
           {options.map((option) => (
             <option key={option.value || option.label} value={option.value}>

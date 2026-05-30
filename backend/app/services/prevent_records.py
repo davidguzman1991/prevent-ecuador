@@ -66,6 +66,12 @@ PREVENT_EXPORT_HEADERS = [
     "guia_insuficiencia_cardiaca",
     "base_renal_cardiorrenal",
     "guia_renal_cardiorrenal",
+    "patient_province_code",
+    "patient_province_name",
+    "patient_canton_code",
+    "patient_canton_name",
+    "patient_area_type",
+    "patient_geo_source",
 ]
 
 
@@ -281,6 +287,12 @@ def _build_prevent_export_row(record: PreventRecord) -> list[object]:
         traceability["guia_insuficiencia_cardiaca"],
         traceability["base_renal_cardiorrenal"],
         traceability["guia_renal_cardiorrenal"],
+        record.patient_province_code,
+        record.patient_province_name,
+        record.patient_canton_code,
+        record.patient_canton_name,
+        record.patient_area_type,
+        record.patient_geo_source,
     ]
 
 
@@ -337,6 +349,14 @@ def _build_prevent_records_query(
         query = query.filter(PreventRecord.diabetes == filters.diabetes)
     if filters.smoker is not None:
         query = query.filter(PreventRecord.smoker == filters.smoker)
+    if filters.patient_province_code:
+        query = query.filter(PreventRecord.patient_province_code == filters.patient_province_code)
+    if filters.patient_canton_code:
+        query = query.filter(PreventRecord.patient_canton_code == filters.patient_canton_code)
+    if filters.patient_area_type:
+        query = query.filter(PreventRecord.patient_area_type == filters.patient_area_type)
+    if filters.patient_geo_source:
+        query = query.filter(PreventRecord.patient_geo_source == filters.patient_geo_source)
     if filters.model_variant is not None:
         query = query.filter(
             PreventRecord.input_payload_json["model_variant"].astext == filters.model_variant,
@@ -543,6 +563,12 @@ def create_prevent_record(
         "clinical_interpretation": clinical_interpretation,
         "debug": evaluation_debug,
         "message": "Prevent risk calculated successfully",
+        "patient_province_code": record.patient_province_code,
+        "patient_province_name": record.patient_province_name,
+        "patient_canton_code": record.patient_canton_code,
+        "patient_canton_name": record.patient_canton_name,
+        "patient_area_type": record.patient_area_type,
+        "patient_geo_source": record.patient_geo_source,
     }
     logger.info("PREVENT response payload: %s", response_payload)
     return PreventRecordCreateResponse(
@@ -566,6 +592,12 @@ def create_prevent_record(
         clinical_interpretation=clinical_interpretation,
         debug=evaluation_debug,
         message="Prevent risk calculated successfully",
+        patient_province_code=record.patient_province_code,
+        patient_province_name=record.patient_province_name,
+        patient_canton_code=record.patient_canton_code,
+        patient_canton_name=record.patient_canton_name,
+        patient_area_type=record.patient_area_type,
+        patient_geo_source=record.patient_geo_source,
     )
 
 
@@ -635,6 +667,12 @@ def list_prevent_records(
                 physician_name=record.physician_name,
                 diabetes=record.diabetes,
                 smoker=record.smoker,
+                patient_province_code=record.patient_province_code,
+                patient_province_name=record.patient_province_name,
+                patient_canton_code=record.patient_canton_code,
+                patient_canton_name=record.patient_canton_name,
+                patient_area_type=record.patient_area_type,
+                patient_geo_source=record.patient_geo_source,
                 cvd_risk=extracted["cvd_risk"],
                 ascvd_risk=extracted["ascvd_risk"],
                 hf_risk=extracted["hf_risk"],
@@ -674,6 +712,12 @@ def get_prevent_record_detail(
         patient_sex=record.patient_sex,
         patient_country=record.patient_country,
         patient_province=record.patient_province,
+        patient_province_code=record.patient_province_code,
+        patient_province_name=record.patient_province_name,
+        patient_canton_code=record.patient_canton_code,
+        patient_canton_name=record.patient_canton_name,
+        patient_area_type=record.patient_area_type,
+        patient_geo_source=record.patient_geo_source,
         total_cholesterol=record.total_cholesterol,
         hdl_cholesterol=record.hdl_cholesterol,
         ldl_cholesterol=record.ldl_cholesterol,
