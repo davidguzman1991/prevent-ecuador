@@ -295,6 +295,12 @@ function formatRiskValue(risk: number | null, riskType: RiskType): string {
   return formatClinicalRisk(risk);
 }
 
+function formatThirtyYearRiskValue(risk: number | null): string {
+  return risk !== null
+    ? formatClinicalRisk(risk)
+    : "No aplicable por rango de edad oficial PREVENT";
+}
+
 function translateRiskCategory(category: string): string {
   const normalizedCategory = category.trim().toLowerCase();
 
@@ -402,6 +408,13 @@ export function PreventCalculator() {
       : riskType === "ascvd"
         ? result.ascvd_risk
         : result.hf_risk
+    : null;
+  const selectedThirtyYearRisk = result
+    ? riskType === "cvd"
+      ? result.cvd_risk_30y
+      : riskType === "ascvd"
+        ? result.ascvd_risk_30y
+        : result.hf_risk_30y
     : null;
   const selectedRiskPercentage = selectedRisk;
   const selectedPreventCategory = getPreventRiskCategory(selectedRisk);
@@ -670,10 +683,13 @@ export function PreventCalculator() {
       console.debug("PREVENT risk used for badges", {
         defaultTab: "cvd",
         cvdRisk: data.cvd_risk,
+        cvdRisk30y: data.cvd_risk_30y,
         cvdCategory: data.cvd_category,
         ascvdRisk: data.ascvd_risk,
+        ascvdRisk30y: data.ascvd_risk_30y,
         ascvdCategory: data.ascvd_category,
         hfRisk: data.hf_risk,
+        hfRisk30y: data.hf_risk_30y,
         hfCategory: data.hf_category,
         clinicalRiskCategory: data.clinical_interpretation?.risk_category ?? null,
         lipidAscvdBasis:
@@ -1109,6 +1125,7 @@ export function PreventCalculator() {
                   : undefined
               }
               label={getRiskTypeShortLabel(riskType)}
+              thirtyYearRisk={selectedThirtyYearRisk}
             />
 
             <CardiovascularAgeCard
@@ -1209,9 +1226,21 @@ export function PreventCalculator() {
 
           <section className="print-report-section">
             <div className="print-report-results">
-              <PrintResultCard label="Riesgo global" value={formatRiskValue(result.cvd_risk, "cvd")} />
-              <PrintResultCard label="ASCVD" value={formatRiskValue(result.ascvd_risk, "ascvd")} />
-              <PrintResultCard label="HF" value={formatRiskValue(result.hf_risk, "hf")} />
+              <PrintResultCard
+                label="Riesgo global"
+                value={`10 años: ${formatRiskValue(result.cvd_risk, "cvd")}`}
+                secondary={`30 años: ${formatThirtyYearRiskValue(result.cvd_risk_30y)}`}
+              />
+              <PrintResultCard
+                label="ASCVD"
+                value={`10 años: ${formatRiskValue(result.ascvd_risk, "ascvd")}`}
+                secondary={`30 años: ${formatThirtyYearRiskValue(result.ascvd_risk_30y)}`}
+              />
+              <PrintResultCard
+                label="HF"
+                value={`10 años: ${formatRiskValue(result.hf_risk, "hf")}`}
+                secondary={`30 años: ${formatThirtyYearRiskValue(result.hf_risk_30y)}`}
+              />
               <PrintResultCard label="Edad cardiovascular equivalente" value={formatPreventAge(result.prevent_age)} />
             </div>
             <p className="print-metric-note">
@@ -1243,9 +1272,12 @@ export function PreventCalculator() {
 
           <section className="print-report-section print-report-technical-section">
             <h2>Valores técnicos calculados</h2>
-            <p>CVD exacto: {formatResearchRisk(result.cvd_risk)}</p>
-            <p>ASCVD exacto: {formatResearchRisk(result.ascvd_risk)}</p>
-            <p>HF exacto: {formatResearchRisk(result.hf_risk)}</p>
+            <p>CVD 10 años exacto: {formatResearchRisk(result.cvd_risk)}</p>
+            <p>ASCVD 10 años exacto: {formatResearchRisk(result.ascvd_risk)}</p>
+            <p>HF 10 años exacto: {formatResearchRisk(result.hf_risk)}</p>
+            <p>CVD 30 años exacto: {formatResearchRisk(result.cvd_risk_30y)}</p>
+            <p>ASCVD 30 años exacto: {formatResearchRisk(result.ascvd_risk_30y)}</p>
+            <p>HF 30 años exacto: {formatResearchRisk(result.hf_risk_30y)}</p>
           </section>
 
           <footer className="print-clinical-footer">
@@ -1273,12 +1305,14 @@ function RiskGauge({
   isCalculated,
   emptyStateLabel,
   label,
+  thirtyYearRisk,
 }: {
   percentage: number | null;
   category: string | null;
   isCalculated: boolean;
   emptyStateLabel?: string;
   label: string;
+  thirtyYearRisk: number | null;
 }) {
   const clampedPercentage = percentage === null ? 0 : Math.min(Math.max(percentage, 0), 100);
   const categoryLabel = category
@@ -1315,6 +1349,11 @@ function RiskGauge({
         <strong>{percentage !== null ? formatClinicalRisk(percentage) : "--"}</strong>
         <span>{label} a 10 años</span>
       </div>
+      <p className="prevent-gauge-context">
+        Riesgo a 10 años: {percentage !== null ? formatClinicalRisk(percentage) : isCalculated ? "No calculable" : "Pendiente"}
+        <br />
+        Riesgo a 30 años: {isCalculated ? formatThirtyYearRiskValue(thirtyYearRisk) : "Pendiente"}
+      </p>
       <p className="prevent-gauge-context">
         Categorías PREVENT clásicas: Bajo &lt;5%, Límite 5-7.4%,
         Intermedio 7.5-19.9%, Alto ≥20%.
@@ -1512,11 +1551,20 @@ function EcuadorIdentity({ showFlag = true }: { showFlag?: boolean }) {
   );
 }
 
-function PrintResultCard({ label, value }: { label: string; value: string }) {
+function PrintResultCard({
+  label,
+  value,
+  secondary,
+}: {
+  label: string;
+  value: string;
+  secondary?: string;
+}) {
   return (
     <div className="print-result-card">
       <span>{label}</span>
       <strong>{value}</strong>
+      {secondary ? <small>{secondary}</small> : null}
     </div>
   );
 }
