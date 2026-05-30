@@ -24,6 +24,33 @@ class PreventRecord(Base):
             "('self_reported', 'clinic_assigned', 'imported', 'unknown')",
             name="ck_prevent_records_patient_geo_source",
         ),
+        CheckConstraint(
+            "patient_health_coverage IS NULL OR patient_health_coverage IN "
+            "('iess', 'msp', 'private', 'issfa', 'isspol', 'none', 'unknown')",
+            name="ck_prevent_records_patient_health_coverage",
+        ),
+        CheckConstraint(
+            "patient_education_level IS NULL OR patient_education_level IN "
+            "('no_schooling', 'primary', 'secondary', 'higher', 'postgraduate', 'unknown')",
+            name="ck_prevent_records_patient_education_level",
+        ),
+        CheckConstraint(
+            "patient_employment_status IS NULL OR patient_employment_status IN "
+            "('employed', 'self_employed', 'unemployed', 'retired', "
+            "'homemaker', 'student', 'other', 'unknown')",
+            name="ck_prevent_records_patient_employment_status",
+        ),
+        CheckConstraint(
+            "patient_ethnicity IS NULL OR patient_ethnicity IN "
+            "('mestizo', 'montubio', 'afro_ecuadorian', 'indigenous', "
+            "'white', 'other', 'unknown')",
+            name="ck_prevent_records_patient_ethnicity",
+        ),
+        CheckConstraint(
+            "patient_socioeconomic_level IS NULL OR patient_socioeconomic_level IN "
+            "('low', 'middle', 'high', 'prefer_not_to_answer')",
+            name="ck_prevent_records_patient_socioeconomic_level",
+        ),
         {"schema": "public"},
     )
 
@@ -69,6 +96,11 @@ class PreventRecord(Base):
     patient_canton_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     patient_area_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     patient_geo_source: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    patient_health_coverage: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    patient_education_level: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    patient_employment_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    patient_ethnicity: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    patient_socioeconomic_level: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     total_cholesterol: Mapped[float | None] = mapped_column(Float, nullable=True)
     hdl_cholesterol: Mapped[float | None] = mapped_column(Float, nullable=True)

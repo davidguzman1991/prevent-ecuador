@@ -11,6 +11,13 @@ import {
   ECUADOR_PROVINCES,
   getCantonsByProvinceCode,
 } from "@/lib/ecuadorGeo";
+import {
+  EDUCATION_LEVEL_OPTIONS,
+  EMPLOYMENT_STATUS_OPTIONS,
+  ETHNICITY_OPTIONS,
+  HEALTH_COVERAGE_OPTIONS,
+  SOCIOECONOMIC_LEVEL_OPTIONS,
+} from "@/lib/socialDeterminants";
 import { getApiBaseUrl } from "@/lib/api";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 import type {
@@ -114,6 +121,11 @@ const initialFormState: FormState = {
   patient_canton_code: "",
   patient_area_type: "unknown",
   patient_geo_source: "self_reported",
+  patient_health_coverage: "unknown",
+  patient_education_level: "unknown",
+  patient_employment_status: "unknown",
+  patient_ethnicity: "unknown",
+  patient_socioeconomic_level: "prefer_not_to_answer",
   physician_name: "",
   physician_specialty: "",
 };
@@ -706,6 +718,11 @@ export function PreventCalculator() {
       physician_specialty: form.physician_specialty.trim(),
       patient_area_type: form.patient_area_type,
       patient_geo_source: form.patient_geo_source,
+      patient_health_coverage: form.patient_health_coverage,
+      patient_education_level: form.patient_education_level,
+      patient_employment_status: form.patient_employment_status,
+      patient_ethnicity: form.patient_ethnicity,
+      patient_socioeconomic_level: form.patient_socioeconomic_level,
     };
     if (selectedProvince) {
       payload.patient_province_code = selectedProvince.code;
@@ -1089,6 +1106,49 @@ export function PreventCalculator() {
                     { label: "Importado", value: "imported" },
                     { label: "No especificado", value: "unknown" },
                   ]}
+                />
+              </div>
+            </FormSection>
+
+            <FormSection
+              title="Determinantes sociales de salud (Opcional)"
+              description="Variables para análisis epidemiológico y métricas poblacionales futuras. No modifican el cálculo PREVENT individual."
+            >
+              <div className="prevent-form-grid">
+                <SelectField
+                  label="Cobertura sanitaria habitual"
+                  name="patient_health_coverage"
+                  value={form.patient_health_coverage}
+                  onChange={handleInputChange}
+                  options={HEALTH_COVERAGE_OPTIONS}
+                />
+                <SelectField
+                  label="Nivel educativo"
+                  name="patient_education_level"
+                  value={form.patient_education_level}
+                  onChange={handleInputChange}
+                  options={EDUCATION_LEVEL_OPTIONS}
+                />
+                <SelectField
+                  label="Situación laboral"
+                  name="patient_employment_status"
+                  value={form.patient_employment_status}
+                  onChange={handleInputChange}
+                  options={EMPLOYMENT_STATUS_OPTIONS}
+                />
+                <SelectField
+                  label="Autoidentificación étnica"
+                  name="patient_ethnicity"
+                  value={form.patient_ethnicity}
+                  onChange={handleInputChange}
+                  options={ETHNICITY_OPTIONS}
+                />
+                <SelectField
+                  label="Nivel socioeconómico percibido"
+                  name="patient_socioeconomic_level"
+                  value={form.patient_socioeconomic_level}
+                  onChange={handleInputChange}
+                  options={SOCIOECONOMIC_LEVEL_OPTIONS}
                 />
               </div>
             </FormSection>

@@ -16,6 +16,14 @@ import {
   getCantonsByProvinceCode,
 } from "@/lib/ecuadorGeo";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
+import {
+  EDUCATION_LEVEL_OPTIONS,
+  EMPLOYMENT_STATUS_OPTIONS,
+  ETHNICITY_OPTIONS,
+  HEALTH_COVERAGE_OPTIONS,
+  SOCIOECONOMIC_LEVEL_OPTIONS,
+  optionLabel,
+} from "@/lib/socialDeterminants";
 
 const getApiBaseUrl = () => {
   const apiBaseUrl =
@@ -48,6 +56,11 @@ type DashboardListItem = {
   patient_canton_name?: string | null;
   patient_area_type?: string | null;
   patient_geo_source?: string | null;
+  patient_health_coverage?: string | null;
+  patient_education_level?: string | null;
+  patient_employment_status?: string | null;
+  patient_ethnicity?: string | null;
+  patient_socioeconomic_level?: string | null;
   cvd_risk: number | null;
   ascvd_risk: number | null;
   hf_risk: number | null;
@@ -85,6 +98,11 @@ type DashboardDetail = {
   patient_canton_name?: string | null;
   patient_area_type?: string | null;
   patient_geo_source?: string | null;
+  patient_health_coverage?: string | null;
+  patient_education_level?: string | null;
+  patient_employment_status?: string | null;
+  patient_ethnicity?: string | null;
+  patient_socioeconomic_level?: string | null;
   total_cholesterol: number | null;
   hdl_cholesterol: number | null;
   ldl_cholesterol: number | null;
@@ -129,6 +147,9 @@ type DashboardFilters = {
   patient_province_code: string;
   patient_canton_code: string;
   patient_area_type: "all" | "urban" | "rural" | "unknown";
+  patient_health_coverage: string;
+  patient_education_level: string;
+  patient_employment_status: string;
   model_variant: "all" | "base" | "uacr" | "hba1c" | "sdi" | "full";
   record_status: "active" | "archived" | "all";
 };
@@ -142,6 +163,9 @@ const initialFilters: DashboardFilters = {
   patient_province_code: "",
   patient_canton_code: "",
   patient_area_type: "all",
+  patient_health_coverage: "all",
+  patient_education_level: "all",
+  patient_employment_status: "all",
   model_variant: "all",
   record_status: "active",
 };
@@ -167,6 +191,15 @@ function buildQueryString(
   }
   if (filters.patient_area_type !== "all") {
     params.set("patient_area_type", filters.patient_area_type);
+  }
+  if (filters.patient_health_coverage !== "all") {
+    params.set("patient_health_coverage", filters.patient_health_coverage);
+  }
+  if (filters.patient_education_level !== "all") {
+    params.set("patient_education_level", filters.patient_education_level);
+  }
+  if (filters.patient_employment_status !== "all") {
+    params.set("patient_employment_status", filters.patient_employment_status);
   }
   if (filters.model_variant !== "all") {
     params.set("model_variant", filters.model_variant);
@@ -213,6 +246,40 @@ function translateGeoSource(source: string | null | undefined): string {
   if (source === "imported") return "Importado";
   if (source === "unknown") return "No especificada";
   return "No especificada";
+}
+
+function translateHealthCoverage(value: string | null | undefined): string {
+  return optionLabel(HEALTH_COVERAGE_OPTIONS, value);
+}
+
+function translateEducationLevel(value: string | null | undefined): string {
+  return optionLabel(EDUCATION_LEVEL_OPTIONS, value);
+}
+
+function translateEmploymentStatus(value: string | null | undefined): string {
+  return optionLabel(EMPLOYMENT_STATUS_OPTIONS, value);
+}
+
+function translateEthnicity(value: string | null | undefined): string {
+  return optionLabel(ETHNICITY_OPTIONS, value);
+}
+
+function translateSocioeconomicLevel(value: string | null | undefined): string {
+  return optionLabel(SOCIOECONOMIC_LEVEL_OPTIONS, value);
+}
+
+type RecordWithDss = {
+  patient_health_coverage?: string | null;
+  patient_education_level?: string | null;
+  patient_employment_status?: string | null;
+};
+
+function formatDssSummary(record: RecordWithDss): string {
+  return [
+    translateHealthCoverage(record.patient_health_coverage),
+    translateEducationLevel(record.patient_education_level),
+    translateEmploymentStatus(record.patient_employment_status),
+  ].join(" / ");
 }
 
 type RecordWithGeography = {
@@ -742,6 +809,36 @@ export default function DashboardPage() {
                 ]}
               />
               <SelectField
+                label="Cobertura"
+                name="patient_health_coverage"
+                value={filters.patient_health_coverage}
+                onChange={handleFilterChange}
+                options={[
+                  { label: "Todas", value: "all" },
+                  ...HEALTH_COVERAGE_OPTIONS,
+                ]}
+              />
+              <SelectField
+                label="Educación"
+                name="patient_education_level"
+                value={filters.patient_education_level}
+                onChange={handleFilterChange}
+                options={[
+                  { label: "Todos", value: "all" },
+                  ...EDUCATION_LEVEL_OPTIONS,
+                ]}
+              />
+              <SelectField
+                label="Situación laboral"
+                name="patient_employment_status"
+                value={filters.patient_employment_status}
+                onChange={handleFilterChange}
+                options={[
+                  { label: "Todas", value: "all" },
+                  ...EMPLOYMENT_STATUS_OPTIONS,
+                ]}
+              />
+              <SelectField
                 label="Modelo"
                 name="model_variant"
                 value={filters.model_variant}
@@ -819,6 +916,7 @@ export default function DashboardPage() {
                   <th>Médico</th>
                   <th>Estado</th>
                   <th>Ubicación</th>
+                  <th>DSS</th>
                   <th>Riesgo CVD</th>
                   <th>Riesgo ASCVD</th>
                   <th>Riesgo HF</th>
@@ -828,7 +926,7 @@ export default function DashboardPage() {
               <tbody>
                 {records.length === 0 && !isLoading ? (
                   <tr>
-                    <td colSpan={10} className="dashboard-empty">
+                    <td colSpan={11} className="dashboard-empty">
                       No hay registros para los filtros seleccionados.
                     </td>
                   </tr>
@@ -845,6 +943,7 @@ export default function DashboardPage() {
                     <td>{record.physician_name}</td>
                     <td><ArchiveBadge isDeleted={record.is_deleted} /></td>
                     <td>{formatPatientLocation(record)}</td>
+                    <td>{formatDssSummary(record)}</td>
                     <td>
                       <RiskCell
                         risk10y={record.cvd_risk}
@@ -975,6 +1074,26 @@ export default function DashboardPage() {
                   <DetailItem
                     label="Fuente geográfica"
                     value={translateGeoSource(selectedRecord.patient_geo_source)}
+                  />
+                  <DetailItem
+                    label="Cobertura sanitaria"
+                    value={translateHealthCoverage(selectedRecord.patient_health_coverage)}
+                  />
+                  <DetailItem
+                    label="Nivel educativo"
+                    value={translateEducationLevel(selectedRecord.patient_education_level)}
+                  />
+                  <DetailItem
+                    label="Situación laboral"
+                    value={translateEmploymentStatus(selectedRecord.patient_employment_status)}
+                  />
+                  <DetailItem
+                    label="Autoidentificación étnica"
+                    value={translateEthnicity(selectedRecord.patient_ethnicity)}
+                  />
+                  <DetailItem
+                    label="Nivel socioeconómico percibido"
+                    value={translateSocioeconomicLevel(selectedRecord.patient_socioeconomic_level)}
                   />
                   <DetailItem label="CVD 10a" value={formatClinicalRisk(selectedRecord.cvd_risk)} />
                   <DetailItem
@@ -1148,6 +1267,26 @@ export default function DashboardPage() {
                     <ReportItem
                       label="Fuente geográfica"
                       value={translateGeoSource(selectedRecord.patient_geo_source)}
+                    />
+                    <ReportItem
+                      label="Cobertura sanitaria"
+                      value={translateHealthCoverage(selectedRecord.patient_health_coverage)}
+                    />
+                    <ReportItem
+                      label="Nivel educativo"
+                      value={translateEducationLevel(selectedRecord.patient_education_level)}
+                    />
+                    <ReportItem
+                      label="Situación laboral"
+                      value={translateEmploymentStatus(selectedRecord.patient_employment_status)}
+                    />
+                    <ReportItem
+                      label="Autoidentificación étnica"
+                      value={translateEthnicity(selectedRecord.patient_ethnicity)}
+                    />
+                    <ReportItem
+                      label="Nivel socioeconómico percibido"
+                      value={translateSocioeconomicLevel(selectedRecord.patient_socioeconomic_level)}
                     />
                     <ReportItem
                       label="Colesterol total"

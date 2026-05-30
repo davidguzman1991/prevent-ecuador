@@ -3,6 +3,39 @@ export type RiskType = "cvd" | "ascvd" | "hf";
 export type ModelVariant = "auto" | "base" | "uacr" | "hba1c" | "sdi" | "full";
 export type PatientAreaType = "urban" | "rural" | "unknown";
 export type PatientGeoSource = "self_reported" | "clinic_assigned" | "imported" | "unknown";
+export type PatientHealthCoverage =
+  | "iess"
+  | "msp"
+  | "private"
+  | "issfa"
+  | "isspol"
+  | "none"
+  | "unknown";
+export type PatientEducationLevel =
+  | "no_schooling"
+  | "primary"
+  | "secondary"
+  | "higher"
+  | "postgraduate"
+  | "unknown";
+export type PatientEmploymentStatus =
+  | "employed"
+  | "self_employed"
+  | "unemployed"
+  | "retired"
+  | "homemaker"
+  | "student"
+  | "other"
+  | "unknown";
+export type PatientEthnicity =
+  | "mestizo"
+  | "montubio"
+  | "afro_ecuadorian"
+  | "indigenous"
+  | "white"
+  | "other"
+  | "unknown";
+export type PatientSocioeconomicLevel = "low" | "middle" | "high" | "prefer_not_to_answer";
 
 export type ValidatedFieldName =
   | "age"
@@ -32,6 +65,11 @@ export type FormState = {
   patient_canton_code: string;
   patient_area_type: PatientAreaType;
   patient_geo_source: PatientGeoSource;
+  patient_health_coverage: PatientHealthCoverage;
+  patient_education_level: PatientEducationLevel;
+  patient_employment_status: PatientEmploymentStatus;
+  patient_ethnicity: PatientEthnicity;
+  patient_socioeconomic_level: PatientSocioeconomicLevel;
   physician_name: string;
   physician_specialty: string;
 };
@@ -60,6 +98,11 @@ export type PreventResult = {
   clinical_interpretation?: ClinicalInterpretation | null;
   debug?: Record<string, unknown> | null;
   message: string;
+  patient_health_coverage?: PatientHealthCoverage | null;
+  patient_education_level?: PatientEducationLevel | null;
+  patient_employment_status?: PatientEmploymentStatus | null;
+  patient_ethnicity?: PatientEthnicity | null;
+  patient_socioeconomic_level?: PatientSocioeconomicLevel | null;
 };
 
 export type ClinicalInterpretation = {

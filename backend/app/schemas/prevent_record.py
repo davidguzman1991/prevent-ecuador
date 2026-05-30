@@ -9,6 +9,35 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 PatientAreaType = Literal["urban", "rural", "unknown"]
 PatientGeoSource = Literal["self_reported", "clinic_assigned", "imported", "unknown"]
+PatientHealthCoverage = Literal["iess", "msp", "private", "issfa", "isspol", "none", "unknown"]
+PatientEducationLevel = Literal[
+    "no_schooling",
+    "primary",
+    "secondary",
+    "higher",
+    "postgraduate",
+    "unknown",
+]
+PatientEmploymentStatus = Literal[
+    "employed",
+    "self_employed",
+    "unemployed",
+    "retired",
+    "homemaker",
+    "student",
+    "other",
+    "unknown",
+]
+PatientEthnicity = Literal[
+    "mestizo",
+    "montubio",
+    "afro_ecuadorian",
+    "indigenous",
+    "white",
+    "other",
+    "unknown",
+]
+PatientSocioeconomicLevel = Literal["low", "middle", "high", "prefer_not_to_answer"]
 
 
 class PreventRecordBase(BaseModel):
@@ -32,6 +61,11 @@ class PreventRecordBase(BaseModel):
     patient_canton_name: str | None = None
     patient_area_type: PatientAreaType | None = None
     patient_geo_source: PatientGeoSource | None = None
+    patient_health_coverage: PatientHealthCoverage | None = None
+    patient_education_level: PatientEducationLevel | None = None
+    patient_employment_status: PatientEmploymentStatus | None = None
+    patient_ethnicity: PatientEthnicity | None = None
+    patient_socioeconomic_level: PatientSocioeconomicLevel | None = None
 
     total_cholesterol: float | None = None
     hdl_cholesterol: float | None = Field(
@@ -149,6 +183,11 @@ class PreventRecordCreateResponse(BaseModel):
     patient_canton_name: str | None = None
     patient_area_type: PatientAreaType | None = None
     patient_geo_source: PatientGeoSource | None = None
+    patient_health_coverage: PatientHealthCoverage | None = None
+    patient_education_level: PatientEducationLevel | None = None
+    patient_employment_status: PatientEmploymentStatus | None = None
+    patient_ethnicity: PatientEthnicity | None = None
+    patient_socioeconomic_level: PatientSocioeconomicLevel | None = None
 
 
 class PreventRecordListItem(BaseModel):
@@ -167,6 +206,11 @@ class PreventRecordListItem(BaseModel):
     patient_canton_name: str | None = None
     patient_area_type: PatientAreaType | None = None
     patient_geo_source: PatientGeoSource | None = None
+    patient_health_coverage: PatientHealthCoverage | None = None
+    patient_education_level: PatientEducationLevel | None = None
+    patient_employment_status: PatientEmploymentStatus | None = None
+    patient_ethnicity: PatientEthnicity | None = None
+    patient_socioeconomic_level: PatientSocioeconomicLevel | None = None
     cvd_risk: float | None
     ascvd_risk: float | None
     hf_risk: float | None
@@ -201,6 +245,11 @@ class PreventRecordDetailResponse(BaseModel):
     patient_canton_name: str | None
     patient_area_type: PatientAreaType | None
     patient_geo_source: PatientGeoSource | None
+    patient_health_coverage: PatientHealthCoverage | None
+    patient_education_level: PatientEducationLevel | None
+    patient_employment_status: PatientEmploymentStatus | None
+    patient_ethnicity: PatientEthnicity | None
+    patient_socioeconomic_level: PatientSocioeconomicLevel | None
     total_cholesterol: float | None
     hdl_cholesterol: float | None
     ldl_cholesterol: float | None
@@ -254,6 +303,11 @@ class PreventRecordListFilters(BaseModel):
     patient_canton_code: str | None = None
     patient_area_type: PatientAreaType | None = None
     patient_geo_source: PatientGeoSource | None = None
+    patient_health_coverage: PatientHealthCoverage | None = None
+    patient_education_level: PatientEducationLevel | None = None
+    patient_employment_status: PatientEmploymentStatus | None = None
+    patient_ethnicity: PatientEthnicity | None = None
+    patient_socioeconomic_level: PatientSocioeconomicLevel | None = None
     model_variant: Literal["base", "uacr", "hba1c", "sdi", "full"] | None = None
     record_status: Literal["active", "archived", "all"] = "active"
     page: int = 1

@@ -72,6 +72,11 @@ PREVENT_EXPORT_HEADERS = [
     "patient_canton_name",
     "patient_area_type",
     "patient_geo_source",
+    "cobertura_sanitaria",
+    "nivel_educativo",
+    "situacion_laboral",
+    "etnia",
+    "nivel_socioeconomico",
 ]
 
 
@@ -293,6 +298,11 @@ def _build_prevent_export_row(record: PreventRecord) -> list[object]:
         record.patient_canton_name,
         record.patient_area_type,
         record.patient_geo_source,
+        record.patient_health_coverage,
+        record.patient_education_level,
+        record.patient_employment_status,
+        record.patient_ethnicity,
+        record.patient_socioeconomic_level,
     ]
 
 
@@ -357,6 +367,18 @@ def _build_prevent_records_query(
         query = query.filter(PreventRecord.patient_area_type == filters.patient_area_type)
     if filters.patient_geo_source:
         query = query.filter(PreventRecord.patient_geo_source == filters.patient_geo_source)
+    if filters.patient_health_coverage:
+        query = query.filter(PreventRecord.patient_health_coverage == filters.patient_health_coverage)
+    if filters.patient_education_level:
+        query = query.filter(PreventRecord.patient_education_level == filters.patient_education_level)
+    if filters.patient_employment_status:
+        query = query.filter(PreventRecord.patient_employment_status == filters.patient_employment_status)
+    if filters.patient_ethnicity:
+        query = query.filter(PreventRecord.patient_ethnicity == filters.patient_ethnicity)
+    if filters.patient_socioeconomic_level:
+        query = query.filter(
+            PreventRecord.patient_socioeconomic_level == filters.patient_socioeconomic_level,
+        )
     if filters.model_variant is not None:
         query = query.filter(
             PreventRecord.input_payload_json["model_variant"].astext == filters.model_variant,
@@ -569,6 +591,11 @@ def create_prevent_record(
         "patient_canton_name": record.patient_canton_name,
         "patient_area_type": record.patient_area_type,
         "patient_geo_source": record.patient_geo_source,
+        "patient_health_coverage": record.patient_health_coverage,
+        "patient_education_level": record.patient_education_level,
+        "patient_employment_status": record.patient_employment_status,
+        "patient_ethnicity": record.patient_ethnicity,
+        "patient_socioeconomic_level": record.patient_socioeconomic_level,
     }
     logger.info("PREVENT response payload: %s", response_payload)
     return PreventRecordCreateResponse(
@@ -598,6 +625,11 @@ def create_prevent_record(
         patient_canton_name=record.patient_canton_name,
         patient_area_type=record.patient_area_type,
         patient_geo_source=record.patient_geo_source,
+        patient_health_coverage=record.patient_health_coverage,
+        patient_education_level=record.patient_education_level,
+        patient_employment_status=record.patient_employment_status,
+        patient_ethnicity=record.patient_ethnicity,
+        patient_socioeconomic_level=record.patient_socioeconomic_level,
     )
 
 
@@ -673,6 +705,11 @@ def list_prevent_records(
                 patient_canton_name=record.patient_canton_name,
                 patient_area_type=record.patient_area_type,
                 patient_geo_source=record.patient_geo_source,
+                patient_health_coverage=record.patient_health_coverage,
+                patient_education_level=record.patient_education_level,
+                patient_employment_status=record.patient_employment_status,
+                patient_ethnicity=record.patient_ethnicity,
+                patient_socioeconomic_level=record.patient_socioeconomic_level,
                 cvd_risk=extracted["cvd_risk"],
                 ascvd_risk=extracted["ascvd_risk"],
                 hf_risk=extracted["hf_risk"],
@@ -718,6 +755,11 @@ def get_prevent_record_detail(
         patient_canton_name=record.patient_canton_name,
         patient_area_type=record.patient_area_type,
         patient_geo_source=record.patient_geo_source,
+        patient_health_coverage=record.patient_health_coverage,
+        patient_education_level=record.patient_education_level,
+        patient_employment_status=record.patient_employment_status,
+        patient_ethnicity=record.patient_ethnicity,
+        patient_socioeconomic_level=record.patient_socioeconomic_level,
         total_cholesterol=record.total_cholesterol,
         hdl_cholesterol=record.hdl_cholesterol,
         ldl_cholesterol=record.ldl_cholesterol,

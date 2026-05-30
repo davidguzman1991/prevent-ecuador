@@ -27,6 +27,14 @@ from app.services.prevent_records import (
 
 router = APIRouter()
 
+HEALTH_COVERAGE_PATTERN = "^(iess|msp|private|issfa|isspol|none|unknown)$"
+EDUCATION_LEVEL_PATTERN = "^(no_schooling|primary|secondary|higher|postgraduate|unknown)$"
+EMPLOYMENT_STATUS_PATTERN = (
+    "^(employed|self_employed|unemployed|retired|homemaker|student|other|unknown)$"
+)
+ETHNICITY_PATTERN = "^(mestizo|montubio|afro_ecuadorian|indigenous|white|other|unknown)$"
+SOCIOECONOMIC_LEVEL_PATTERN = "^(low|middle|high|prefer_not_to_answer)$"
+
 
 @router.get(
     "/list",
@@ -46,6 +54,11 @@ def list_prevent_records_endpoint(
         default=None,
         pattern="^(self_reported|clinic_assigned|imported|unknown)$",
     ),
+    patient_health_coverage: str | None = Query(default=None, pattern=HEALTH_COVERAGE_PATTERN),
+    patient_education_level: str | None = Query(default=None, pattern=EDUCATION_LEVEL_PATTERN),
+    patient_employment_status: str | None = Query(default=None, pattern=EMPLOYMENT_STATUS_PATTERN),
+    patient_ethnicity: str | None = Query(default=None, pattern=ETHNICITY_PATTERN),
+    patient_socioeconomic_level: str | None = Query(default=None, pattern=SOCIOECONOMIC_LEVEL_PATTERN),
     model_variant: str | None = Query(default=None),
     record_status: str = Query(default="active", pattern="^(active|archived|all)$"),
     page: int = Query(default=1, ge=1),
@@ -62,6 +75,11 @@ def list_prevent_records_endpoint(
         patient_canton_code=patient_canton_code,
         patient_area_type=patient_area_type,
         patient_geo_source=patient_geo_source,
+        patient_health_coverage=patient_health_coverage,
+        patient_education_level=patient_education_level,
+        patient_employment_status=patient_employment_status,
+        patient_ethnicity=patient_ethnicity,
+        patient_socioeconomic_level=patient_socioeconomic_level,
         model_variant=model_variant,
         record_status=record_status,
         page=page,
@@ -84,6 +102,11 @@ def export_prevent_records_endpoint(
         default=None,
         pattern="^(self_reported|clinic_assigned|imported|unknown)$",
     ),
+    patient_health_coverage: str | None = Query(default=None, pattern=HEALTH_COVERAGE_PATTERN),
+    patient_education_level: str | None = Query(default=None, pattern=EDUCATION_LEVEL_PATTERN),
+    patient_employment_status: str | None = Query(default=None, pattern=EMPLOYMENT_STATUS_PATTERN),
+    patient_ethnicity: str | None = Query(default=None, pattern=ETHNICITY_PATTERN),
+    patient_socioeconomic_level: str | None = Query(default=None, pattern=SOCIOECONOMIC_LEVEL_PATTERN),
     model_variant: str | None = Query(default=None),
     record_status: str = Query(default="active", pattern="^(active|archived|all)$"),
     db: Session = Depends(get_db),
@@ -98,6 +121,11 @@ def export_prevent_records_endpoint(
         patient_canton_code=patient_canton_code,
         patient_area_type=patient_area_type,
         patient_geo_source=patient_geo_source,
+        patient_health_coverage=patient_health_coverage,
+        patient_education_level=patient_education_level,
+        patient_employment_status=patient_employment_status,
+        patient_ethnicity=patient_ethnicity,
+        patient_socioeconomic_level=patient_socioeconomic_level,
         model_variant=model_variant,
         record_status=record_status,
     )
@@ -124,6 +152,11 @@ def export_prevent_records_xlsx_endpoint(
         default=None,
         pattern="^(self_reported|clinic_assigned|imported|unknown)$",
     ),
+    patient_health_coverage: str | None = Query(default=None, pattern=HEALTH_COVERAGE_PATTERN),
+    patient_education_level: str | None = Query(default=None, pattern=EDUCATION_LEVEL_PATTERN),
+    patient_employment_status: str | None = Query(default=None, pattern=EMPLOYMENT_STATUS_PATTERN),
+    patient_ethnicity: str | None = Query(default=None, pattern=ETHNICITY_PATTERN),
+    patient_socioeconomic_level: str | None = Query(default=None, pattern=SOCIOECONOMIC_LEVEL_PATTERN),
     model_variant: str | None = Query(default=None),
     record_status: str = Query(default="active", pattern="^(active|archived|all)$"),
     db: Session = Depends(get_db),
@@ -138,6 +171,11 @@ def export_prevent_records_xlsx_endpoint(
         patient_canton_code=patient_canton_code,
         patient_area_type=patient_area_type,
         patient_geo_source=patient_geo_source,
+        patient_health_coverage=patient_health_coverage,
+        patient_education_level=patient_education_level,
+        patient_employment_status=patient_employment_status,
+        patient_ethnicity=patient_ethnicity,
+        patient_socioeconomic_level=patient_socioeconomic_level,
         model_variant=model_variant,
         record_status=record_status,
     )

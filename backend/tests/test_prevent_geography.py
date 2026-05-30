@@ -52,6 +52,22 @@ GEOGRAPHY_HEADERS = [
     "patient_geo_source",
 ]
 
+DSS_HEADERS = [
+    "cobertura_sanitaria",
+    "nivel_educativo",
+    "situacion_laboral",
+    "etnia",
+    "nivel_socioeconomico",
+]
+
+DSS_PAYLOAD = {
+    "patient_health_coverage": "iess",
+    "patient_education_level": "higher",
+    "patient_employment_status": "employed",
+    "patient_ethnicity": "mestizo",
+    "patient_socioeconomic_level": "middle",
+}
+
 
 class FakeSession:
     def __init__(self) -> None:
@@ -87,7 +103,7 @@ class EmptyExportSession:
 class PreventGeographyTest(unittest.TestCase):
     def test_create_record_with_complete_geography(self) -> None:
         db = FakeSession()
-        payload = PreventRecordCreate(**BASE_PAYLOAD, **GEOGRAPHY_PAYLOAD)
+        payload = PreventRecordCreate(**BASE_PAYLOAD, **GEOGRAPHY_PAYLOAD, **DSS_PAYLOAD)
 
         response = create_prevent_record(db=db, payload=payload)
 
@@ -99,8 +115,18 @@ class PreventGeographyTest(unittest.TestCase):
         self.assertEqual(db.record.patient_canton_name, "Quito")
         self.assertEqual(db.record.patient_area_type, "urban")
         self.assertEqual(db.record.patient_geo_source, "self_reported")
+        self.assertEqual(db.record.patient_health_coverage, "iess")
+        self.assertEqual(db.record.patient_education_level, "higher")
+        self.assertEqual(db.record.patient_employment_status, "employed")
+        self.assertEqual(db.record.patient_ethnicity, "mestizo")
+        self.assertEqual(db.record.patient_socioeconomic_level, "middle")
         self.assertEqual(response.patient_province_code, "17")
         self.assertEqual(response.patient_canton_code, "1701")
+        self.assertEqual(response.patient_health_coverage, "iess")
+        self.assertEqual(response.patient_education_level, "higher")
+        self.assertEqual(response.patient_employment_status, "employed")
+        self.assertEqual(response.patient_ethnicity, "mestizo")
+        self.assertEqual(response.patient_socioeconomic_level, "middle")
         self.assertIsNotNone(response.cvd_risk)
         self.assertIsNotNone(response.cvd_risk_30y)
 
@@ -117,8 +143,28 @@ class PreventGeographyTest(unittest.TestCase):
         self.assertIsNone(db.record.patient_canton_name)
         self.assertIsNone(db.record.patient_area_type)
         self.assertIsNone(db.record.patient_geo_source)
+        self.assertIsNone(db.record.patient_health_coverage)
+        self.assertIsNone(db.record.patient_education_level)
+        self.assertIsNone(db.record.patient_employment_status)
+        self.assertIsNone(db.record.patient_ethnicity)
+        self.assertIsNone(db.record.patient_socioeconomic_level)
         self.assertIsNone(response.patient_province_code)
         self.assertIsNone(response.patient_geo_source)
+        self.assertIsNone(response.patient_health_coverage)
+
+    def test_invalid_social_determinants_are_rejected(self) -> None:
+        invalid_cases = [
+            {"patient_health_coverage": "municipal"},
+            {"patient_education_level": "doctoral"},
+            {"patient_employment_status": "temporary"},
+            {"patient_ethnicity": "latin"},
+            {"patient_socioeconomic_level": "very_high"},
+        ]
+
+        for invalid_payload in invalid_cases:
+            with self.subTest(invalid_payload=invalid_payload):
+                with self.assertRaises(ValidationError):
+                    PreventRecordCreate(**BASE_PAYLOAD, **invalid_payload)
 
     def test_invalid_area_type_is_rejected(self) -> None:
         with self.assertRaises(ValidationError):
@@ -148,7 +194,8 @@ class PreventGeographyTest(unittest.TestCase):
             PreventRecordCreate(**BASE_PAYLOAD, patient_province_code="17")
 
     def test_csv_export_includes_geography_columns(self) -> None:
-        self.assertEqual(PREVENT_EXPORT_HEADERS[-6:], GEOGRAPHY_HEADERS)
+        self.assertEqual(PREVENT_EXPORT_HEADERS[-11:-5], GEOGRAPHY_HEADERS)
+        self.assertEqual(PREVENT_EXPORT_HEADERS[-5:], DSS_HEADERS)
 
         csv_content = export_prevent_records_csv(
             db=EmptyExportSession(),
@@ -156,7 +203,8 @@ class PreventGeographyTest(unittest.TestCase):
         )
         header = next(csv.reader(io.StringIO(csv_content.lstrip("\ufeff")), delimiter=";"))
 
-        self.assertEqual(header[-6:], GEOGRAPHY_HEADERS)
+        self.assertEqual(header[-11:-5], GEOGRAPHY_HEADERS)
+        self.assertEqual(header[-5:], DSS_HEADERS)
 
     def test_xlsx_export_includes_geography_columns(self) -> None:
         xlsx_content = export_prevent_records_xlsx(
@@ -167,9 +215,10 @@ class PreventGeographyTest(unittest.TestCase):
         worksheet = workbook.active
         header = [cell.value for cell in next(worksheet.iter_rows(min_row=1, max_row=1))]
 
-        self.assertEqual(header[-6:], GEOGRAPHY_HEADERS)
+        self.assertEqual(header[-11:-5], GEOGRAPHY_HEADERS)
+        self.assertEqual(header[-5:], DSS_HEADERS)
 
-    def test_prevent_risks_do_not_change_with_geography_fields(self) -> None:
+    def test_prevent_risks_do_not_change_with_geography_or_social_fields(self) -> None:
         clinical_payload = {
             key: value
             for key, value in BASE_PAYLOAD.items()
@@ -177,7 +226,7 @@ class PreventGeographyTest(unittest.TestCase):
         }
         _, base_result, base_warnings = compute_prevent_10y(clinical_payload)
         _, geo_result, geo_warnings = compute_prevent_10y(
-            {**clinical_payload, **GEOGRAPHY_PAYLOAD},
+            {**clinical_payload, **GEOGRAPHY_PAYLOAD, **DSS_PAYLOAD},
         )
 
         self.assertEqual(base_warnings, geo_warnings)
