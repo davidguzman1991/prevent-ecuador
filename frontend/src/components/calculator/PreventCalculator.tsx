@@ -920,21 +920,34 @@ export function PreventCalculator() {
             </strong>
           </div>
           <div className="prevent-brand-mark">PE</div>
-          <nav className="prevent-side-nav">
-            <a href="#ingreso" className="prevent-side-link is-active">
-              Calculadora
-            </a>
-            <a href="#resultados" className="prevent-side-link">
-              Resultados
-            </a>
-            <Link href="/metodologia" className="prevent-side-link">
-              Metodología
-            </Link>
-          </nav>
           <div className="prevent-sidebar-actions">
             <Link className="prevent-dashboard-link" href="/dashboard">
-              Panel clínico
+              Iniciar sesión
             </Link>
+            <Link className="prevent-methodology-link" href="/metodologia">
+              Metodología
+            </Link>
+          </div>
+          <div className="prevent-sidebar-intro">
+            <span className="prevent-kicker">Plataforma científica validada</span>
+            <p>
+              Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca a
+              10 y 30 años, con captura estructurada para investigación
+              poblacional.
+            </p>
+            <div className="prevent-hero-badges prevent-sidebar-badges" aria-label="Alcance PREVENT">
+              <span>PREVENT</span>
+              <span>10 años</span>
+              <span>30 años</span>
+              <span>CVD</span>
+              <span>ASCVD</span>
+              <span>HF</span>
+            </div>
+            <p className="prevent-sidebar-project">
+              PREVENT Ecuador integra estratificación clínica y variables
+              poblacionales para apoyar investigación cardio-reno-metabólica,
+              auditoría científica y futuros indicadores territoriales.
+            </p>
           </div>
           <div className="prevent-sidebar-credit">
             <span>Desarrollado por</span>
@@ -963,19 +976,12 @@ export function PreventCalculator() {
                 >
                   Calculadora
                 </a>
-                <a
-                  className="prevent-mobile-options-link"
-                  href="#resultados"
-                  onClick={() => setIsMobileOptionsOpen(false)}
-                >
-                  Resultados
-                </a>
                 <Link
                   className="prevent-mobile-options-link"
                   href="/dashboard"
                   onClick={() => setIsMobileOptionsOpen(false)}
                 >
-                  Panel clínico
+                  Iniciar sesión
                 </Link>
                 <Link
                   className="prevent-mobile-options-link"
@@ -1000,22 +1006,6 @@ export function PreventCalculator() {
                 priority
                 className="h-auto w-full object-contain"
               />
-            </div>
-            <div className="prevent-hero-summary">
-              <span className="prevent-kicker">Plataforma científica validada</span>
-              <p className="prevent-copy prevent-hero-description">
-                Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca
-                a 10 y 30 años, con captura estructurada para investigación
-                poblacional.
-              </p>
-              <div className="prevent-hero-badges" aria-label="Alcance PREVENT">
-                <span>PREVENT</span>
-                <span>10 años</span>
-                <span>30 años</span>
-                <span>CVD</span>
-                <span>ASCVD</span>
-                <span>HF</span>
-              </div>
             </div>
           </header>
 
