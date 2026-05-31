@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { PrivacyConsentModal } from "@/components/PrivacyConsentModal";
 import { SiteFooter } from "@/components/SiteFooter";
-import { ValidationInfoCard } from "@/components/ValidationInfoCard";
 import { FormSection } from "@/components/calculator/FormSection";
 import {
   ECUADOR_PROVINCES,
@@ -52,9 +51,9 @@ const PHYSICIAN_SPECIALTY_OPTIONS = [
   "Médico Investigador",
 ] as const;
 
-const VALIDATION_BADGE_TEXT = "Validación técnica";
-const DEFAULT_METHOD_NOTE =
-  "Implementación independiente contrastada con el paquete oficial R PREVENT-AHA y la calculadora web PREVENT.";
+const showClinicalContext = false;
+
+type RiskHorizon = "10y" | "30y";
 
 const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = {
   age: {
@@ -321,23 +320,59 @@ function formatThirtyYearRiskValue(risk: number | null): string {
     : "No aplicable por rango de edad oficial PREVENT";
 }
 
-function translateRiskCategory(category: string): string {
-  const normalizedCategory = category.trim().toLowerCase();
+function getVisualRiskCategory(
+  risk: number | null,
+  horizon: RiskHorizon,
+): "low" | "borderline" | "intermediate" | "high" | null {
+  if (risk === null) return null;
 
-  if (normalizedCategory === "low") return "Bajo";
-  if (normalizedCategory === "borderline") return "Límite";
-  if (normalizedCategory === "intermediate") return "Intermedio";
-  if (normalizedCategory === "high") return "Alto";
+  if (horizon === "10y") {
+    if (risk >= 20) return "high";
+    if (risk >= 7.5) return "intermediate";
+    if (risk >= 5) return "borderline";
+    return "low";
+  }
 
-  return category;
+  if (risk >= 40) return "high";
+  if (risk >= 20) return "intermediate";
+  if (risk >= 10) return "borderline";
+  return "low";
 }
 
-function getPreventRiskCategory(risk: number | null): string | null {
-  if (risk === null) return null;
-  if (risk >= 20) return "high";
-  if (risk >= 7.5) return "intermediate";
-  if (risk >= 5) return "borderline";
-  return "low";
+function translateVisualRiskCategory(
+  category: ReturnType<typeof getVisualRiskCategory>,
+): string {
+  if (category === "high") return "Alto";
+  if (category === "intermediate") return "Intermedio";
+  if (category === "borderline") return "Límite";
+  if (category === "low") return "Bajo";
+  return "No calculable";
+}
+
+function getRiskForHorizon(
+  result: PreventResult,
+  riskType: RiskType,
+  horizon: RiskHorizon,
+): number | null {
+  if (horizon === "30y") {
+    return getThirtyYearRisk(result, riskType);
+  }
+
+  if (riskType === "cvd") return result.cvd_risk;
+  if (riskType === "ascvd") return result.ascvd_risk;
+  return result.hf_risk;
+}
+
+function getRiskTypeCode(riskType: RiskType): string {
+  if (riskType === "cvd") return "CVD";
+  if (riskType === "ascvd") return "ASCVD";
+  return "HF";
+}
+
+function getRiskTypeModalLabel(riskType: RiskType): string {
+  if (riskType === "cvd") return "Riesgo cardiovascular global";
+  if (riskType === "ascvd") return "Riesgo aterosclerótico";
+  return "Riesgo de insuficiencia cardíaca";
 }
 
 function translateModelVariant(modelVariant: string): string {
@@ -362,31 +397,6 @@ function getVariantHelperMessage(form: FormState): string | null {
     return "El modelo full usará coeficientes de faltantes para las variables opcionales no ingresadas.";
   }
   return null;
-}
-
-function getClinicalInsight(result: PreventResult): string | null {
-  if (
-    result.cvd_risk !== null &&
-    result.hf_risk !== null &&
-    result.hf_risk > result.cvd_risk
-  ) {
-    return "Predominio de riesgo por insuficiencia cardíaca.";
-  }
-
-  if (
-    result.ascvd_risk !== null &&
-    result.ascvd_risk >= 20
-  ) {
-    return "Alto riesgo aterosclerótico: considerar intensificación del manejo lipídico.";
-  }
-
-  return null;
-}
-
-function getRiskTypeShortLabel(riskType: RiskType): string {
-  if (riskType === "cvd") return "Riesgo global";
-  if (riskType === "ascvd") return "Riesgo aterosclerótico";
-  return "Insuficiencia cardíaca";
 }
 
 function getThirtyYearRisk(result: PreventResult, riskType: RiskType): number | null {
@@ -420,6 +430,8 @@ export function PreventCalculator() {
   const [result, setResult] = useState<PreventResult | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
   const [riskType, setRiskType] = useState<RiskType>("cvd");
+  const [riskHorizon, setRiskHorizon] = useState<RiskHorizon>("10y");
+  const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
   const [manualVariantSelection, setManualVariantSelection] = useState(false);
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -430,15 +442,7 @@ export function PreventCalculator() {
   );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
   const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState(false);
-  const resultsRef = useRef<HTMLElement | null>(null);
   const feedbackTimeoutRef = useRef<number | null>(null);
-  const selectedRisk = result
-    ? riskType === "cvd"
-      ? result.cvd_risk
-      : riskType === "ascvd"
-        ? result.ascvd_risk
-        : result.hf_risk
-    : null;
   const selectedProvince = ECUADOR_PROVINCES.find(
     (province) => province.code === form.patient_province_code,
   );
@@ -446,24 +450,23 @@ export function PreventCalculator() {
   const selectedCanton = cantonOptions.find(
     (canton) => canton.code === form.patient_canton_code,
   );
-  const selectedThirtyYearRisk = result
-    ? getThirtyYearRisk(result, riskType)
-    : null;
-  const selectedRiskPercentage = selectedRisk;
-  const selectedPreventCategory = getPreventRiskCategory(selectedRisk);
-  const clinicalInsight = result ? getClinicalInsight(result) : null;
-  const methodologyNote = result?.methodology_note ?? DEFAULT_METHOD_NOTE;
-  const showValidationBadge = (result?.engine_status ?? "validation") !== "validated";
   const variantHelperMessage = getVariantHelperMessage(form);
-  const selectedOutcomeWarnings = result ? getOutcomeWarnings(result, riskType) : [];
   const insufficientResultReason = result ? getInsufficientResultReason(result) : null;
-  const insufficientResultMessage =
-    getInsufficientResultMessage(insufficientResultReason);
   const bmiWarning =
     getFieldWarning(form, "bmi") ??
     (insufficientResultReason === "bmi" && !form.bmi.trim()
       ? "Se requiere IMC (Índice de Masa Corporal) para completar la evaluación PREVENT."
       : null);
+
+  useEffect(() => {
+    if (result) {
+      setRiskHorizon("10y");
+      setIsResultsModalOpen(true);
+      return;
+    }
+
+    setIsResultsModalOpen(false);
+  }, [result]);
 
   const handleInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -666,25 +669,27 @@ export function PreventCalculator() {
     }, 3200);
   };
 
-  const scrollToResultsAfterCalculation = () => {
+  const handleResetCalculation = () => {
+    setForm(initialFormState);
+    setResult(null);
+    setRecordId(null);
+    setError("");
+    setRiskType("cvd");
+    setRiskHorizon("10y");
+    setIsResultsModalOpen(false);
+    setSubmitFeedback("");
+    setHasUncalculatedChanges(false);
+    setBmiCalculator(initialBmiCalculatorState);
+    setUsesCustomSpecialty(false);
+  };
+
+  const handleEditResultData = () => {
+    setIsResultsModalOpen(false);
     window.requestAnimationFrame(() => {
-      const resultsElement = resultsRef.current;
-
-      if (!resultsElement) {
-        return;
-      }
-
-      const rect = resultsElement.getBoundingClientRect();
-      const isMobileLayout = window.matchMedia("(max-width: 980px)").matches;
-      const isResultsStartVisible =
-        rect.top >= 0 && rect.top <= window.innerHeight * 0.45;
-
-      if (isMobileLayout || !isResultsStartVisible) {
-        resultsElement.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
+      document.getElementById("ingreso")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     });
   };
 
@@ -779,7 +784,6 @@ export function PreventCalculator() {
       setRecordId(data.id);
       setResult(data);
       showResultUpdatedFeedback();
-      scrollToResultsAfterCalculation();
     } catch (submitError) {
       const message =
         submitError instanceof Error
@@ -1274,17 +1278,7 @@ export function PreventCalculator() {
               <button
                 type="button"
                 className="prevent-button prevent-button-secondary"
-                onClick={() => {
-                  setForm(initialFormState);
-                  setResult(null);
-                  setRecordId(null);
-                  setError("");
-                  setRiskType("cvd");
-                  setSubmitFeedback("");
-                  setHasUncalculatedChanges(false);
-                  setBmiCalculator(initialBmiCalculatorState);
-                  setUsesCustomSpecialty(false);
-                }}
+                onClick={handleResetCalculation}
               >
                 LIMPIAR FORMULARIO
               </button>
@@ -1296,143 +1290,22 @@ export function PreventCalculator() {
             ) : null}
           </form>
         </section>
-
-        {result ? (
-        <aside className="prevent-results-column" id="resultados" ref={resultsRef}>
-          <section className="prevent-result-card">
-            <div className="prevent-panel-header">
-              <span className="prevent-panel-badge">RESULTADOS Y EVALUACIÓN</span>
-              <h2>
-                Evaluación <span className="prevent-brand-word">PREVENT</span>
-              </h2>
-              <p>Informe de riesgo preliminar y recomendaciones.</p>
-            </div>
-
-            <div className="prevent-tab-row" aria-label="Desenlaces PREVENT">
-              <button
-                type="button"
-                className={`prevent-tab ${riskType === "cvd" ? "is-active" : ""}`}
-                onClick={() => setRiskType("cvd")}
-              >
-                Global
-              </button>
-              <button
-                type="button"
-                className={`prevent-tab ${riskType === "ascvd" ? "is-active" : ""}`}
-                onClick={() => setRiskType("ascvd")}
-              >
-                Aterosclerótico
-              </button>
-              <button
-                type="button"
-                className={`prevent-tab ${riskType === "hf" ? "is-active" : ""}`}
-                onClick={() => setRiskType("hf")}
-              >
-                IC
-              </button>
-            </div>
-
-            {hasUncalculatedChanges ? (
-              <div className="prevent-stale-notice">
-                Cambios no recalculados. Presione “Calcular riesgo” para actualizar
-                la evaluación con los datos visibles.
-              </div>
-            ) : null}
-
-            <RiskGauge
-              percentage={selectedRiskPercentage}
-              category={selectedPreventCategory}
-              isCalculated={Boolean(result)}
-              emptyStateLabel={
-                result && selectedRisk === null && insufficientResultReason
-                  ? "Información insuficiente"
-                  : undefined
-              }
-              label={getRiskTypeShortLabel(riskType)}
-              thirtyYearRisk={selectedThirtyYearRisk}
-            />
-
-            <CardiovascularAgeCard
-              value={result?.prevent_age}
-              interpretation={result?.clinical_interpretation ?? null}
-            />
-
-            <p className="prevent-risk-support">
-              {result && selectedRisk === null
-                ? insufficientResultMessage ?? getMissingRiskMessage(result, riskType)
-                : "Probabilidad acumulada de evento ASCVD/IC."}
-            </p>
-
-            {result && selectedRisk === null && selectedOutcomeWarnings.length > 0 ? (
-              <ul className="prevent-warning-list">
-                {selectedOutcomeWarnings.map((warning) => (
-                  <li key={formatWarningDetail(warning)}>{formatWarningDetail(warning)}</li>
-                ))}
-              </ul>
-            ) : null}
-
-            <div className="prevent-score-note">
-              <span>Lectura del score PREVENT</span>
-              <p>
-                El riesgo PREVENT representa una estimación probabilística basada
-                en ecuaciones poblacionales. La interpretación clínica final debe
-                contextualizarse según comorbilidades y factores asociados.
-              </p>
-            </div>
-
-            {clinicalInsight ? <div className="prevent-insight">{clinicalInsight}</div> : null}
-
-            {result?.clinical_interpretation ? (
-              <ClinicalInterpretationPanel interpretation={result.clinical_interpretation} />
-            ) : null}
-
-            <div className="prevent-result-meta">
-              <ResultMetric label="Variante" value={result ? translateModelVariant(result.model_variant) : "Pendiente"} />
-            </div>
-
-            {result?.warnings?.length ? (
-              <div className="prevent-alert prevent-alert-soft">
-                {result.warnings.map((warning) => (
-                  <p key={getWarningMessage(warning)}>{getWarningMessage(warning)}</p>
-                ))}
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={handlePrintReport}
-              disabled={!recordId}
-              className="prevent-button prevent-button-print prevent-download"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.9"
-              >
-                <path d="M7 8V4h10v4" />
-                <path d="M7 17H5a2 2 0 0 1-2-2v-4a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a2 2 0 0 1-2 2h-2" />
-                <path d="M7 14h10v6H7z" />
-                <path d="M17 11h.01" />
-              </svg>
-              <span>Imprimir / Guardar como PDF</span>
-            </button>
-
-            <ValidationInfoCard />
-
-            {showValidationBadge ? (
-              <p className="prevent-method-note">
-                {VALIDATION_BADGE_TEXT}: {methodologyNote}
-              </p>
-            ) : null}
-          </section>
-        </aside>
-        ) : null}
-
       </div>
+      {result && isResultsModalOpen ? (
+        <ResultsModal
+          result={result}
+          riskType={riskType}
+          horizon={riskHorizon}
+          hasUncalculatedChanges={hasUncalculatedChanges}
+          canPrint={Boolean(recordId)}
+          onRiskTypeChange={setRiskType}
+          onHorizonChange={setRiskHorizon}
+          onClose={() => setIsResultsModalOpen(false)}
+          onEditData={handleEditResultData}
+          onNewCalculation={handleResetCalculation}
+          onPrint={handlePrintReport}
+        />
+      ) : null}
       {result ? (
         <div id="prevent-print-report" aria-label="Reporte imprimible PREVENT">
           <header className="print-report-header">
@@ -1524,66 +1397,261 @@ export function PreventCalculator() {
   );
 }
 
-function RiskGauge({
-  percentage,
-  category,
-  isCalculated,
-  emptyStateLabel,
-  label,
-  thirtyYearRisk,
+function ResultsModal({
+  result,
+  riskType,
+  horizon,
+  hasUncalculatedChanges,
+  canPrint,
+  onRiskTypeChange,
+  onHorizonChange,
+  onClose,
+  onEditData,
+  onNewCalculation,
+  onPrint,
 }: {
-  percentage: number | null;
-  category: string | null;
-  isCalculated: boolean;
-  emptyStateLabel?: string;
-  label: string;
-  thirtyYearRisk: number | null;
+  result: PreventResult;
+  riskType: RiskType;
+  horizon: RiskHorizon;
+  hasUncalculatedChanges: boolean;
+  canPrint: boolean;
+  onRiskTypeChange: (riskType: RiskType) => void;
+  onHorizonChange: (horizon: RiskHorizon) => void;
+  onClose: () => void;
+  onEditData: () => void;
+  onNewCalculation: () => void;
+  onPrint: () => void;
 }) {
-  const clampedPercentage = percentage === null ? 0 : Math.min(Math.max(percentage, 0), 100);
-  const categoryLabel = category
-    ? translateRiskCategory(category)
-    : emptyStateLabel
-      ? emptyStateLabel
-    : isCalculated
-      ? "No calculable"
-      : "Pendiente";
-  const categoryTone = category ?? "pending";
+  const selectedRisk = getRiskForHorizon(result, riskType, horizon);
+  const selectedWarnings = getOutcomeWarnings(result, riskType);
+  const insufficientReason = getInsufficientResultReason(result);
+  const selectedMissingMessage =
+    selectedRisk === null
+      ? getInsufficientResultMessage(insufficientReason) ??
+        getMissingRiskMessage(result, riskType)
+      : null;
 
   return (
-    <div className={`prevent-gauge-card prevent-gauge-${categoryTone}`}>
-      <div className="prevent-gauge-header">
-        <span className="prevent-outcome-pill">Riesgo PREVENT estimado</span>
-        <strong className="prevent-category-pill">{categoryLabel}</strong>
+    <div className="prevent-results-modal-backdrop">
+      <section
+        className="prevent-results-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prevent-results-modal-title"
+      >
+        <header className="prevent-results-modal-header">
+          <div>
+            <span className="prevent-panel-badge">Resultado PREVENT</span>
+            <h2 id="prevent-results-modal-title">Resultado PREVENT</h2>
+            <p>
+              Estimación de riesgo cardio-reno-metabólico a 10 y 30 años.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="prevent-modal-close"
+            aria-label="Cerrar resultados"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="prevent-results-modal-controls">
+          <div className="prevent-tab-row" aria-label="Desenlaces PREVENT">
+            <button
+              type="button"
+              className={`prevent-tab ${riskType === "cvd" ? "is-active" : ""}`}
+              onClick={() => onRiskTypeChange("cvd")}
+            >
+              Global
+            </button>
+            <button
+              type="button"
+              className={`prevent-tab ${riskType === "ascvd" ? "is-active" : ""}`}
+              onClick={() => onRiskTypeChange("ascvd")}
+            >
+              ASCVD
+            </button>
+            <button
+              type="button"
+              className={`prevent-tab ${riskType === "hf" ? "is-active" : ""}`}
+              onClick={() => onRiskTypeChange("hf")}
+            >
+              IC
+            </button>
+          </div>
+
+          <div className="prevent-horizon-toggle" aria-label="Horizonte temporal">
+            <button
+              type="button"
+              className={horizon === "10y" ? "is-active" : ""}
+              onClick={() => onHorizonChange("10y")}
+            >
+              10 años
+            </button>
+            <button
+              type="button"
+              className={horizon === "30y" ? "is-active" : ""}
+              onClick={() => onHorizonChange("30y")}
+            >
+              30 años
+            </button>
+          </div>
+        </div>
+
+        {hasUncalculatedChanges ? (
+          <div className="prevent-stale-notice">
+            Cambios no recalculados. Presione “Calcular riesgo” para actualizar
+            la evaluación con los datos visibles.
+          </div>
+        ) : null}
+
+        <DigitalRiskDashboard
+          risk={selectedRisk}
+          riskType={riskType}
+          horizon={horizon}
+          missingMessage={selectedMissingMessage}
+        />
+
+        <section className="prevent-complement-card" aria-label="Riesgos complementarios">
+          <div>
+            <span className="prevent-rail-kicker">Riesgos complementarios</span>
+            <p>Valores completos recibidos desde el motor PREVENT.</p>
+          </div>
+          <div className="prevent-mini-risk-grid">
+            {(["cvd", "ascvd", "hf"] as RiskType[]).map((outcome) => (
+              <MiniRiskCard
+                key={outcome}
+                label={getRiskTypeCode(outcome)}
+                tenYearRisk={getRiskForHorizon(result, outcome, "10y")}
+                thirtyYearRisk={getRiskForHorizon(result, outcome, "30y")}
+              />
+            ))}
+          </div>
+        </section>
+
+        {selectedRisk === null && selectedWarnings.length > 0 ? (
+          <ul className="prevent-warning-list">
+            {selectedWarnings.map((warning) => (
+              <li key={formatWarningDetail(warning)}>{formatWarningDetail(warning)}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        {showClinicalContext && result.clinical_interpretation ? (
+          <ClinicalInterpretationPanel interpretation={result.clinical_interpretation} />
+        ) : null}
+
+        <CardiovascularAgeCard
+          value={result.prevent_age}
+          interpretation={result.clinical_interpretation ?? null}
+        />
+
+        <div className="prevent-responsible-note">
+          PREVENT estima riesgo probabilístico poblacional. No reemplaza el
+          juicio clínico.
+        </div>
+
+        <footer className="prevent-results-modal-actions">
+          <button
+            type="button"
+            className="prevent-button prevent-button-secondary"
+            onClick={onEditData}
+          >
+            Editar datos
+          </button>
+          <button
+            type="button"
+            className="prevent-button prevent-button-secondary"
+            onClick={onNewCalculation}
+          >
+            Nuevo cálculo
+          </button>
+          <button
+            type="button"
+            onClick={onPrint}
+            disabled={!canPrint}
+            className="prevent-button prevent-button-primary prevent-download"
+          >
+            Imprimir / guardar PDF
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function DigitalRiskDashboard({
+  risk,
+  riskType,
+  horizon,
+  missingMessage,
+}: {
+  risk: number | null;
+  riskType: RiskType;
+  horizon: RiskHorizon;
+  missingMessage: string | null;
+}) {
+  const category = getVisualRiskCategory(risk, horizon);
+  const categoryTone = category ?? "pending";
+  const progress = risk === null ? 0 : Math.min(Math.max(risk, 0), 100);
+  const dashOffset = 100 - progress;
+  const riskLabel = risk !== null ? formatClinicalRisk(risk) : "--";
+  const horizonLabel = horizon === "10y" ? "10 años" : "30 años";
+
+  return (
+    <section className={`prevent-digital-risk prevent-digital-risk-${categoryTone}`}>
+      <div className="prevent-digital-risk-copy">
+        <span>{getRiskTypeCode(riskType)} {horizonLabel}</span>
+        <h3>{getRiskTypeModalLabel(riskType)}</h3>
+        <p>
+          {horizon === "10y"
+            ? "Categorías visuales: bajo <5%, límite 5-7.4%, intermedio 7.5-19.9%, alto ≥20%."
+            : "Interpretar según contexto clínico y horizonte temporal."}
+        </p>
       </div>
-      <div className="prevent-gauge-visual">
-        <svg className="prevent-gauge" viewBox="0 0 240 135" role="img" aria-label={label}>
-          <path
-            className="prevent-gauge-track"
-            d="M 30 112 A 90 90 0 0 1 210 112"
+
+      <div className="prevent-digital-risk-meter">
+        <svg viewBox="0 0 240 240" role="img" aria-label={`${getRiskTypeCode(riskType)} ${horizonLabel}`}>
+          <circle className="prevent-digital-risk-track" cx="120" cy="120" r="94" pathLength="100" />
+          <circle
+            className="prevent-digital-risk-value"
+            cx="120"
+            cy="120"
+            r="94"
             pathLength="100"
-          />
-          <path
-            className="prevent-gauge-value"
-            d="M 30 112 A 90 90 0 0 1 210 112"
-            pathLength="100"
-            style={{ strokeDashoffset: 100 - clampedPercentage }}
+            style={{ strokeDashoffset: dashOffset }}
           />
         </svg>
+        <div className="prevent-digital-risk-readout">
+          <strong>{riskLabel}</strong>
+          <span>{translateVisualRiskCategory(category)}</span>
+        </div>
       </div>
-      <div className="prevent-gauge-readout">
-        <strong>{percentage !== null ? formatClinicalRisk(percentage) : "--"}</strong>
-        <span>{label} a 10 años</span>
-      </div>
-      <p className="prevent-gauge-context">
-        Riesgo a 10 años: {percentage !== null ? formatClinicalRisk(percentage) : isCalculated ? "No calculable" : "Pendiente"}
-        <br />
-        Riesgo a 30 años: {isCalculated ? formatThirtyYearRiskValue(thirtyYearRisk) : "Pendiente"}
-      </p>
-      <p className="prevent-gauge-context">
-        Categorías PREVENT clásicas: Bajo &lt;5%, Límite 5-7.4%,
-        Intermedio 7.5-19.9%, Alto ≥20%.
-      </p>
-    </div>
+
+      {risk === null ? (
+        <p className="prevent-digital-risk-missing">{missingMessage ?? "No calculable"}</p>
+      ) : null}
+    </section>
+  );
+}
+
+function MiniRiskCard({
+  label,
+  tenYearRisk,
+  thirtyYearRisk,
+}: {
+  label: string;
+  tenYearRisk: number | null;
+  thirtyYearRisk: number | null;
+}) {
+  return (
+    <article className="prevent-mini-risk-card">
+      <strong>{label}</strong>
+      <span>10a: {formatClinicalRisk(tenYearRisk)}</span>
+      <span>30a: {formatThirtyYearRiskValue(thirtyYearRisk)}</span>
+    </article>
   );
 }
 
@@ -1850,15 +1918,6 @@ function PrintRiskProfile({
           <li key={reason}>{reason}</li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function ResultMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="prevent-meta-row">
-      <span>{label}</span>
-      <strong>{value}</strong>
     </div>
   );
 }
