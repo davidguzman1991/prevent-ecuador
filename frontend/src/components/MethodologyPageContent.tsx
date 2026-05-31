@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ContactCard } from "@/components/ContactCard";
 
 const HERO_BADGES = [
@@ -157,6 +158,16 @@ export function MethodologyPageContent() {
   return (
     <div className="methodology-page">
       <header className="methodology-hero">
+        <div className="methodology-hero-visual" aria-hidden="true">
+          <Image
+            src="/methodology-ai-hero.png"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="methodology-hero-image"
+          />
+        </div>
         <div className="methodology-hero-copy">
           <span className="methodology-kicker">
             <MedicalPulseIcon />

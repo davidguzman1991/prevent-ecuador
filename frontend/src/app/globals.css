@@ -2293,7 +2293,7 @@ button {
 
 .methodology-page {
   display: grid;
-  gap: 20px;
+  gap: 28px;
 }
 
 .methodology-shell {
@@ -2301,22 +2301,50 @@ button {
 }
 
 .methodology-hero {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.8fr);
   gap: 20px;
-  padding: 34px;
-  border: 1px solid var(--line);
-  border-radius: 32px;
+  min-height: 520px;
+  padding: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 30px;
   background:
-    radial-gradient(circle at top left, rgba(30, 136, 229, 0.18), transparent 18rem),
-    linear-gradient(180deg, rgba(11, 27, 51, 0.98), rgba(8, 20, 39, 0.98));
+    radial-gradient(circle at 18% 0%, rgba(30, 136, 229, 0.28), transparent 24rem),
+    linear-gradient(135deg, rgba(5, 11, 24, 0.98), rgba(8, 20, 39, 0.9));
   box-shadow: var(--shadow-md);
 }
 
+.methodology-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(5, 11, 24, 0.98) 0%, rgba(5, 11, 24, 0.86) 36%, rgba(5, 11, 24, 0.28) 100%),
+    linear-gradient(180deg, rgba(5, 11, 24, 0.16), rgba(5, 11, 24, 0.82));
+}
+
+.methodology-hero-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.methodology-hero-image {
+  object-fit: cover;
+  object-position: center right;
+  opacity: 0.96;
+}
+
 .methodology-hero-copy {
+  position: relative;
+  z-index: 2;
   display: grid;
   gap: 14px;
-  align-content: start;
+  align-content: center;
 }
 
 .methodology-kicker,
@@ -2329,8 +2357,9 @@ button {
   min-height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(229, 243, 251, 0.82);
-  color: var(--primary-dark);
+  border: 1px solid rgba(30, 136, 229, 0.28);
+  background: rgba(30, 136, 229, 0.16);
+  color: #8ec5ff;
   font-size: 0.74rem;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -2355,19 +2384,22 @@ button {
   color: #ffffff;
   font-size: clamp(2.7rem, 6vw, 4.6rem);
   font-weight: 850;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   line-height: 0.95;
+  text-shadow: 0 18px 42px rgba(0, 0, 0, 0.48);
 }
 
 .methodology-hero-subtitle {
   max-width: 44rem;
   margin: 0;
-  color: var(--muted);
+  color: #d7e2f2;
   font-size: 1.02rem;
   line-height: 1.7;
 }
 
 .methodology-hero-panel {
+  position: relative;
+  z-index: 2;
   display: grid;
   gap: 14px;
   align-content: end;
@@ -2377,9 +2409,11 @@ button {
 .methodology-card,
 .methodology-alert-card {
   padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: rgba(11, 27, 51, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(30, 136, 229, 0.09), transparent 12rem),
+    rgba(11, 27, 51, 0.88);
   box-shadow: var(--shadow-sm);
 }
 
@@ -2389,7 +2423,7 @@ button {
 }
 
 .methodology-hero-stat span {
-  color: var(--muted);
+  color: #8ec5ff;
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -2397,7 +2431,7 @@ button {
 }
 
 .methodology-hero-stat strong {
-  color: #12324a;
+  color: #ffffff;
   font-size: 1rem;
   line-height: 1.45;
 }
@@ -2406,16 +2440,19 @@ button {
   display: grid;
   gap: 8px;
   padding: 18px;
-  border: 1px solid rgba(33, 150, 83, 0.2);
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(239, 250, 244, 0.96), rgba(255, 255, 255, 0.96));
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.18), transparent 10rem),
+    rgba(5, 11, 24, 0.74);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
 }
 
 .methodology-validation-stamp span,
 .methodology-validation-banner span,
 .methodology-metric-card span {
-  color: #166534;
+  color: #86efac;
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -2423,14 +2460,14 @@ button {
 }
 
 .methodology-validation-stamp strong {
-  color: #14532d;
+  color: #ffffff;
   font-size: 1.05rem;
   line-height: 1.35;
 }
 
 .methodology-validation-stamp p {
   margin: 0;
-  color: #3f5f4c;
+  color: #c8d5e8;
   font-size: 0.86rem;
   line-height: 1.55;
 }
@@ -2442,8 +2479,8 @@ button {
   min-height: 46px;
   padding: 0 18px;
   border-radius: 999px;
-  border: 1px solid rgba(46, 139, 192, 0.2);
-  background: rgba(5, 11, 24, 0.48);
+  border: 1px solid rgba(30, 136, 229, 0.34);
+  background: rgba(30, 136, 229, 0.14);
   color: #8ec5ff;
   font-size: 0.84rem;
   font-weight: 800;
@@ -2458,7 +2495,7 @@ button {
 
 .methodology-section {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .methodology-section-heading {
@@ -2472,13 +2509,13 @@ button {
   color: #ffffff;
   font-size: clamp(1.45rem, 3vw, 2.15rem);
   font-weight: 820;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .methodology-section-heading p {
   max-width: 62ch;
   margin: 0;
-  color: var(--muted);
+  color: #c8d5e8;
   font-size: 0.96rem;
   line-height: 1.65;
 }
@@ -2490,7 +2527,7 @@ button {
 .methodology-intro p {
   max-width: 78ch;
   margin: 0;
-  color: var(--muted);
+  color: #d7e2f2;
   font-size: 1rem;
   line-height: 1.8;
 }
@@ -2502,7 +2539,7 @@ button {
 
 .methodology-card-prose h3 {
   margin: 0;
-  color: #12324a;
+  color: #ffffff;
   font-size: 1.12rem;
   font-weight: 820;
   letter-spacing: -0.01em;
@@ -2512,7 +2549,7 @@ button {
 .methodology-credits-card p,
 .methodology-credits-card span {
   margin: 0;
-  color: var(--muted);
+  color: #c8d5e8;
   font-size: 0.95rem;
   line-height: 1.7;
 }
@@ -2523,7 +2560,7 @@ button {
   gap: 9px;
   margin: 0;
   padding-left: 18px;
-  color: #334155;
+  color: #d7e2f2;
   font-size: 0.94rem;
   line-height: 1.65;
 }
@@ -2572,8 +2609,9 @@ button {
 .methodology-table-wrap {
   width: 100%;
   overflow-x: auto;
-  border: 1px solid rgba(201, 214, 226, 0.82);
-  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(5, 11, 24, 0.42);
 }
 
 .methodology-table {
@@ -2585,13 +2623,13 @@ button {
 .methodology-table th,
 .methodology-table td {
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(227, 232, 239, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   text-align: left;
 }
 
 .methodology-table th {
-  background: rgba(5, 11, 24, 0.58);
-  color: var(--primary-dark);
+  background: rgba(30, 136, 229, 0.12);
+  color: #8ec5ff;
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -2610,16 +2648,17 @@ button {
 
 .methodology-table-note {
   margin: 0;
-  color: var(--muted-2);
+  color: #a7b4c8;
   font-size: 0.78rem;
   line-height: 1.5;
 }
 
 .methodology-alert-card {
   background:
-    linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(11, 27, 51, 0.94)),
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.14), transparent 10rem),
+    linear-gradient(180deg, rgba(245, 158, 11, 0.08), rgba(11, 27, 51, 0.94)),
     #0b1b33;
-  border-color: rgba(183, 121, 31, 0.16);
+  border-color: rgba(245, 158, 11, 0.2);
 }
 
 .methodology-credits-card {
@@ -2657,10 +2696,10 @@ button {
   align-items: center;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid rgba(46, 139, 192, 0.18);
+  border: 1px solid rgba(30, 136, 229, 0.28);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  color: #12324a;
+  background: rgba(30, 136, 229, 0.13);
+  color: #d7e2f2;
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -2669,14 +2708,16 @@ button {
   display: grid;
   gap: 8px;
   padding: 20px;
-  border: 1px solid rgba(33, 150, 83, 0.22);
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(234, 252, 242, 0.98), rgba(255, 255, 255, 0.98));
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.17), transparent 14rem),
+    linear-gradient(135deg, rgba(8, 20, 39, 0.96), rgba(11, 27, 51, 0.92));
   box-shadow: var(--shadow-sm);
 }
 
 .methodology-validation-banner strong {
-  color: #14532d;
+  color: #ffffff;
   font-size: clamp(1.2rem, 2.5vw, 1.75rem);
   font-weight: 860;
   letter-spacing: -0.02em;
@@ -2686,7 +2727,7 @@ button {
 .methodology-validation-banner p {
   max-width: 72ch;
   margin: 0;
-  color: #3f5f4c;
+  color: #c8d5e8;
   font-size: 0.95rem;
   line-height: 1.6;
 }
@@ -2701,14 +2742,15 @@ button {
   display: grid;
   gap: 8px;
   padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(8, 20, 39, 0.94), rgba(5, 11, 24, 0.82));
   box-shadow: var(--shadow-sm);
 }
 
 .methodology-metric-card strong {
-  color: #12324a;
+  color: #ffffff;
   font-size: 1.35rem;
   font-weight: 850;
   line-height: 1.1;
@@ -2735,7 +2777,7 @@ button {
 
 .methodology-roadmap-header h3 {
   margin: 10px 0 0;
-  color: #12324a;
+  color: #ffffff;
   font-size: 1.05rem;
   font-weight: 820;
   line-height: 1.25;
@@ -2745,8 +2787,8 @@ button {
   flex: 0 0 auto;
   padding: 7px 10px;
   border-radius: 999px;
-  background: rgba(220, 252, 231, 0.86);
-  color: #166534;
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
   font-size: 0.72rem;
   font-weight: 900;
 }
@@ -3764,8 +3806,20 @@ button {
   }
 
   .methodology-hero {
+    min-height: 560px;
     padding: 24px 20px;
     border-radius: 26px;
+  }
+
+  .methodology-hero::after {
+    background:
+      linear-gradient(180deg, rgba(5, 11, 24, 0.94) 0%, rgba(5, 11, 24, 0.72) 52%, rgba(5, 11, 24, 0.95) 100%),
+      linear-gradient(90deg, rgba(5, 11, 24, 0.92), rgba(5, 11, 24, 0.46));
+  }
+
+  .methodology-hero-image {
+    object-position: center;
+    opacity: 0.72;
   }
 
   .methodology-hero h1 {
@@ -3814,7 +3868,7 @@ button {
 
   .methodology-table tr {
     padding: 10px 0;
-    border-bottom: 1px solid rgba(227, 232, 239, 0.92);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .methodology-table tr:last-child {
@@ -3830,7 +3884,7 @@ button {
     content: attr(data-label);
     display: block;
     margin-bottom: 4px;
-    color: var(--primary-dark);
+    color: #8ec5ff;
     font-size: 0.72rem;
     font-weight: 900;
     letter-spacing: 0.08em;
