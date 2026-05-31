@@ -75,8 +75,8 @@ button {
   width: min(1640px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr) minmax(310px, 360px);
-  gap: 22px;
+  grid-template-columns: 210px minmax(0, 1fr) minmax(300px, 330px);
+  gap: 18px;
   align-items: start;
 }
 
@@ -379,8 +379,8 @@ button {
 
 .prevent-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.36fr);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.4fr);
+  gap: 24px;
   align-items: center;
   width: 100%;
 }
@@ -398,14 +398,16 @@ button {
 }
 
 .prevent-hero-logo img {
+  width: min(300px, 100%);
+  max-width: none;
   filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.34));
 }
 
 .prevent-title {
-  max-width: 18ch;
+  max-width: 13ch;
   margin: 14px 0 0;
   color: #ffffff;
-  font-size: clamp(2.45rem, 4.2vw, 4.5rem);
+  font-size: clamp(2.1rem, 2.75vw, 3.25rem);
   font-weight: 850;
   line-height: 0.98;
   letter-spacing: 0;
@@ -3231,6 +3233,10 @@ button {
 
   .prevent-hero-logo {
     justify-content: flex-start;
+  }
+
+  .prevent-hero-logo img {
+    width: min(360px, 100%);
   }
 
   .prevent-title {

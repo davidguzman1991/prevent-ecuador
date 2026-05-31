@@ -909,10 +909,10 @@ export function PreventCalculator() {
               </div>
               <div className="prevent-hero-logo">
                 <Image
-                  src="/LOGO PREVENT.png"
+                  src="/prevent-ecuador-logo-transparent.png"
                   alt="PREVENT Ecuador"
-                  width={520}
-                  height={180}
+                  width={720}
+                  height={310}
                   priority
                   className="h-auto w-full max-w-[520px] object-contain"
                 />
