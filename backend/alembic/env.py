@@ -7,7 +7,13 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.core.database import Base
+from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.doctor import Doctor  # noqa: F401
+from app.models.follow_up_record import FollowUpRecord  # noqa: F401
+from app.models.patient import Patient  # noqa: F401
 from app.models.prevent_record import PreventRecord  # noqa: F401
+from app.models.public_session import PublicSession  # noqa: F401
+from app.models.user import AppUser  # noqa: F401
 
 
 config = context.config

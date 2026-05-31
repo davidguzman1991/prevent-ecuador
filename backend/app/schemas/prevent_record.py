@@ -188,6 +188,15 @@ class PreventRecordCreateResponse(BaseModel):
     patient_employment_status: PatientEmploymentStatus | None = None
     patient_ethnicity: PatientEthnicity | None = None
     patient_socioeconomic_level: PatientSocioeconomicLevel | None = None
+    source_type: str | None = None
+    user_type: str | None = None
+    visibility_scope: str | None = None
+    created_modality: str | None = None
+    request_id: str | None = None
+    created_by_user_id: UUID | None = None
+    owner_doctor_id: UUID | None = None
+    patient_id: UUID | None = None
+    public_session_id: UUID | None = None
 
 
 class PreventRecordListItem(BaseModel):
@@ -218,6 +227,15 @@ class PreventRecordListItem(BaseModel):
     ascvd_risk_30y: float | None
     hf_risk_30y: float | None
     model_variant: str | None
+    created_by_user_id: UUID | None = None
+    owner_doctor_id: UUID | None = None
+    patient_id: UUID | None = None
+    public_session_id: UUID | None = None
+    source_type: str | None = None
+    user_type: str | None = None
+    visibility_scope: str | None = None
+    created_modality: str | None = None
+    request_id: str | None = None
 
 
 class PreventRecordListResponse(BaseModel):
@@ -291,6 +309,15 @@ class PreventRecordDetailResponse(BaseModel):
     hf_30y: float | None = None
     model_variant: str | None
     clinical_interpretation: dict[str, Any] | None = None
+    created_by_user_id: UUID | None = None
+    owner_doctor_id: UUID | None = None
+    patient_id: UUID | None = None
+    public_session_id: UUID | None = None
+    source_type: str | None = None
+    user_type: str | None = None
+    visibility_scope: str | None = None
+    created_modality: str | None = None
+    request_id: str | None = None
 
 
 class PreventRecordListFilters(BaseModel):
@@ -312,3 +339,9 @@ class PreventRecordListFilters(BaseModel):
     record_status: Literal["active", "archived", "all"] = "active"
     page: int = 1
     page_size: int = 20
+    owner_doctor_id: UUID | None = None
+    visibility_scope: str | None = None
+    visibility_scopes: list[str] | None = None
+    include_public: bool = False
+    include_legacy: bool = False
+    admin_mode: bool = False

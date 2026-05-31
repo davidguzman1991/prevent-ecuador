@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, Integer, String, Text, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -80,6 +80,31 @@ class PreventRecord(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("public.app_users.id"),
+        nullable=True,
+    )
+    owner_doctor_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("public.doctors.id"),
+        nullable=True,
+    )
+    patient_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("public.patients.id"),
+        nullable=True,
+    )
+    public_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("public.public_sessions.id"),
+        nullable=True,
+    )
+    source_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    user_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    visibility_scope: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    created_modality: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     patient_age: Mapped[int] = mapped_column(Integer, nullable=False)
     patient_sex: Mapped[str] = mapped_column(String(20), nullable=False)

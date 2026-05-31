@@ -2,7 +2,7 @@ import csv
 import io
 import logging
 from datetime import datetime, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -16,6 +16,7 @@ from app.schemas.prevent_record import (
     PreventRecordListItem,
     PreventRecordListResponse,
 )
+from app.services.auth_users import AuthenticatedUser
 from app.services.clinical_recommendations import (
     build_clinical_interpretation,
     normalize_clinical_interpretation,
@@ -347,6 +348,12 @@ def _build_prevent_records_query(
 ):
     query = db.query(PreventRecord)
 
+    if filters.owner_doctor_id is not None:
+        query = query.filter(PreventRecord.owner_doctor_id == filters.owner_doctor_id)
+    if filters.visibility_scope is not None:
+        query = query.filter(PreventRecord.visibility_scope == filters.visibility_scope)
+    if filters.visibility_scopes:
+        query = query.filter(PreventRecord.visibility_scope.in_(filters.visibility_scopes))
     if filters.date_from is not None:
         query = query.filter(func.date(PreventRecord.created_at) >= filters.date_from)
     if filters.date_to is not None:
@@ -392,6 +399,22 @@ def _build_prevent_records_query(
     return query
 
 
+def _record_matches_access_scope(
+    record: PreventRecord,
+    *,
+    owner_doctor_id: UUID | None = None,
+    visibility_scope: str | None = None,
+    visibility_scopes: list[str] | None = None,
+) -> bool:
+    if owner_doctor_id is not None and record.owner_doctor_id != owner_doctor_id:
+        return False
+    if visibility_scope is not None and record.visibility_scope != visibility_scope:
+        return False
+    if visibility_scopes is not None and record.visibility_scope not in visibility_scopes:
+        return False
+    return True
+
+
 def _validate_requested_variant(engine_input: dict[str, object]) -> str | None:
     requested_variant = engine_input.get("model_variant")
     if requested_variant is None:
@@ -430,8 +453,10 @@ def create_prevent_record(
     payload: PreventRecordCreate,
     *,
     debug: bool = False,
+    current_user: AuthenticatedUser | None = None,
 ) -> PreventRecordCreateResponse:
     engine_input = payload.model_dump(by_alias=True, exclude_none=True)
+    request_id = str(uuid4())
     requested_variant = _validate_requested_variant(engine_input)
     logger.info("PREVENT input payload received: %s", _safe_payload_for_log(engine_input))
     model_variant, result, warnings = compute_prevent_10y(engine_input, requested_variant)
@@ -520,8 +545,30 @@ def create_prevent_record(
             "input_payload_json",
         },
     )
+    if current_user is not None:
+        record_traceability = {
+            "created_by_user_id": current_user.user.id,
+            "owner_doctor_id": current_user.doctor_profile.id
+            if current_user.doctor_profile is not None
+            else None,
+            "source_type": "doctor",
+            "user_type": "doctor",
+            "visibility_scope": "doctor_private",
+            "created_modality": "doctor_calculator",
+            "request_id": request_id,
+        }
+    else:
+        record_traceability = {
+            "source_type": "public",
+            "user_type": "anonymous",
+            "visibility_scope": "public_anonymous",
+            "created_modality": "public_calculator",
+            "request_id": request_id,
+        }
+
     record = PreventRecord(
         **record_data,
+        **record_traceability,
         risk_10y=risk_10y_stored,
         risk_category=cvd_category,
         model_variant_used=model_variant,
@@ -596,6 +643,15 @@ def create_prevent_record(
         "patient_employment_status": record.patient_employment_status,
         "patient_ethnicity": record.patient_ethnicity,
         "patient_socioeconomic_level": record.patient_socioeconomic_level,
+        "source_type": record.source_type,
+        "user_type": record.user_type,
+        "visibility_scope": record.visibility_scope,
+        "created_modality": record.created_modality,
+        "request_id": record.request_id,
+        "created_by_user_id": record.created_by_user_id,
+        "owner_doctor_id": record.owner_doctor_id,
+        "patient_id": record.patient_id,
+        "public_session_id": record.public_session_id,
     }
     logger.info("PREVENT response payload: %s", response_payload)
     return PreventRecordCreateResponse(
@@ -630,6 +686,15 @@ def create_prevent_record(
         patient_employment_status=record.patient_employment_status,
         patient_ethnicity=record.patient_ethnicity,
         patient_socioeconomic_level=record.patient_socioeconomic_level,
+        source_type=record.source_type,
+        user_type=record.user_type,
+        visibility_scope=record.visibility_scope,
+        created_modality=record.created_modality,
+        request_id=record.request_id,
+        created_by_user_id=record.created_by_user_id,
+        owner_doctor_id=record.owner_doctor_id,
+        patient_id=record.patient_id,
+        public_session_id=record.public_session_id,
     )
 
 
@@ -717,6 +782,15 @@ def list_prevent_records(
                 ascvd_risk_30y=extracted["ascvd_30y"],
                 hf_risk_30y=extracted["hf_30y"],
                 model_variant=extracted["model_variant"],
+                created_by_user_id=record.created_by_user_id,
+                owner_doctor_id=record.owner_doctor_id,
+                patient_id=record.patient_id,
+                public_session_id=record.public_session_id,
+                source_type=record.source_type,
+                user_type=record.user_type,
+                visibility_scope=record.visibility_scope,
+                created_modality=record.created_modality,
+                request_id=record.request_id,
             ),
         )
 
@@ -733,9 +807,20 @@ def list_prevent_records(
 def get_prevent_record_detail(
     db: Session,
     record_id: UUID,
+    *,
+    owner_doctor_id: UUID | None = None,
+    visibility_scope: str | None = None,
+    visibility_scopes: list[str] | None = None,
 ) -> PreventRecordDetailResponse | None:
     record = get_prevent_record(db, record_id)
     if record is None:
+        return None
+    if not _record_matches_access_scope(
+        record,
+        owner_doctor_id=owner_doctor_id,
+        visibility_scope=visibility_scope,
+        visibility_scopes=visibility_scopes,
+    ):
         return None
 
     extracted = _extract_record_results(record)
@@ -801,6 +886,15 @@ def get_prevent_record_detail(
         hf_30y=extracted["hf_30y"],
         model_variant=extracted["model_variant"],
         clinical_interpretation=_clinical_interpretation_from_record(record),
+        created_by_user_id=record.created_by_user_id,
+        owner_doctor_id=record.owner_doctor_id,
+        patient_id=record.patient_id,
+        public_session_id=record.public_session_id,
+        source_type=record.source_type,
+        user_type=record.user_type,
+        visibility_scope=record.visibility_scope,
+        created_modality=record.created_modality,
+        request_id=record.request_id,
     )
 
 

@@ -1,5 +1,6 @@
 """Pydantic schemas package."""
 
+from app.schemas.auth import CurrentUserResponse, DoctorProfileResponse
 from app.schemas.prevent_record import (
     PreventRecordBase,
     PreventRecordCreate,
@@ -12,4 +13,6 @@ __all__ = [
     "PreventRecordCreate",
     "PreventRecordCreateResponse",
     "PreventRecordResponse",
+    "CurrentUserResponse",
+    "DoctorProfileResponse",
 ]
