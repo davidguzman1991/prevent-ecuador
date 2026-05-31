@@ -23,6 +23,10 @@ export function ValidationInfoCard() {
           <ValidationCheckIcon />
           <span>Concordancia numérica completa</span>
         </li>
+        <li>
+          <ValidationCheckIcon />
+          <span>Error promedio ≈ 10^-14</span>
+        </li>
       </ul>
 
       <Link href="/metodologia" className="prevent-validation-link">

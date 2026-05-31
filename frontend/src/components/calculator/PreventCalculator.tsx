@@ -808,6 +808,13 @@ export function PreventCalculator() {
 
       <div className="prevent-layout">
         <aside className="prevent-sidebar" aria-label="Navegación clínica">
+          <div className="prevent-sidebar-logo">
+            <strong>
+              PREVENT
+              <br />
+              Ecuador
+            </strong>
+          </div>
           <div className="prevent-brand-mark">PE</div>
           <nav className="prevent-side-nav">
             <a href="#ingreso" className="prevent-side-link is-active">
@@ -824,6 +831,11 @@ export function PreventCalculator() {
             <Link className="prevent-dashboard-link" href="/dashboard">
               Panel clínico
             </Link>
+          </div>
+          <div className="prevent-sidebar-credit">
+            <span>Desarrollado por</span>
+            <strong>Dr. David Guzmán</strong>
+            <p>Médico · Investigador</p>
           </div>
           <div className="prevent-mobile-options">
             <button
@@ -886,6 +898,14 @@ export function PreventCalculator() {
                   a 10 y 30 años, con captura estructurada para investigación
                   poblacional.
                 </p>
+                <div className="prevent-hero-badges" aria-label="Alcance PREVENT">
+                  <span>PREVENT</span>
+                  <span>10 años</span>
+                  <span>30 años</span>
+                  <span>CVD</span>
+                  <span>ASCVD</span>
+                  <span>HF</span>
+                </div>
               </div>
               <div className="prevent-hero-logo">
                 <Image
@@ -936,6 +956,8 @@ export function PreventCalculator() {
             <FormSection
               title="DATOS DEL PACIENTE"
               description="Datos básicos para el cálculo principal."
+              icon="patient"
+              defaultOpen
             >
               <div className="prevent-form-grid">
                 <Field
@@ -1037,6 +1059,7 @@ export function PreventCalculator() {
             <FormSection
               title="ANTECEDENTES Y TRATAMIENTOS"
               description="Factores de riesgo adicionales."
+              icon="treatment"
             >
               <div className="prevent-switch-grid">
                 <CheckboxField
@@ -1069,6 +1092,7 @@ export function PreventCalculator() {
             <FormSection
               title="Datos geográficos para análisis poblacional"
               description="Estos datos permiten analizar la distribución territorial del riesgo cardio-reno-metabólico. No reemplazan la evaluación clínica individual."
+              icon="geo"
             >
               <div className="prevent-form-grid">
                 <SelectField
@@ -1132,6 +1156,7 @@ export function PreventCalculator() {
             <FormSection
               title="Determinantes sociales de salud (Opcional)"
               description="Variables para análisis epidemiológico y métricas poblacionales futuras. No modifican el cálculo PREVENT individual."
+              icon="social"
             >
               <div className="prevent-form-grid">
                 <SelectField
@@ -1175,6 +1200,7 @@ export function PreventCalculator() {
             <FormSection
               title="BIOMARCADORES OPCIONALES"
               description="Variables adicionales para variantes extendidas del modelo."
+              icon="biomarker"
             >
               <div className="prevent-form-grid">
                 <Field
@@ -1214,6 +1240,8 @@ export function PreventCalculator() {
             <FormSection
               title="PROFESIONAL RESPONSABLE"
               description="Datos para trazabilidad del informe clínico."
+              icon="physician"
+              defaultOpen
             >
               <div className="prevent-form-grid">
                 <Field
@@ -1407,9 +1435,7 @@ export function PreventCalculator() {
             ) : null}
           </section>
           ) : (
-            <section className="prevent-result-card prevent-validation-only">
-              <ValidationInfoCard />
-            </section>
+            <RightRailCards />
           )}
         </aside>
 
@@ -1502,6 +1528,48 @@ export function PreventCalculator() {
       ) : null}
       <SiteFooter />
     </main>
+  );
+}
+
+function RightRailCards() {
+  return (
+    <div className="prevent-right-rail">
+      <ValidationInfoCard />
+
+      <section className="prevent-rail-card">
+        <span className="prevent-rail-kicker">Desenlaces calculados</span>
+        <ul className="prevent-rail-list">
+          <li>
+            <span className="prevent-rail-dot prevent-rail-dot-cvd" />
+            Riesgo cardiovascular global (CVD)
+          </li>
+          <li>
+            <span className="prevent-rail-dot prevent-rail-dot-ascvd" />
+            Riesgo aterosclerótico (ASCVD)
+          </li>
+          <li>
+            <span className="prevent-rail-dot prevent-rail-dot-hf" />
+            Riesgo de insuficiencia cardíaca (HF)
+          </li>
+        </ul>
+      </section>
+
+      <section className="prevent-rail-card">
+        <span className="prevent-rail-kicker">Horizontes temporales</span>
+        <ul className="prevent-rail-list prevent-rail-list-compact">
+          <li>10 años</li>
+          <li>30 años</li>
+        </ul>
+      </section>
+
+      <section className="prevent-rail-card prevent-rail-privacy">
+        <span className="prevent-rail-kicker">Privacidad</span>
+        <p>
+          Los datos clínicos se utilizan exclusivamente para fines de cálculo y
+          análisis científico autorizados.
+        </p>
+      </section>
+    </div>
   );
 }
 
