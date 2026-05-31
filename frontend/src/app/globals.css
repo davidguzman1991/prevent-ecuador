@@ -379,7 +379,7 @@ button {
 
 .prevent-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.4fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.46fr);
   gap: 24px;
   align-items: center;
   width: 100%;
@@ -398,8 +398,9 @@ button {
 }
 
 .prevent-hero-logo img {
-  width: min(300px, 100%);
+  width: min(390px, 100%);
   max-width: none;
+  border-radius: 12px;
   filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.34));
 }
 
