@@ -157,6 +157,9 @@ const REFERENCES = [
 export function MethodologyPageContent() {
   return (
     <div className="methodology-page">
+      <Link href="/" className="methodology-floating-calculator-link">
+        Volver a la calculadora
+      </Link>
       <header className="methodology-hero">
         <div className="methodology-hero-visual" aria-hidden="true">
           <Image
@@ -200,9 +203,6 @@ export function MethodologyPageContent() {
             <span>Desenlaces integrados</span>
             <strong>CVD • ASCVD • HF</strong>
           </div>
-          <Link href="/" className="methodology-hero-link">
-            Volver a la calculadora
-          </Link>
         </div>
       </header>
 
