@@ -886,36 +886,31 @@ export function PreventCalculator() {
         </aside>
 
         <section className="prevent-main-column" id="ingreso">
-          <header className="prevent-hero-card">
-            <div className="prevent-hero-grid">
-              <div className="prevent-hero-text">
-                <span className="prevent-kicker">Plataforma científica validada</span>
-                <h1 className="prevent-title">
-                  Estratificación cardio-reno-metabólica
-                </h1>
-                <p className="prevent-copy">
-                  Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca
-                  a 10 y 30 años, con captura estructurada para investigación
-                  poblacional.
-                </p>
-                <div className="prevent-hero-badges" aria-label="Alcance PREVENT">
-                  <span>PREVENT</span>
-                  <span>10 años</span>
-                  <span>30 años</span>
-                  <span>CVD</span>
-                  <span>ASCVD</span>
-                  <span>HF</span>
-                </div>
-              </div>
-              <div className="prevent-hero-logo">
-                <Image
-                  src="/logo2.png"
-                  alt="PREVENT Ecuador"
-                  width={720}
-                  height={310}
-                  priority
-                  className="h-auto w-full max-w-[520px] object-contain"
-                />
+          <header className="prevent-hero-card prevent-hero-card-banner">
+            <div className="prevent-hero-logo prevent-hero-logo-banner">
+              <Image
+                src="/logo%20hero.webp"
+                alt="PREVENT Ecuador"
+                width={1280}
+                height={520}
+                priority
+                className="h-auto w-full object-contain"
+              />
+            </div>
+            <div className="prevent-hero-summary">
+              <span className="prevent-kicker">Plataforma científica validada</span>
+              <p className="prevent-copy prevent-hero-description">
+                Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca
+                a 10 y 30 años, con captura estructurada para investigación
+                poblacional.
+              </p>
+              <div className="prevent-hero-badges" aria-label="Alcance PREVENT">
+                <span>PREVENT</span>
+                <span>10 años</span>
+                <span>30 años</span>
+                <span>CVD</span>
+                <span>ASCVD</span>
+                <span>HF</span>
               </div>
             </div>
           </header>
@@ -1302,8 +1297,8 @@ export function PreventCalculator() {
           </form>
         </section>
 
+        {result ? (
         <aside className="prevent-results-column" id="resultados" ref={resultsRef}>
-          {result ? (
           <section className="prevent-result-card">
             <div className="prevent-panel-header">
               <span className="prevent-panel-badge">RESULTADOS Y EVALUACIÓN</span>
@@ -1434,10 +1429,8 @@ export function PreventCalculator() {
               </p>
             ) : null}
           </section>
-          ) : (
-            <RightRailCards />
-          )}
         </aside>
+        ) : null}
 
       </div>
       {result ? (
@@ -1528,48 +1521,6 @@ export function PreventCalculator() {
       ) : null}
       <SiteFooter />
     </main>
-  );
-}
-
-function RightRailCards() {
-  return (
-    <div className="prevent-right-rail">
-      <ValidationInfoCard />
-
-      <section className="prevent-rail-card">
-        <span className="prevent-rail-kicker">Desenlaces calculados</span>
-        <ul className="prevent-rail-list">
-          <li>
-            <span className="prevent-rail-dot prevent-rail-dot-cvd" />
-            Riesgo cardiovascular global (CVD)
-          </li>
-          <li>
-            <span className="prevent-rail-dot prevent-rail-dot-ascvd" />
-            Riesgo aterosclerótico (ASCVD)
-          </li>
-          <li>
-            <span className="prevent-rail-dot prevent-rail-dot-hf" />
-            Riesgo de insuficiencia cardíaca (HF)
-          </li>
-        </ul>
-      </section>
-
-      <section className="prevent-rail-card">
-        <span className="prevent-rail-kicker">Horizontes temporales</span>
-        <ul className="prevent-rail-list prevent-rail-list-compact">
-          <li>10 años</li>
-          <li>30 años</li>
-        </ul>
-      </section>
-
-      <section className="prevent-rail-card prevent-rail-privacy">
-        <span className="prevent-rail-kicker">Privacidad</span>
-        <p>
-          Los datos clínicos se utilizan exclusivamente para fines de cálculo y
-          análisis científico autorizados.
-        </p>
-      </section>
-    </div>
   );
 }
 

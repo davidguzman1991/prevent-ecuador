@@ -75,8 +75,8 @@ button {
   width: min(1640px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr) minmax(300px, 330px);
-  gap: 18px;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 22px;
   align-items: start;
 }
 
@@ -301,7 +301,9 @@ button {
 }
 
 .prevent-hero-card {
-  padding: 28px 32px;
+  display: grid;
+  gap: 18px;
+  padding: 26px 32px 28px;
   overflow: hidden;
   background:
     radial-gradient(circle at 88% 20%, rgba(30, 136, 229, 0.16), transparent 15rem),
@@ -385,23 +387,35 @@ button {
   width: 100%;
 }
 
-.prevent-hero-text {
-  min-width: 0;
-  max-width: 46rem;
+.prevent-hero-summary {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
 }
 
 .prevent-hero-logo {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   min-width: 0;
   opacity: 0.98;
 }
 
 .prevent-hero-logo img {
-  width: min(390px, 100%);
+  width: min(980px, 100%);
   max-width: none;
-  border-radius: 12px;
-  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.34));
+  border-radius: 18px;
+  filter: drop-shadow(0 24px 46px rgba(0, 0, 0, 0.42));
+}
+
+.prevent-hero-logo-banner {
+  width: 100%;
+}
+
+.prevent-hero-logo-banner img {
+  display: block;
+  margin: 0 auto;
+  max-height: 320px;
 }
 
 .prevent-title {
@@ -422,11 +436,19 @@ button {
   line-height: 1.75;
 }
 
+.prevent-hero-description {
+  max-width: 76ch;
+  margin: 0;
+  color: #d7e2f2;
+  font-size: 1rem;
+}
+
 .prevent-hero-badges {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
-  margin-top: 22px;
+  margin-top: 0;
 }
 
 .prevent-hero-badges span {
@@ -966,12 +988,12 @@ button {
 }
 
 .prevent-results-column {
-  position: sticky;
-  top: 22px;
-  max-height: calc(100vh - 44px);
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-gutter: stable;
+  grid-column: 2;
+  position: static;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+  scrollbar-gutter: auto;
 }
 
 .prevent-result-card {
@@ -1775,85 +1797,6 @@ button {
   transform: translateY(-1px);
   background: var(--primary-soft);
   border-color: rgba(46, 139, 192, 0.28);
-}
-
-.prevent-right-rail {
-  display: grid;
-  gap: 16px;
-}
-
-.prevent-rail-card {
-  display: grid;
-  gap: 16px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at top right, rgba(30, 136, 229, 0.1), transparent 10rem),
-    linear-gradient(180deg, rgba(11, 27, 51, 0.95), rgba(8, 20, 39, 0.92));
-  box-shadow: var(--shadow-sm);
-}
-
-.prevent-rail-kicker {
-  color: #69adff;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.prevent-rail-list {
-  display: grid;
-  gap: 13px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.prevent-rail-list li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: center;
-  color: #d7e2f2;
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
-.prevent-rail-list-compact li {
-  grid-template-columns: 1fr;
-}
-
-.prevent-rail-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-}
-
-.prevent-rail-dot-cvd {
-  background: linear-gradient(135deg, var(--success), #16a34a);
-}
-
-.prevent-rail-dot-ascvd {
-  background: linear-gradient(135deg, var(--ascvd), #6d28d9);
-}
-
-.prevent-rail-dot-hf {
-  background: linear-gradient(135deg, var(--hf), #ea580c);
-}
-
-.prevent-rail-privacy {
-  border-color: rgba(30, 136, 229, 0.22);
-  background:
-    radial-gradient(circle at top left, rgba(30, 136, 229, 0.14), transparent 9rem),
-    linear-gradient(180deg, rgba(11, 27, 51, 0.94), rgba(8, 20, 39, 0.9));
-}
-
-.prevent-rail-privacy p {
-  margin: 0;
-  color: #c8d5e8;
-  font-size: 0.86rem;
-  line-height: 1.65;
 }
 
 .prevent-method-note {
@@ -3168,7 +3111,7 @@ button {
 
 @media (max-width: 1240px) {
   .prevent-layout {
-    grid-template-columns: 210px minmax(0, 1fr) minmax(290px, 320px);
+    grid-template-columns: 210px minmax(0, 1fr);
     gap: 16px;
   }
 
@@ -3208,6 +3151,7 @@ button {
   }
 
   .prevent-results-column {
+    grid-column: auto;
     position: static;
     max-height: none;
     overflow: visible;
@@ -3233,11 +3177,11 @@ button {
   }
 
   .prevent-hero-logo {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .prevent-hero-logo img {
-    width: min(360px, 100%);
+    width: min(780px, 100%);
   }
 
   .prevent-title {
