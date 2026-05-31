@@ -487,7 +487,6 @@ export function PreventCalculator() {
     initialCkdEpiCalculatorState,
   );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
-  const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState(false);
   const feedbackTimeoutRef = useRef<number | null>(null);
   const selectedProvince = ECUADOR_PROVINCES.find(
     (province) => province.code === form.patient_province_code,
@@ -954,45 +953,9 @@ export function PreventCalculator() {
             <strong>Dr. David Guzmán</strong>
             <p>Médico · Investigador</p>
           </div>
-          <div className="prevent-mobile-options">
-            <button
-              type="button"
-              className="prevent-mobile-options-button"
-              aria-expanded={isMobileOptionsOpen}
-              aria-controls="prevent-mobile-options-menu"
-              onClick={() => setIsMobileOptionsOpen((isOpen) => !isOpen)}
-            >
-              ☰ Más opciones
-            </button>
-            {isMobileOptionsOpen ? (
-              <div
-                id="prevent-mobile-options-menu"
-                className="prevent-mobile-options-menu"
-              >
-                <a
-                  className="prevent-mobile-options-link"
-                  href="#ingreso"
-                  onClick={() => setIsMobileOptionsOpen(false)}
-                >
-                  Calculadora
-                </a>
-                <Link
-                  className="prevent-mobile-options-link"
-                  href="/dashboard"
-                  onClick={() => setIsMobileOptionsOpen(false)}
-                >
-                  Iniciar sesión
-                </Link>
-                <Link
-                  className="prevent-mobile-options-link"
-                  href="/metodologia"
-                  onClick={() => setIsMobileOptionsOpen(false)}
-                >
-                  Metodología
-                </Link>
-              </div>
-            ) : null}
-          </div>
+          <Link className="prevent-mobile-login-link" href="/dashboard">
+            Iniciar sesión
+          </Link>
         </aside>
 
         <section className="prevent-main-column" id="ingreso">
