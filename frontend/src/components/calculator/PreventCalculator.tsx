@@ -54,6 +54,11 @@ const PHYSICIAN_SPECIALTY_OPTIONS = [
 const showClinicalContext = false;
 
 type RiskHorizon = "10y" | "30y";
+type CkdEpiCalculatorState = {
+  isOpen: boolean;
+  creatinine: string;
+  error: string;
+};
 
 const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = {
   age: {
@@ -136,6 +141,12 @@ const initialBmiCalculatorState: BmiCalculatorState = {
   error: "",
 };
 
+const initialCkdEpiCalculatorState: CkdEpiCalculatorState = {
+  isOpen: false,
+  creatinine: "",
+  error: "",
+};
+
 function extractErrorMessage(errorBody: unknown): string {
   if (
     errorBody &&
@@ -173,6 +184,38 @@ function calculateBmiFromWeightAndHeight(weightKg: string, heightCm: string): st
 
   const heightMeters = height / 100;
   return (weight / (heightMeters * heightMeters)).toFixed(1);
+}
+
+function calculateCkdEpi2021Egfr(
+  creatinineMgDl: string,
+  ageValue: string,
+  sex: FormState["sex"],
+): string {
+  const creatinine = parseClinicalNumber(creatinineMgDl);
+  const age = parseClinicalNumber(ageValue);
+
+  if (!Number.isFinite(creatinine) || creatinine <= 0) {
+    throw new Error("Ingrese una creatinina sérica mayor a 0 mg/dL.");
+  }
+  if (!Number.isFinite(age) || age <= 0) {
+    throw new Error("Ingrese la edad para calcular CKD-EPI.");
+  }
+  if (sex !== "male" && sex !== "female") {
+    throw new Error("Seleccione sexo masculino o femenino para calcular CKD-EPI.");
+  }
+
+  const isFemale = sex === "female";
+  const kappa = isFemale ? 0.7 : 0.9;
+  const alpha = isFemale ? -0.241 : -0.302;
+  const creatinineRatio = creatinine / kappa;
+  const egfr =
+    142 *
+    Math.pow(Math.min(creatinineRatio, 1), alpha) *
+    Math.pow(Math.max(creatinineRatio, 1), -1.2) *
+    Math.pow(0.9938, age) *
+    (isFemale ? 1.012 : 1);
+
+  return egfr.toFixed(1);
 }
 
 function getFieldRangeText(rule: FieldValidationRule): string {
@@ -440,6 +483,9 @@ export function PreventCalculator() {
   const [bmiCalculator, setBmiCalculator] = useState<BmiCalculatorState>(
     initialBmiCalculatorState,
   );
+  const [ckdEpiCalculator, setCkdEpiCalculator] = useState<CkdEpiCalculatorState>(
+    initialCkdEpiCalculatorState,
+  );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
   const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState(false);
   const feedbackTimeoutRef = useRef<number | null>(null);
@@ -653,6 +699,59 @@ export function PreventCalculator() {
     }
   };
 
+  const updateEgfrValue = (nextEgfr: string) => {
+    const nextFormState = {
+      ...form,
+      egfr: nextEgfr,
+    };
+
+    setForm(nextFormState);
+    console.debug("PREVENT formState visible", {
+      changedField: "egfr",
+      formState: nextFormState,
+    });
+
+    if (result) {
+      console.debug("PREVENT previous result cleared after CKD-EPI update", {
+        previousRecordId: recordId,
+        previousResult: result,
+      });
+      setResult(null);
+      setRecordId(null);
+      setRiskType("cvd");
+      setHasUncalculatedChanges(true);
+      setSubmitFeedback("");
+    }
+  };
+
+  const handleCkdEpiCalculatorChange = (value: string) => {
+    setCkdEpiCalculator((current) => ({
+      ...current,
+      creatinine: value,
+      error: "",
+    }));
+  };
+
+  const handleCalculateCkdEpi = () => {
+    try {
+      const nextEgfr = calculateCkdEpi2021Egfr(
+        ckdEpiCalculator.creatinine,
+        form.age,
+        form.sex,
+      );
+      updateEgfrValue(nextEgfr);
+      setCkdEpiCalculator((current) => ({ ...current, error: "" }));
+    } catch (ckdEpiError) {
+      setCkdEpiCalculator((current) => ({
+        ...current,
+        error:
+          ckdEpiError instanceof Error
+            ? ckdEpiError.message
+            : "No se pudo calcular eGFR CKD-EPI.",
+      }));
+    }
+  };
+
   const clearSubmitFeedbackTimer = () => {
     if (feedbackTimeoutRef.current !== null) {
       window.clearTimeout(feedbackTimeoutRef.current);
@@ -680,6 +779,7 @@ export function PreventCalculator() {
     setSubmitFeedback("");
     setHasUncalculatedChanges(false);
     setBmiCalculator(initialBmiCalculatorState);
+    setCkdEpiCalculator(initialCkdEpiCalculatorState);
     setUsesCustomSpecialty(false);
   };
 
@@ -1024,15 +1124,19 @@ export function PreventCalculator() {
                   validationRule={FIELD_VALIDATION_RULES.hdl}
                   warning={getFieldWarning(form, "hdl")}
                 />
-                <Field
-                  label="Función renal estimada (eGFR)"
-                  name="egfr"
-                  type="number"
+                <EgfrField
                   value={form.egfr}
                   onChange={handleInputChange}
-                  required
-                  step="0.1"
-                  help="Estimación en mL/min/1.73 m²."
+                  calculator={ckdEpiCalculator}
+                  onToggleCalculator={() =>
+                    setCkdEpiCalculator((current) => ({
+                      ...current,
+                      isOpen: !current.isOpen,
+                      error: "",
+                    }))
+                  }
+                  onCalculatorChange={handleCkdEpiCalculatorChange}
+                  onCalculate={handleCalculateCkdEpi}
                   validationRule={FIELD_VALIDATION_RULES.egfr}
                   warning={getFieldWarning(form, "egfr")}
                 />
@@ -2000,6 +2104,101 @@ type BmiFieldProps = {
   validationRule: FieldValidationRule;
   warning: string | null;
 };
+
+type EgfrFieldProps = {
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  calculator: CkdEpiCalculatorState;
+  onToggleCalculator: () => void;
+  onCalculatorChange: (value: string) => void;
+  onCalculate: () => void;
+  validationRule: FieldValidationRule;
+  warning: string | null;
+};
+
+function EgfrField({
+  value,
+  onChange,
+  calculator,
+  onToggleCalculator,
+  onCalculatorChange,
+  onCalculate,
+  validationRule,
+  warning,
+}: EgfrFieldProps) {
+  return (
+    <div className="prevent-field prevent-bmi-field">
+      <div className="prevent-bmi-label-row">
+        <span className="prevent-field-label">
+          Función renal estimada (eGFR)
+          <span
+            className="prevent-field-help"
+            title="Puede escribir eGFR directamente o estimarlo con CKD-EPI 2021 a partir de creatinina, edad y sexo."
+          >
+            i
+          </span>
+        </span>
+        <button
+          type="button"
+          className="prevent-inline-action"
+          onClick={onToggleCalculator}
+          aria-expanded={calculator.isOpen}
+        >
+          {calculator.isOpen ? "Ocultar CKD-EPI" : "Calcular CKD-EPI"}
+        </button>
+      </div>
+      <input
+        className={`prevent-input ${warning ? "prevent-input-warning" : ""}`}
+        name="egfr"
+        type="number"
+        value={value}
+        onChange={onChange}
+        required
+        step="0.1"
+        aria-invalid={warning ? "true" : undefined}
+      />
+      <span className="prevent-field-guidance">
+        Rango validado PREVENT: {getFieldRangeText(validationRule)}. También
+        puede escribir el valor directamente.
+      </span>
+      {warning ? <span className="prevent-field-warning">{warning}</span> : null}
+
+      {calculator.isOpen ? (
+        <div className="prevent-bmi-calculator prevent-egfr-calculator">
+          <label className="prevent-field">
+            <span className="prevent-field-label">Creatinina sérica (mg/dL)</span>
+            <input
+              className="prevent-input"
+              type="number"
+              value={calculator.creatinine}
+              onChange={(event) => onCalculatorChange(event.target.value)}
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="Ej. 1.0"
+            />
+          </label>
+          <div className="prevent-egfr-calculator-note">
+            Usa edad y sexo ya ingresados en Datos del paciente. Ecuación
+            CKD-EPI 2021 sin raza.
+          </div>
+          <button
+            type="button"
+            className="prevent-button prevent-button-secondary prevent-bmi-calculate"
+            onClick={onCalculate}
+          >
+            Usar eGFR calculado
+          </button>
+          {calculator.error ? (
+            <span className="prevent-field-warning prevent-bmi-error">
+              {calculator.error}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function BmiField({
   value,
