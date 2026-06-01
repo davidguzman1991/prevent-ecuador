@@ -19,6 +19,7 @@ import {
   SOCIOECONOMIC_LEVEL_OPTIONS,
 } from "@/lib/socialDeterminants";
 import { getApiBaseUrl, getJsonRequestHeaders } from "@/lib/api";
+import { PHYSICIAN_SPECIALTY_OPTIONS } from "@/lib/physicianSpecialties";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
 import { useAuth } from "@/hooks/useAuth";
 import type {
@@ -35,24 +36,6 @@ import type {
 
 const CUSTOM_SPECIALTY_VALUE = "__other__";
 const DOCTOR_SAVE_PREFERENCE_KEY = "prevent_doctor_save_preference";
-
-const PHYSICIAN_SPECIALTY_OPTIONS = [
-  "Medicina General",
-  "Medicina Interna",
-  "Cardiología",
-  "Endocrinología",
-  "Diabetología",
-  "Nefrología",
-  "Neurología",
-  "Geriatría",
-  "Medicina Familiar",
-  "Cuidados Paliativos",
-  "Emergencia",
-  "Medicina Crítica / UCI",
-  "Cirugía General",
-  "Interno de Medicina",
-  "Médico Investigador",
-] as const;
 
 const showClinicalContext = false;
 

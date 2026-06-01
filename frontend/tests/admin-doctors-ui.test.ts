@@ -13,15 +13,15 @@ test("admin dashboard renders doctors management table and create action", () =>
 test("admin doctor form includes required management fields", () => {
   for (const label of [
     "Nombre completo",
-    "Nombre visible",
     "Email",
     "Especialidad",
-    "Institución",
-    "Ciudad",
-    "Contraseña temporal opcional",
+    "Provincia",
+    "Cantón/Ciudad",
   ]) {
     assert.match(adminPage, new RegExp(label));
   }
+  assert.doesNotMatch(adminPage, /Contraseña temporal opcional/);
+  assert.doesNotMatch(adminPage, /Institución<\/span>/);
 });
 
 test("admin doctors table exposes active state actions", () => {

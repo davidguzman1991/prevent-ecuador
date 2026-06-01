@@ -9,6 +9,7 @@ from app.core.auth import require_admin
 from app.core.dependencies import get_db
 from app.schemas.doctor_admin import (
     AdminDoctorCreate,
+    AdminDoctorCreateResponse,
     AdminDoctorListResponse,
     AdminDoctorPasswordResetResponse,
     AdminDoctorResponse,
@@ -48,13 +49,13 @@ def get_admin_doctor_endpoint(
     return get_admin_doctor(db=db, doctor_id=doctor_id)
 
 
-@router.post("", response_model=AdminDoctorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AdminDoctorCreateResponse, status_code=status.HTTP_201_CREATED)
 def create_admin_doctor_endpoint(
     payload: AdminDoctorCreate,
     db: Session = Depends(get_db),
     current_user: AuthenticatedUser = Depends(require_admin),
     supabase_admin: SupabaseAdminClient = Depends(get_supabase_admin_client),
-) -> AdminDoctorResponse:
+) -> AdminDoctorCreateResponse:
     _ = current_user
     return create_admin_doctor(db=db, payload=payload, supabase_admin=supabase_admin)
 

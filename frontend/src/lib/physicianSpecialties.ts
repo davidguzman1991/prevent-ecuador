@@ -1,0 +1,17 @@
+export const PHYSICIAN_SPECIALTY_OPTIONS = [
+  "Medicina General",
+  "Medicina Interna",
+  "Cardiología",
+  "Endocrinología",
+  "Diabetología",
+  "Nefrología",
+  "Neurología",
+  "Geriatría",
+  "Medicina Familiar",
+  "Cuidados Paliativos",
+  "Emergencia",
+  "Medicina Crítica / UCI",
+  "Cirugía General",
+  "Interno de Medicina",
+  "Médico Investigador",
+] as const;

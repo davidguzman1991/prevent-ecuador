@@ -47,6 +47,11 @@ export type AdminDoctor = {
   created_at: string;
   total_records: number;
   last_record_at: string | null;
+  profile_status: "pending" | "partial" | "complete";
+};
+
+export type AdminDoctorCreateResponse = AdminDoctor & {
+  temporary_password: string;
 };
 
 export type AdminDoctorListResponse = {

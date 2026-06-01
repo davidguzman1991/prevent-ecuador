@@ -71,6 +71,15 @@ class SupabaseAdminClient:
     ) -> dict[str, Any]:
         existing = self.find_user_by_email(email)
         if existing is not None:
+            if temporary_password and existing.get("id"):
+                return self._request(
+                    "PUT",
+                    f"/auth/v1/admin/users/{existing['id']}",
+                    {
+                        "password": temporary_password,
+                        "user_metadata": {"full_name": full_name, "name": full_name},
+                    },
+                )
             return existing
         payload: dict[str, Any] = {
             "email": email,

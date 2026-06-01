@@ -6,17 +6,27 @@ import { AuthStatusBar } from "@/components/AuthStatusBar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiBaseUrl } from "@/lib/api";
+import {
+  ECUADOR_PROVINCES,
+  getCantonsByProvinceCode,
+} from "@/lib/ecuadorGeo";
+import { PHYSICIAN_SPECIALTY_OPTIONS } from "@/lib/physicianSpecialties";
 import { formatClinicalRisk } from "@/lib/risk-format";
-import type { AdminDoctor, AdminDoctorListResponse, DashboardListResponse, DashboardRecord } from "@/types/dashboard";
+import type {
+  AdminDoctor,
+  AdminDoctorCreateResponse,
+  AdminDoctorListResponse,
+  DashboardListResponse,
+  DashboardRecord,
+} from "@/types/dashboard";
 
 type DoctorFormState = {
   email: string;
   full_name: string;
   display_name: string;
   specialty: string;
-  institution_name: string;
+  province_code: string;
   city: string;
-  temporary_password: string;
 };
 
 const emptyDoctorForm: DoctorFormState = {
@@ -24,10 +34,19 @@ const emptyDoctorForm: DoctorFormState = {
   full_name: "",
   display_name: "",
   specialty: "",
-  institution_name: "",
+  province_code: "",
   city: "",
-  temporary_password: "",
 };
+
+function profileStatusLabel(status: AdminDoctor["profile_status"]): string {
+  if (status === "complete") return "Completo";
+  if (status === "partial") return "Parcial";
+  return "Pendiente";
+}
+
+function profileStatusClass(status: AdminDoctor["profile_status"]): string {
+  return `profile-status-badge profile-status-${status}`;
+}
 
 function formatDate(value: string): string {
   const parsed = new Date(value);
@@ -91,6 +110,7 @@ function AdminDashboard() {
   const [isSavingDoctor, setIsSavingDoctor] = useState(false);
   const [error, setError] = useState("");
   const [doctorMessage, setDoctorMessage] = useState("");
+  const [createdTemporaryPassword, setCreatedTemporaryPassword] = useState("");
 
   useEffect(() => {
     if (!accessToken) return;
@@ -111,6 +131,7 @@ function AdminDashboard() {
   const publicCount = records.filter((record) => record.visibility_scope === "public_anonymous").length;
   const legacyCount = records.filter((record) => record.visibility_scope === "legacy_admin_only").length;
   const activeDoctors = doctors.filter((doctor) => doctor.is_active).length;
+  const cantonOptions = getCantonsByProvinceCode(doctorForm.province_code);
 
   const refreshDoctors = async () => {
     if (!accessToken) return;
@@ -123,6 +144,7 @@ function AdminDashboard() {
     setDoctorForm(emptyDoctorForm);
     setEditingDoctor(null);
     setDoctorMessage("");
+    setCreatedTemporaryPassword("");
     setIsDoctorModalOpen(true);
   };
 
@@ -132,12 +154,12 @@ function AdminDashboard() {
       full_name: doctor.full_name ?? doctor.display_name,
       display_name: doctor.display_name,
       specialty: doctor.specialty ?? "",
-      institution_name: doctor.institution_name ?? "",
+      province_code: "",
       city: doctor.city ?? "",
-      temporary_password: "",
     });
     setEditingDoctor(doctor);
     setDoctorMessage("");
+    setCreatedTemporaryPassword("");
     setIsDoctorModalOpen(true);
   };
 
@@ -146,7 +168,11 @@ function AdminDashboard() {
   };
 
   const handleDoctorFieldChange = (field: keyof DoctorFormState, value: string) => {
-    setDoctorForm((current) => ({ ...current, [field]: value }));
+    setDoctorForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === "province_code" ? { city: "" } : {}),
+    }));
   };
 
   const handleSaveDoctor = async (event: FormEvent<HTMLFormElement>) => {
@@ -160,17 +186,14 @@ function AdminDashboard() {
         ? {
             display_name: doctorForm.display_name,
             specialty: doctorForm.specialty || null,
-            institution_name: doctorForm.institution_name || null,
             city: doctorForm.city || null,
           }
         : {
             email: doctorForm.email.trim(),
             full_name: doctorForm.full_name.trim(),
-            display_name: doctorForm.display_name.trim(),
+            display_name: doctorForm.full_name.trim(),
             specialty: doctorForm.specialty || null,
-            institution_name: doctorForm.institution_name || null,
             city: doctorForm.city || null,
-            temporary_password: doctorForm.temporary_password || null,
           };
       const url = editingDoctor
         ? `${getApiBaseUrl()}/api/admin/doctors/${editingDoctor.doctor_id}`
@@ -187,12 +210,14 @@ function AdminDashboard() {
         const body = (await response.json().catch(() => null)) as { detail?: string } | null;
         throw new Error(body?.detail || "No se pudo guardar el médico.");
       }
+      const savedDoctor = (await response.json()) as AdminDoctor | AdminDoctorCreateResponse;
       await refreshDoctors();
       setIsDoctorModalOpen(false);
+      setCreatedTemporaryPassword("temporary_password" in savedDoctor ? savedDoctor.temporary_password : "");
       setDoctorMessage(
         editingDoctor
           ? "Médico actualizado."
-          : "Médico creado. Recomiende cambio de contraseña en el primer acceso.",
+          : "Médico creado. Entregue la contraseña temporal y recomiende cambio en el primer acceso.",
       );
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el médico.");
@@ -271,6 +296,11 @@ function AdminDashboard() {
 
       {error ? <div className="prevent-alert">{error}</div> : null}
       {doctorMessage ? <div className="prevent-alert prevent-alert-soft">{doctorMessage}</div> : null}
+      {createdTemporaryPassword ? (
+        <div className="prevent-alert prevent-alert-soft">
+          Contraseña temporal generada: <strong>{createdTemporaryPassword}</strong>. Cópiela ahora; no se mostrará nuevamente.
+        </div>
+      ) : null}
 
       <section className="role-kpi-grid">
         <MetricCard label="Total registros" value={String(records.length)} />
@@ -312,8 +342,8 @@ function AdminDashboard() {
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Especialidad</th>
-                  <th>Institución</th>
                   <th>Ciudad</th>
+                  <th>Estado del perfil</th>
                   <th>Estado</th>
                   <th>Evaluaciones</th>
                   <th>Última evaluación</th>
@@ -326,8 +356,8 @@ function AdminDashboard() {
                     <td>{doctor.display_name}</td>
                     <td>{doctor.email ?? "Sin email"}</td>
                     <td>{doctor.specialty ?? "No registrado"}</td>
-                    <td>{doctor.institution_name ?? "No registrada"}</td>
                     <td>{doctor.city ?? "No registrada"}</td>
+                    <td><span className={profileStatusClass(doctor.profile_status)}>{profileStatusLabel(doctor.profile_status)}</span></td>
                     <td>{doctor.is_active ? "Activo" : "Inactivo"}</td>
                     <td>{doctor.total_records}</td>
                     <td>{doctor.last_record_at ? formatDate(doctor.last_record_at) : "Sin evaluaciones"}</td>
@@ -410,30 +440,41 @@ function AdminDashboard() {
                 <span className="prevent-field-label">Nombre completo</span>
                 <input className="prevent-input" value={doctorForm.full_name} disabled={Boolean(editingDoctor)} onChange={(event) => handleDoctorFieldChange("full_name", event.target.value)} required />
               </label>
-              <label className="prevent-field">
-                <span className="prevent-field-label">Nombre visible</span>
-                <input className="prevent-input" value={doctorForm.display_name} onChange={(event) => handleDoctorFieldChange("display_name", event.target.value)} required />
-              </label>
-              <label className="prevent-field">
-                <span className="prevent-field-label">Especialidad</span>
-                <input className="prevent-input" value={doctorForm.specialty} onChange={(event) => handleDoctorFieldChange("specialty", event.target.value)} />
-              </label>
-              <label className="prevent-field">
-                <span className="prevent-field-label">Institución</span>
-                <input className="prevent-input" value={doctorForm.institution_name} onChange={(event) => handleDoctorFieldChange("institution_name", event.target.value)} />
-              </label>
-              <label className="prevent-field">
-                <span className="prevent-field-label">Ciudad</span>
-                <input className="prevent-input" value={doctorForm.city} onChange={(event) => handleDoctorFieldChange("city", event.target.value)} />
-              </label>
-              {!editingDoctor ? (
+              {editingDoctor ? (
                 <label className="prevent-field">
-                  <span className="prevent-field-label">Contraseña temporal opcional</span>
-                  <input className="prevent-input" type="password" value={doctorForm.temporary_password} onChange={(event) => handleDoctorFieldChange("temporary_password", event.target.value)} />
+                  <span className="prevent-field-label">Nombre visible</span>
+                  <input className="prevent-input" value={doctorForm.display_name} onChange={(event) => handleDoctorFieldChange("display_name", event.target.value)} required />
                 </label>
               ) : null}
+              <label className="prevent-field">
+                <span className="prevent-field-label">Especialidad</span>
+                <select className="prevent-input" value={doctorForm.specialty} onChange={(event) => handleDoctorFieldChange("specialty", event.target.value)}>
+                  <option value="">Seleccionar</option>
+                  {PHYSICIAN_SPECIALTY_OPTIONS.map((specialty) => (
+                    <option key={specialty} value={specialty}>{specialty}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="prevent-field">
+                <span className="prevent-field-label">Provincia</span>
+                <select className="prevent-input" value={doctorForm.province_code} onChange={(event) => handleDoctorFieldChange("province_code", event.target.value)}>
+                  <option value="">Seleccionar</option>
+                  {ECUADOR_PROVINCES.map((province) => (
+                    <option key={province.code} value={province.code}>{province.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="prevent-field">
+                <span className="prevent-field-label">Cantón/Ciudad</span>
+                <select className="prevent-input" value={doctorForm.city} onChange={(event) => handleDoctorFieldChange("city", event.target.value)} disabled={!doctorForm.province_code}>
+                  <option value="">Seleccionar</option>
+                  {cantonOptions.map((canton) => (
+                    <option key={canton.code} value={canton.name}>{canton.name}</option>
+                  ))}
+                </select>
+              </label>
               <p className="prevent-helper-note">
-                La cuenta se crea en Supabase Auth desde backend. Recomiende cambio de contraseña en el primer acceso.
+                La cuenta se crea en Supabase Auth desde backend. La contraseña temporal se genera automáticamente y se muestra una sola vez.
               </p>
               <footer className="prevent-results-modal-actions">
                 <button className="dashboard-button dashboard-button-primary" type="submit" disabled={isSavingDoctor}>
@@ -464,8 +505,8 @@ function AdminDashboard() {
               <DetailItem label="Email" value={selectedDoctor.email ?? "Sin email"} />
               <DetailItem label="Nombre completo" value={selectedDoctor.full_name ?? "No registrado"} />
               <DetailItem label="Especialidad" value={selectedDoctor.specialty ?? "No registrada"} />
-              <DetailItem label="Institución" value={selectedDoctor.institution_name ?? "No registrada"} />
               <DetailItem label="Ciudad" value={selectedDoctor.city ?? "No registrada"} />
+              <DetailItem label="Estado del perfil" value={profileStatusLabel(selectedDoctor.profile_status)} />
               <DetailItem label="Estado" value={selectedDoctor.is_active ? "Activo" : "Inactivo"} />
               <DetailItem label="Evaluaciones" value={String(selectedDoctor.total_records)} />
               <DetailItem label="Última evaluación" value={selectedDoctor.last_record_at ? formatDate(selectedDoctor.last_record_at) : "Sin evaluaciones"} />

@@ -9,8 +9,8 @@ from fastapi import HTTPException
 
 from app.models.doctor import Doctor
 from app.models.user import AppUser
-from app.schemas.doctor_admin import AdminDoctorCreate
-from app.services.admin_doctors import create_admin_doctor, set_admin_doctor_active
+from app.schemas.doctor_admin import AdminDoctorCreate, AdminDoctorResponse
+from app.services.admin_doctors import _generate_temporary_password, _profile_status, create_admin_doctor, set_admin_doctor_active
 from app.services.supabase_admin import SupabaseAdminClient
 
 
@@ -127,20 +127,53 @@ class AdminDoctorsTest(unittest.TestCase):
         payload = AdminDoctorCreate(
             email="Doctor@Example.com",
             full_name="Dra. Nueva",
-            display_name="Dra. Nueva",
             specialty="Cardiologia",
         )
 
         with patch("app.services.admin_doctors.get_admin_doctor") as get_doctor:
-            get_doctor.return_value = doctor
-            create_admin_doctor(db=db, payload=payload, supabase_admin=supabase)
+            get_doctor.return_value = AdminDoctorResponse(
+                doctor_id=doctor.id,
+                user_id=user.id,
+                email=user.email,
+                full_name=user.full_name,
+                display_name=doctor.display_name,
+                specialty=doctor.specialty,
+                institution_name=None,
+                city=None,
+                is_active=True,
+                created_at=doctor.created_at,
+                total_records=0,
+                last_record_at=None,
+                profile_status="partial",
+            )
+            response = create_admin_doctor(db=db, payload=payload, supabase_admin=supabase)
 
         self.assertNotIn(user, db.added)
+        self.assertEqual(supabase.created_payloads[0]["temporary_password"], response.temporary_password)
         self.assertEqual(user.auth_subject, "new-subject")
         self.assertEqual(user.email, "doctor@example.com")
         self.assertEqual(user.full_name, "Dra. Nueva")
         self.assertTrue(user.is_active)
         self.assertEqual(doctor.display_name, "Dra. Nueva")
+        self.assertEqual(doctor.specialty, "Cardiologia")
+
+    def test_generated_temporary_password_has_required_classes(self) -> None:
+        password = _generate_temporary_password()
+
+        self.assertGreaterEqual(len(password), 12)
+        self.assertLessEqual(len(password), 16)
+        self.assertRegex(password, r"[A-Z]")
+        self.assertRegex(password, r"[a-z]")
+        self.assertRegex(password, r"\d")
+        self.assertRegex(password, r"[#!$%&*?]")
+
+    def test_profile_status_is_dynamic_without_persistence(self) -> None:
+        user = AppUser(email="doctor@example.com", full_name="Doctor", role="doctor")
+        pending = Doctor(display_name="Doctor")
+        partial = Doctor(display_name="Doctor", city="QUITO")
+
+        self.assertEqual(_profile_status(pending, user), "pending")
+        self.assertEqual(_profile_status(partial, user), "partial")
 
     def test_deactivate_doctor_sets_user_inactive_without_deleting(self) -> None:
         user = AppUser(

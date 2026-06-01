@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import secrets
+import string
 from datetime import datetime
 from uuid import UUID
 
@@ -12,6 +14,7 @@ from app.models.prevent_record import PreventRecord
 from app.models.user import AppUser
 from app.schemas.doctor_admin import (
     AdminDoctorCreate,
+    AdminDoctorCreateResponse,
     AdminDoctorListResponse,
     AdminDoctorPasswordResetResponse,
     AdminDoctorResponse,
@@ -22,6 +25,28 @@ from app.services.supabase_admin import SupabaseAdminClient
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
+
+
+def _generate_temporary_password(length: int = 14) -> str:
+    symbols = "#!$%&*?"
+    alphabet = string.ascii_letters + string.digits + symbols
+    required = [
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.digits),
+        secrets.choice(symbols),
+    ]
+    remaining = [secrets.choice(alphabet) for _ in range(length - len(required))]
+    password_chars = required + remaining
+    secrets.SystemRandom().shuffle(password_chars)
+    return "".join(password_chars)
+
+
+def _profile_status(doctor: Doctor, user: AppUser | None) -> str:
+    _ = user
+    if doctor.specialty or doctor.city:
+        return "partial"
+    return "pending"
 
 
 def _doctor_metrics_subquery(db: Session):
@@ -52,6 +77,7 @@ def _doctor_response(row) -> AdminDoctorResponse:
         created_at=doctor.created_at,
         total_records=int(total_records or 0),
         last_record_at=last_record_at,
+        profile_status=_profile_status(doctor, user),
     )
 
 
@@ -85,12 +111,13 @@ def create_admin_doctor(
     db: Session,
     payload: AdminDoctorCreate,
     supabase_admin: SupabaseAdminClient,
-) -> AdminDoctorResponse:
+) -> AdminDoctorCreateResponse:
     email = _normalize_email(payload.email)
+    temporary_password = _generate_temporary_password()
     auth_user = supabase_admin.create_user(
         email=email,
         full_name=payload.full_name,
-        temporary_password=payload.temporary_password,
+        temporary_password=temporary_password,
     )
     auth_subject = str(auth_user.get("id") or auth_user.get("sub") or "")
     if not auth_subject:
@@ -130,17 +157,17 @@ def create_admin_doctor(
 
     doctor = db.query(Doctor).filter(Doctor.user_id == user.id).one_or_none()
     if doctor is None:
-        doctor = Doctor(user_id=user.id, display_name=payload.display_name)
+        doctor = Doctor(user_id=user.id, display_name=payload.display_name or payload.full_name)
         db.add(doctor)
-    doctor.display_name = payload.display_name
+    doctor.display_name = payload.display_name or payload.full_name
     doctor.specialty = payload.specialty
-    doctor.institution_name = payload.institution_name
     doctor.city = payload.city
 
     db.commit()
     db.refresh(doctor)
     db.refresh(user)
-    return get_admin_doctor(db=db, doctor_id=doctor.id)
+    response = get_admin_doctor(db=db, doctor_id=doctor.id)
+    return AdminDoctorCreateResponse(**response.model_dump(), temporary_password=temporary_password)
 
 
 def update_admin_doctor(db: Session, doctor_id: UUID, payload: AdminDoctorUpdate) -> AdminDoctorResponse:
@@ -149,7 +176,7 @@ def update_admin_doctor(db: Session, doctor_id: UUID, payload: AdminDoctorUpdate
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
     user = db.get(AppUser, doctor.user_id) if doctor.user_id is not None else None
     data = payload.model_dump(exclude_unset=True)
-    for field in ("display_name", "specialty", "institution_name", "city"):
+    for field in ("display_name", "specialty", "city"):
         if field in data:
             setattr(doctor, field, data[field])
     if "is_active" in data and user is not None:
