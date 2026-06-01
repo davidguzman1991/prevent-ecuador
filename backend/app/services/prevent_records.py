@@ -448,15 +448,12 @@ def _build_engine_warnings(warnings: list[str] | None) -> list[dict[str, object]
     ]
 
 
-def create_prevent_record(
-    db: Session,
+def _evaluate_prevent_payload(
     payload: PreventRecordCreate,
     *,
     debug: bool = False,
-    current_user: AuthenticatedUser | None = None,
-) -> PreventRecordCreateResponse:
+) -> dict[str, object]:
     engine_input = payload.model_dump(by_alias=True, exclude_none=True)
-    request_id = str(uuid4())
     requested_variant = _validate_requested_variant(engine_input)
     logger.info("PREVENT input payload received: %s", _safe_payload_for_log(engine_input))
     model_variant, result, warnings = compute_prevent_10y(engine_input, requested_variant)
@@ -535,6 +532,95 @@ def create_prevent_record(
             "warnings": combined_warnings,
             "clinical_interpretation": clinical_interpretation,
         }
+
+    return {
+        "engine_input": engine_input,
+        "result": result,
+        "model_variant": model_variant,
+        "combined_warnings": combined_warnings,
+        "cvd_risk": cvd_risk,
+        "ascvd_risk": ascvd_risk,
+        "hf_risk": hf_risk,
+        "cvd_risk_30y": cvd_risk_30y,
+        "ascvd_risk_30y": ascvd_risk_30y,
+        "hf_risk_30y": hf_risk_30y,
+        "prevent_age": prevent_age,
+        "cvd_category": cvd_category,
+        "ascvd_category": ascvd_category,
+        "hf_category": hf_category,
+        "clinical_interpretation": clinical_interpretation,
+        "risk_10y_stored": risk_10y_stored,
+        "evaluation_debug": evaluation_debug,
+    }
+
+
+def calculate_prevent_record_preview(
+    payload: PreventRecordCreate,
+    *,
+    debug: bool = False,
+) -> PreventRecordCreateResponse:
+    evaluation = _evaluate_prevent_payload(payload, debug=debug)
+    return PreventRecordCreateResponse(
+        id=uuid4(),
+        cvd_risk=evaluation["cvd_risk"],
+        ascvd_risk=evaluation["ascvd_risk"],
+        hf_risk=evaluation["hf_risk"],
+        cvd_risk_30y=evaluation["cvd_risk_30y"],
+        ascvd_risk_30y=evaluation["ascvd_risk_30y"],
+        hf_risk_30y=evaluation["hf_risk_30y"],
+        prevent_age=evaluation["prevent_age"],
+        cvd_category=evaluation["cvd_category"],
+        ascvd_category=evaluation["ascvd_category"],
+        hf_category=evaluation["hf_category"],
+        model_variant=str(evaluation["model_variant"]),
+        risk_10y=evaluation["risk_10y_stored"],
+        risk_category=evaluation["cvd_category"],
+        engine_status=PREVENT_ENGINE_STATUS,
+        methodology_note=PREVENT_METHOD_NOTE,
+        warnings=evaluation["combined_warnings"],
+        clinical_interpretation=evaluation["clinical_interpretation"],
+        debug=evaluation["evaluation_debug"],
+        message="Prevent risk calculated without saving",
+        patient_province_code=payload.patient_province_code,
+        patient_province_name=payload.patient_province_name,
+        patient_canton_code=payload.patient_canton_code,
+        patient_canton_name=payload.patient_canton_name,
+        patient_area_type=payload.patient_area_type,
+        patient_geo_source=payload.patient_geo_source,
+        patient_health_coverage=payload.patient_health_coverage,
+        patient_education_level=payload.patient_education_level,
+        patient_employment_status=payload.patient_employment_status,
+        patient_ethnicity=payload.patient_ethnicity,
+        patient_socioeconomic_level=payload.patient_socioeconomic_level,
+    )
+
+
+def create_prevent_record(
+    db: Session,
+    payload: PreventRecordCreate,
+    *,
+    debug: bool = False,
+    current_user: AuthenticatedUser | None = None,
+) -> PreventRecordCreateResponse:
+    request_id = str(uuid4())
+    evaluation = _evaluate_prevent_payload(payload, debug=debug)
+    engine_input = evaluation["engine_input"]
+    result = evaluation["result"]
+    model_variant = evaluation["model_variant"]
+    combined_warnings = evaluation["combined_warnings"]
+    cvd_risk = evaluation["cvd_risk"]
+    ascvd_risk = evaluation["ascvd_risk"]
+    hf_risk = evaluation["hf_risk"]
+    cvd_risk_30y = evaluation["cvd_risk_30y"]
+    ascvd_risk_30y = evaluation["ascvd_risk_30y"]
+    hf_risk_30y = evaluation["hf_risk_30y"]
+    prevent_age = evaluation["prevent_age"]
+    cvd_category = evaluation["cvd_category"]
+    ascvd_category = evaluation["ascvd_category"]
+    hf_category = evaluation["hf_category"]
+    clinical_interpretation = evaluation["clinical_interpretation"]
+    risk_10y_stored = evaluation["risk_10y_stored"]
+    evaluation_debug = evaluation["evaluation_debug"]
 
     record_data = payload.model_dump(
         exclude_none=True,

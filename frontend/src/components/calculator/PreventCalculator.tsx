@@ -34,6 +34,7 @@ import type {
 } from "@/types/prevent";
 
 const CUSTOM_SPECIALTY_VALUE = "__other__";
+const DOCTOR_SAVE_PREFERENCE_KEY = "prevent_doctor_save_preference";
 
 const PHYSICIAN_SPECIALTY_OPTIONS = [
   "Medicina General",
@@ -56,6 +57,7 @@ const PHYSICIAN_SPECIALTY_OPTIONS = [
 const showClinicalContext = false;
 
 type RiskHorizon = "10y" | "30y";
+type DoctorSavePreference = "save" | "skip";
 type CkdEpiCalculatorState = {
   isOpen: boolean;
   creatinine: string;
@@ -484,6 +486,9 @@ export function PreventCalculator() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitFeedback, setSubmitFeedback] = useState("");
   const [hasUncalculatedChanges, setHasUncalculatedChanges] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<Record<string, unknown> | null>(null);
+  const [isSaveDecisionOpen, setIsSaveDecisionOpen] = useState(false);
+  const [rememberSaveDecision, setRememberSaveDecision] = useState(false);
   const [bmiCalculator, setBmiCalculator] = useState<BmiCalculatorState>(
     initialBmiCalculatorState,
   );
@@ -515,6 +520,7 @@ export function PreventCalculator() {
   const clinicalHomeHref = currentUser?.role === "global_admin" ? "/admin" : "/doctor";
   const clinicalHomeLabel =
     currentUser?.role === "global_admin" ? "Panel administrador" : "Mis evaluaciones";
+  const isDoctorSession = currentUser?.role === "doctor";
 
   const handleAuthenticatedLogout = async () => {
     await signOut();
@@ -776,9 +782,9 @@ export function PreventCalculator() {
     }
   };
 
-  const showResultUpdatedFeedback = () => {
+  const showResultUpdatedFeedback = (message = "Resultado actualizado") => {
     clearSubmitFeedbackTimer();
-    setSubmitFeedback("Resultado actualizado");
+    setSubmitFeedback(message);
     feedbackTimeoutRef.current = window.setTimeout(() => {
       setSubmitFeedback("");
       feedbackTimeoutRef.current = null;
@@ -808,6 +814,98 @@ export function PreventCalculator() {
         block: "start",
       });
     });
+  };
+
+  const getRememberedSavePreference = (): DoctorSavePreference | null => {
+    if (typeof window === "undefined") return null;
+    const storedValue = window.sessionStorage.getItem(DOCTOR_SAVE_PREFERENCE_KEY);
+    return storedValue === "save" || storedValue === "skip" ? storedValue : null;
+  };
+
+  const rememberCurrentSavePreference = (preference: DoctorSavePreference) => {
+    if (!rememberSaveDecision || typeof window === "undefined") return;
+    window.sessionStorage.setItem(DOCTOR_SAVE_PREFERENCE_KEY, preference);
+  };
+
+  const submitPreventPayload = async (
+    payload: Record<string, unknown>,
+    shouldSave: boolean,
+  ) => {
+    setIsSubmitting(true);
+    setPendingPayload(null);
+    setIsSaveDecisionOpen(false);
+
+    console.log("PREVENT_AUTH", {
+      hasSession: Boolean(session),
+      hasAccessToken: Boolean(accessToken),
+      sendingAuthorization: shouldSave && Boolean(accessToken),
+      shouldSave,
+    });
+
+    try {
+      const endpoint = shouldSave
+        ? `${getApiBaseUrl()}/api/prevent-records/`
+        : `${getApiBaseUrl()}/api/prevent-records/calculate`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: shouldSave ? getJsonRequestHeaders(accessToken) : getJsonRequestHeaders(null),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => null)) as unknown;
+        throw new Error(extractErrorMessage(errorBody));
+      }
+
+      const data = (await response.json()) as PreventResult;
+      console.debug("PREVENT backend response", data);
+      console.debug("PREVENT risk used for badges", {
+        defaultTab: "cvd",
+        cvdRisk: data.cvd_risk,
+        cvdRisk30y: getThirtyYearRisk(data, "cvd"),
+        cvdCategory: data.cvd_category,
+        ascvdRisk: data.ascvd_risk,
+        ascvdRisk30y: getThirtyYearRisk(data, "ascvd"),
+        ascvdCategory: data.ascvd_category,
+        hfRisk: data.hf_risk,
+        hfRisk30y: getThirtyYearRisk(data, "hf"),
+        hfCategory: data.hf_category,
+        clinicalRiskCategory: data.clinical_interpretation?.risk_category ?? null,
+        lipidAscvdBasis:
+          data.clinical_interpretation?.lipid_ascvd_basis ??
+          data.clinical_interpretation?.risk_category_basis ??
+          null,
+      });
+      console.debug(
+        "PREVENT clinical_interpretation used in UI",
+        data.clinical_interpretation ?? null,
+      );
+      setRecordId(shouldSave ? data.id : null);
+      setResult(data);
+      showResultUpdatedFeedback(
+        shouldSave ? "Evaluación guardada" : "Resultado calculado sin guardar",
+      );
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "Ocurrió un error inesperado al enviar la solicitud.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveDecision = (preference: DoctorSavePreference) => {
+    if (!pendingPayload) return;
+    rememberCurrentSavePreference(preference);
+    void submitPreventPayload(pendingPayload, preference === "save");
+  };
+
+  const handleCancelSaveDecision = () => {
+    setPendingPayload(null);
+    setIsSaveDecisionOpen(false);
+    setRememberSaveDecision(false);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -860,59 +958,22 @@ export function PreventCalculator() {
 
     console.debug("PREVENT formState visible before submit", form);
     console.debug("PREVENT payload sent to backend", payload);
-    console.log("PREVENT_AUTH", {
-      hasSession: Boolean(session),
-      hasAccessToken: Boolean(accessToken),
-      sendingAuthorization: Boolean(accessToken),
-    });
 
-    try {
-      const response = await fetch(`${getApiBaseUrl()}/api/prevent-records/`, {
-        method: "POST",
-        headers: getJsonRequestHeaders(accessToken),
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as unknown;
-        throw new Error(extractErrorMessage(errorBody));
+    if (isDoctorSession) {
+      const rememberedPreference = getRememberedSavePreference();
+      if (rememberedPreference) {
+        await submitPreventPayload(payload, rememberedPreference === "save");
+        return;
       }
 
-      const data = (await response.json()) as PreventResult;
-      console.debug("PREVENT backend response", data);
-      console.debug("PREVENT risk used for badges", {
-        defaultTab: "cvd",
-        cvdRisk: data.cvd_risk,
-        cvdRisk30y: getThirtyYearRisk(data, "cvd"),
-        cvdCategory: data.cvd_category,
-        ascvdRisk: data.ascvd_risk,
-        ascvdRisk30y: getThirtyYearRisk(data, "ascvd"),
-        ascvdCategory: data.ascvd_category,
-        hfRisk: data.hf_risk,
-        hfRisk30y: getThirtyYearRisk(data, "hf"),
-        hfCategory: data.hf_category,
-        clinicalRiskCategory: data.clinical_interpretation?.risk_category ?? null,
-        lipidAscvdBasis:
-          data.clinical_interpretation?.lipid_ascvd_basis ??
-          data.clinical_interpretation?.risk_category_basis ??
-          null,
-      });
-      console.debug(
-        "PREVENT clinical_interpretation used in UI",
-        data.clinical_interpretation ?? null,
-      );
-      setRecordId(data.id);
-      setResult(data);
-      showResultUpdatedFeedback();
-    } catch (submitError) {
-      const message =
-        submitError instanceof Error
-          ? submitError.message
-          : "Ocurrió un error inesperado al enviar la solicitud.";
-      setError(message);
-    } finally {
+      setPendingPayload(payload);
+      setIsSaveDecisionOpen(true);
+      setRememberSaveDecision(false);
       setIsSubmitting(false);
+      return;
     }
+
+    await submitPreventPayload(payload, true);
   };
 
   const handlePrintReport = () => {
@@ -1391,6 +1452,60 @@ export function PreventCalculator() {
           </form>
         </section>
       </div>
+      {isSaveDecisionOpen ? (
+        <div className="prevent-results-modal-backdrop">
+          <section
+            className="prevent-save-decision-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="prevent-save-decision-title"
+          >
+            <header className="prevent-results-modal-header">
+              <div>
+                <span className="prevent-kicker">Panel clínico</span>
+                <h2 id="prevent-save-decision-title">Guardar evaluación</h2>
+                <p>
+                  Ha realizado un cálculo PREVENT. ¿Desea guardar esta evaluación
+                  en su panel clínico?
+                </p>
+              </div>
+            </header>
+
+            <label className="prevent-save-decision-remember">
+              <input
+                type="checkbox"
+                checked={rememberSaveDecision}
+                onChange={(event) => setRememberSaveDecision(event.target.checked)}
+              />
+              <span>Recordar mi elección durante esta sesión</span>
+            </label>
+
+            <footer className="prevent-results-modal-actions prevent-save-decision-actions">
+              <button
+                className="prevent-button prevent-button-primary"
+                type="button"
+                onClick={() => handleSaveDecision("save")}
+              >
+                Guardar evaluación
+              </button>
+              <button
+                className="prevent-button prevent-button-secondary"
+                type="button"
+                onClick={() => handleSaveDecision("skip")}
+              >
+                Calcular sin guardar
+              </button>
+              <button
+                className="prevent-button prevent-button-secondary"
+                type="button"
+                onClick={handleCancelSaveDecision}
+              >
+                Cancelar
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
       {result && isResultsModalOpen ? (
         <ResultsModal
           result={result}

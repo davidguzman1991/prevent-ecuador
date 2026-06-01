@@ -18,6 +18,7 @@ from app.schemas.prevent_record import (
 )
 from app.services.prevent_records import (
     archive_prevent_record,
+    calculate_prevent_record_preview,
     create_prevent_record,
     export_prevent_records_csv,
     export_prevent_records_xlsx,
@@ -286,6 +287,23 @@ def create_prevent_record_endpoint(
             debug=debug,
             current_user=current_user,
         )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/calculate",
+    response_model=PreventRecordCreateResponse,
+)
+def calculate_prevent_record_endpoint(
+    payload: PreventRecordCreate,
+    debug: bool = Query(default=False),
+) -> PreventRecordCreateResponse:
+    try:
+        return calculate_prevent_record_preview(payload=payload, debug=debug)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from app.schemas.prevent_record import PreventRecordCreate
 from app.services.prevent_engine import compute_prevent_10y, prevent_base_10y
-from app.services.prevent_records import create_prevent_record
+from app.services.prevent_records import calculate_prevent_record_preview, create_prevent_record
 
 
 BASE_PAYLOAD = {
@@ -79,6 +79,17 @@ class MultiuserFoundationTest(unittest.TestCase):
         self.assertEqual(response.visibility_scope, "public_anonymous")
         self.assertEqual(response.created_modality, "public_calculator")
         self.assertEqual(response.request_id, db.record.request_id)
+
+    def test_preview_calculation_does_not_persist_record(self) -> None:
+        db = FakeSession()
+        payload = PreventRecordCreate(**BASE_PAYLOAD)
+
+        response = calculate_prevent_record_preview(payload=payload)
+
+        self.assertIsNone(db.record)
+        self.assertEqual(response.message, "Prevent risk calculated without saving")
+        self.assertIsNone(response.visibility_scope)
+        self.assertIsNone(response.owner_doctor_id)
 
     def test_legacy_backfill_is_in_migration(self) -> None:
         migration = (
