@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { AuthStatusBar } from "@/components/AuthStatusBar";
@@ -120,6 +121,9 @@ function DoctorDashboard() {
       </section>
 
       <section className="role-actions">
+        <Link className="dashboard-button dashboard-button-primary" href="/">
+          Volver a calculadora
+        </Link>
         <button className="dashboard-button dashboard-button-secondary" type="button" onClick={() => void handleExport("csv")} disabled={isExporting !== null}>
           {isExporting === "csv" ? "Exportando..." : "Exportar CSV"}
         </button>
