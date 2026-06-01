@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PrivacyConsentModal } from "@/components/PrivacyConsentModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { FormSection } from "@/components/calculator/FormSection";
@@ -17,8 +18,9 @@ import {
   HEALTH_COVERAGE_OPTIONS,
   SOCIOECONOMIC_LEVEL_OPTIONS,
 } from "@/lib/socialDeterminants";
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, getJsonRequestHeaders } from "@/lib/api";
 import { formatClinicalRisk, formatResearchRisk } from "@/lib/risk-format";
+import { useAuth } from "@/hooks/useAuth";
 import type {
   BmiCalculatorState,
   ClinicalInterpretation,
@@ -469,6 +471,8 @@ function getMissingRiskMessage(
 }
 
 export function PreventCalculator() {
+  const router = useRouter();
+  const { accessToken, currentUser, session, signOut } = useAuth();
   const [form, setForm] = useState<FormState>(initialFormState);
   const [result, setResult] = useState<PreventResult | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
@@ -502,6 +506,20 @@ export function PreventCalculator() {
     (insufficientResultReason === "bmi" && !form.bmi.trim()
       ? "Se requiere IMC (Índice de Masa Corporal) para completar la evaluación PREVENT."
       : null);
+  const authenticatedName =
+    currentUser?.full_name || currentUser?.doctor_profile?.display_name || currentUser?.email || "";
+  const authenticatedLabel =
+    currentUser?.role === "global_admin"
+      ? "Administrador"
+      : `Dr. ${authenticatedName || "Usuario PREVENT"}`;
+  const clinicalHomeHref = currentUser?.role === "global_admin" ? "/admin" : "/doctor";
+  const clinicalHomeLabel =
+    currentUser?.role === "global_admin" ? "Panel administrador" : "Mis evaluaciones";
+
+  const handleAuthenticatedLogout = async () => {
+    await signOut();
+    router.replace("/login");
+  };
 
   useEffect(() => {
     if (result) {
@@ -842,13 +860,16 @@ export function PreventCalculator() {
 
     console.debug("PREVENT formState visible before submit", form);
     console.debug("PREVENT payload sent to backend", payload);
+    console.log("PREVENT_AUTH", {
+      hasSession: Boolean(session),
+      hasAccessToken: Boolean(accessToken),
+      sendingAuthorization: Boolean(accessToken),
+    });
 
     try {
       const response = await fetch(`${getApiBaseUrl()}/api/prevent-records/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getJsonRequestHeaders(accessToken),
         body: JSON.stringify(payload),
       });
 
@@ -920,8 +941,8 @@ export function PreventCalculator() {
           </div>
           <div className="prevent-brand-mark">PE</div>
           <div className="prevent-sidebar-actions">
-            <Link className="prevent-dashboard-link" href="/dashboard">
-              Iniciar sesión
+            <Link className="prevent-dashboard-link" href={currentUser ? clinicalHomeHref : "/dashboard"}>
+              {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
             </Link>
             <Link className="prevent-methodology-link" href="/metodologia">
               Metodología
@@ -953,12 +974,34 @@ export function PreventCalculator() {
             <strong>Dr. David Guzmán</strong>
             <p>Médico · Investigador</p>
           </div>
-          <Link className="prevent-mobile-login-link" href="/dashboard">
-            Iniciar sesión
+          <Link className="prevent-mobile-login-link" href={currentUser ? clinicalHomeHref : "/dashboard"}>
+            {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
           </Link>
         </aside>
 
         <section className="prevent-main-column" id="ingreso">
+          {currentUser ? (
+            <section className="prevent-clinical-session" aria-label="Sesión clínica activa">
+              <div>
+                <span>Sesión clínica activa</span>
+                <strong>Bienvenido {authenticatedLabel}</strong>
+                <p>Todos los cálculos realizados se guardarán automáticamente en su cuenta.</p>
+              </div>
+              <div className="prevent-clinical-session-actions">
+                <Link className="prevent-button prevent-button-secondary" href={clinicalHomeHref}>
+                  {clinicalHomeLabel}
+                </Link>
+                <button
+                  className="prevent-button prevent-button-secondary"
+                  type="button"
+                  onClick={() => void handleAuthenticatedLogout()}
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            </section>
+          ) : null}
+
           <header className="prevent-hero-card prevent-hero-card-banner">
             <div className="prevent-hero-logo prevent-hero-logo-banner">
               <Image

@@ -9,3 +9,10 @@ export const getApiBaseUrl = () => {
 
   return apiBaseUrl;
 };
+
+export function getJsonRequestHeaders(accessToken?: string | null): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  };
+}

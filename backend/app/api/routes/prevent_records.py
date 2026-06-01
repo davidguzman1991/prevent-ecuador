@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from io import BytesIO
 from uuid import UUID
@@ -28,6 +29,7 @@ from app.services.auth_users import AuthenticatedUser
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 HEALTH_COVERAGE_PATTERN = "^(iess|msp|private|issfa|isspol|none|unknown)$"
 EDUCATION_LEVEL_PATTERN = "^(no_schooling|primary|secondary|higher|postgraduate|unknown)$"
@@ -264,6 +266,19 @@ def create_prevent_record_endpoint(
     #   "physician_name": "Dr. Example",
     #   "physician_specialty": "Cardiology"
     # }
+    owner_doctor_id = (
+        current_user.doctor_profile.id
+        if current_user is not None and current_user.doctor_profile is not None
+        else None
+    )
+    logger.info(
+        "PREVENT_AUTH current_user_is_none=%s current_user_email=%s owner_doctor_id=%s visibility_scope=%s",
+        current_user is None,
+        current_user.user.email if current_user is not None else None,
+        owner_doctor_id,
+        "doctor_private" if current_user is not None else "public_anonymous",
+    )
+
     try:
         return create_prevent_record(
             db=db,

@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from app.api.router import api_router
 from app.api.routes.admin_prevent_records import (
+    count_admin_doctors_endpoint,
     export_admin_prevent_records_endpoint,
     get_admin_prevent_record_detail_endpoint,
     list_admin_prevent_records_endpoint,
@@ -86,6 +87,22 @@ class FakeRecordSession:
     def refresh(self, record) -> None:
         if record.id is None:
             record.id = uuid4()
+
+
+class FakeScalarQuery:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def scalar(self) -> int:
+        return self.value
+
+
+class FakeCountDb:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def query(self, *args, **kwargs):
+        return FakeScalarQuery(self.value)
 
 
 def make_current_user(role: str = "doctor", doctor_id: UUID | None = None) -> AuthenticatedUser:
@@ -381,6 +398,16 @@ class AuthorizationScopesTest(unittest.TestCase):
         self.assertIs(returned, response)
         self.assertEqual(detail_mock.call_args.kwargs["record_id"], record_id)
         self.assertNotIn("owner_doctor_id", detail_mock.call_args.kwargs)
+
+    def test_admin_doctor_count_uses_doctors_table_count(self) -> None:
+        admin = make_current_user(role="global_admin")
+
+        response = count_admin_doctors_endpoint(
+            db=FakeCountDb(2),
+            current_user=admin,
+        )
+
+        self.assertEqual(response, {"total_doctors": 2})
 
     def test_public_and_doctor_post_compatibility_remain_intact(self) -> None:
         anonymous_db = FakeRecordSession()

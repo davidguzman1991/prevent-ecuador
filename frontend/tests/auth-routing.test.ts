@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { getJsonRequestHeaders } from "../src/lib/api";
 import { canAccessRoleRoute, homeForRole } from "../src/lib/auth-routing";
 
-test("doctor is redirected to doctor home after login", () => {
-  assert.equal(homeForRole("doctor"), "/doctor");
+test("doctor is redirected to calculator after login", () => {
+  assert.equal(homeForRole("doctor"), "/");
 });
 
 test("global_admin is redirected to admin home after login", () => {
@@ -27,4 +28,14 @@ test("global_admin can access admin and doctor routes", () => {
 test("unauthenticated role cannot access protected routes", () => {
   assert.equal(canAccessRoleRoute(null, "doctor"), false);
   assert.equal(canAccessRoleRoute(undefined, "global_admin"), false);
+});
+
+test("json request headers include bearer token only when available", () => {
+  assert.deepEqual(getJsonRequestHeaders("token-123"), {
+    "Content-Type": "application/json",
+    Authorization: "Bearer token-123",
+  });
+  assert.deepEqual(getJsonRequestHeaders(null), {
+    "Content-Type": "application/json",
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthStatusBar } from "@/components/AuthStatusBar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -49,6 +49,7 @@ export default function AdminDashboardPage() {
 function AdminDashboard() {
   const { accessToken } = useAuth();
   const [records, setRecords] = useState<DashboardRecord[]>([]);
+  const [totalDoctors, setTotalDoctors] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
   const [error, setError] = useState("");
@@ -58,19 +59,24 @@ function AdminDashboard() {
     setIsLoading(true);
     setError("");
     void fetchAdminRecords(accessToken)
-      .then(setRecords)
+      .then(async (nextRecords) => {
+        setRecords(nextRecords);
+        const response = await fetch(
+          `${getApiBaseUrl()}/api/admin/prevent-records/doctors/count`,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        );
+        if (!response.ok) {
+          throw new Error("No se pudo cargar el total de médicos.");
+        }
+        const data = (await response.json()) as { total_doctors: number };
+        setTotalDoctors(data.total_doctors);
+      })
       .catch((loadError) =>
         setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el panel."),
       )
       .finally(() => setIsLoading(false));
   }, [accessToken]);
 
-  const doctorCount = useMemo(() => {
-    const doctorIds = records
-      .map((record) => record.owner_doctor_id)
-      .filter((doctorId): doctorId is string => Boolean(doctorId));
-    return new Set(doctorIds).size;
-  }, [records]);
   const publicCount = records.filter((record) => record.visibility_scope === "public_anonymous").length;
   const legacyCount = records.filter((record) => record.visibility_scope === "legacy_admin_only").length;
 
@@ -115,7 +121,7 @@ function AdminDashboard() {
 
       <section className="role-kpi-grid">
         <MetricCard label="Total registros" value={String(records.length)} />
-        <MetricCard label="Total médicos" value={String(doctorCount)} />
+        <MetricCard label="Total médicos" value={String(totalDoctors)} />
         <MetricCard label="Registros públicos" value={String(publicCount)} />
         <MetricCard label="Registros legacy" value={String(legacyCount)} />
       </section>

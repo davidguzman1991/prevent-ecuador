@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.api.routes.prevent_records import (
     EDUCATION_LEVEL_PATTERN,
@@ -21,6 +22,7 @@ from app.schemas.prevent_record import (
     PreventRecordListResponse,
 )
 from app.services.auth_users import AuthenticatedUser
+from app.models.doctor import Doctor
 from app.services.prevent_records import (
     export_prevent_records_csv,
     export_prevent_records_xlsx,
@@ -30,6 +32,15 @@ from app.services.prevent_records import (
 
 
 router = APIRouter()
+
+
+@router.get("/doctors/count")
+def count_admin_doctors_endpoint(
+    db: Session = Depends(get_db),
+    current_user: AuthenticatedUser = Depends(require_admin),
+) -> dict[str, int]:
+    _ = current_user
+    return {"total_doctors": int(db.query(func.count(Doctor.id)).scalar() or 0)}
 
 
 def _admin_filters(
