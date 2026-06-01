@@ -133,6 +133,11 @@ class AuthorizationScopesTest(unittest.TestCase):
         self.assertIn("/admin/prevent-records/{record_id}", paths)
         self.assertIn("/admin/prevent-records/export", paths)
         self.assertIn("/admin/prevent-records/export.xlsx", paths)
+        self.assertIn("/admin/doctors", paths)
+        self.assertIn("/admin/doctors/{doctor_id}", paths)
+        self.assertIn("/admin/doctors/{doctor_id}/deactivate", paths)
+        self.assertIn("/admin/doctors/{doctor_id}/activate", paths)
+        self.assertIn("/admin/doctors/{doctor_id}/password-reset", paths)
 
     def test_unauthenticated_user_cannot_access_required_dependencies(self) -> None:
         with self.assertRaises(HTTPException) as context:

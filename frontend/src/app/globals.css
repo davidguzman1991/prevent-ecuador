@@ -2465,6 +2465,13 @@ button {
   overflow-wrap: anywhere;
 }
 
+.auth-status-bar small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .role-dashboard-header {
   display: grid;
   gap: 10px;
@@ -2511,6 +2518,14 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.role-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .role-table-section {
@@ -2569,6 +2584,36 @@ button {
 
 .role-table tbody tr:last-child td {
   border-bottom: 0;
+}
+
+.role-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.role-inline-actions .dashboard-button {
+  min-height: 34px;
+  padding-inline: 10px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+}
+
+.admin-doctor-modal {
+  width: min(760px, 100%);
+}
+
+.admin-doctor-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.admin-doctor-form .prevent-helper-note,
+.admin-doctor-form footer {
+  grid-column: 1 / -1;
 }
 
 .methodology-shell {
@@ -3987,6 +4032,10 @@ button {
     max-height: calc(100vh - 20px);
     padding: 16px;
     border-radius: 20px;
+  }
+
+  .admin-doctor-form {
+    grid-template-columns: 1fr;
   }
 
   .prevent-save-decision-modal {

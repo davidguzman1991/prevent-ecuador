@@ -512,7 +512,7 @@ export function PreventCalculator() {
       ? "Se requiere IMC (Índice de Masa Corporal) para completar la evaluación PREVENT."
       : null);
   const authenticatedName =
-    currentUser?.full_name || currentUser?.doctor_profile?.display_name || currentUser?.email || "";
+    currentUser?.doctor_profile?.display_name || currentUser?.full_name || currentUser?.email || "";
   const authenticatedLabel =
     currentUser?.role === "global_admin"
       ? "Administrador"

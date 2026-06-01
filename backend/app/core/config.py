@@ -23,6 +23,7 @@ class Settings(BaseModel):
     )
     SUPABASE_PROJECT_URL: str = os.getenv("SUPABASE_PROJECT_URL", "")
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     SUPABASE_AUTH_AUDIENCE: str = os.getenv("SUPABASE_AUTH_AUDIENCE", "authenticated")
     SUPABASE_AUTH_ISSUER: str = os.getenv("SUPABASE_AUTH_ISSUER", "")
     DATABASE_URL: str = os.getenv(

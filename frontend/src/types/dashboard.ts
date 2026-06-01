@@ -33,3 +33,23 @@ export type DashboardListResponse = {
   page: number;
   page_size: number;
 };
+
+export type AdminDoctor = {
+  doctor_id: string;
+  user_id: string | null;
+  email: string | null;
+  full_name: string | null;
+  display_name: string;
+  specialty: string | null;
+  institution_name: string | null;
+  city: string | null;
+  is_active: boolean;
+  created_at: string;
+  total_records: number;
+  last_record_at: string | null;
+};
+
+export type AdminDoctorListResponse = {
+  items: AdminDoctor[];
+  total: number;
+};
