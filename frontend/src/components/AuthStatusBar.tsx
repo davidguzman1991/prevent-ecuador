@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -25,9 +26,16 @@ export function AuthStatusBar() {
         <strong>{displayName}</strong>
         {currentUser?.email && currentUser.email !== displayName ? <small>{currentUser.email}</small> : null}
       </div>
-      <button className="dashboard-button dashboard-button-secondary" type="button" onClick={() => void handleLogout()}>
-        Cerrar sesión
-      </button>
+      <div className="auth-status-actions">
+        {currentUser?.role === "doctor" ? (
+          <Link className="dashboard-button dashboard-button-secondary" href="/doctor/profile">
+            Mi Perfil
+          </Link>
+        ) : null}
+        <button className="dashboard-button dashboard-button-secondary" type="button" onClick={() => void handleLogout()}>
+          Cerrar sesión
+        </button>
+      </div>
     </div>
   );
 }

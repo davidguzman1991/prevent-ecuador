@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -13,6 +13,10 @@ class DoctorProfileResponse(BaseModel):
     license_number: str | None = None
     institution_name: str | None = None
     city: str | None = None
+    phone: str | None = None
+    birth_date: date | None = None
+    province_code: str | None = None
+    province_name: str | None = None
 
 
 class CurrentUserResponse(BaseModel):

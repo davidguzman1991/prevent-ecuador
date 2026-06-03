@@ -129,6 +129,7 @@ class AuthorizationScopesTest(unittest.TestCase):
         self.assertIn("/doctor/prevent-records/{record_id}", paths)
         self.assertIn("/doctor/prevent-records/export", paths)
         self.assertIn("/doctor/prevent-records/export.xlsx", paths)
+        self.assertIn("/doctor/profile", paths)
         self.assertIn("/admin/prevent-records/list", paths)
         self.assertIn("/admin/prevent-records/{record_id}", paths)
         self.assertIn("/admin/prevent-records/export", paths)

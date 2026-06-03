@@ -124,6 +124,9 @@ function DoctorDashboard() {
         <Link className="dashboard-button dashboard-button-primary" href="/">
           Volver a calculadora
         </Link>
+        <Link className="dashboard-button dashboard-button-secondary" href="/doctor/profile">
+          Mi Perfil
+        </Link>
         <button className="dashboard-button dashboard-button-secondary" type="button" onClick={() => void handleExport("csv")} disabled={isExporting !== null}>
           {isExporting === "csv" ? "Exportando..." : "Exportar CSV"}
         </button>

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -31,6 +31,10 @@ class AdminDoctorResponse(BaseModel):
     specialty: str | None
     institution_name: str | None
     city: str | None
+    phone: str | None
+    birth_date: date | None
+    province_code: str | None
+    province_name: str | None
     is_active: bool
     created_at: datetime
     total_records: int

@@ -30,6 +30,10 @@ def get_me(
             license_number=doctor_profile.license_number,
             institution_name=doctor_profile.institution_name,
             city=doctor_profile.city,
+            phone=doctor_profile.phone,
+            birth_date=doctor_profile.birth_date,
+            province_code=doctor_profile.province_code,
+            province_name=doctor_profile.province_name,
         )
         if doctor_profile is not None
         else None,

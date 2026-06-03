@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const adminPage = readFileSync(new URL("../src/app/admin/page.tsx", import.meta.url), "utf8");
+const doctorProfilePage = readFileSync(new URL("../src/app/doctor/profile/page.tsx", import.meta.url), "utf8");
+const authStatusBar = readFileSync(new URL("../src/components/AuthStatusBar.tsx", import.meta.url), "utf8");
 
 test("admin dashboard renders doctors management table and create action", () => {
   assert.match(adminPage, /Médicos/);
@@ -29,4 +31,27 @@ test("admin doctors table exposes active state actions", () => {
   assert.match(adminPage, /Desactivar/);
   assert.match(adminPage, /Activar/);
   assert.match(adminPage, /Recuperar/);
+});
+
+test("doctor profile page exposes editable professional profile fields", () => {
+  for (const label of [
+    "Mi Perfil",
+    "Nombre visible",
+    "Especialidad",
+    "Teléfono",
+    "Fecha nacimiento",
+    "Provincia",
+    "Cantón/Ciudad",
+    "Institución",
+    "Guardar perfil",
+  ]) {
+    assert.match(doctorProfilePage, new RegExp(label));
+  }
+  assert.match(doctorProfilePage, /getCantonsByProvinceCode/);
+  assert.match(doctorProfilePage, /calculateAge/);
+});
+
+test("authenticated doctor navigation includes profile access", () => {
+  assert.match(authStatusBar, /\/doctor\/profile/);
+  assert.match(authStatusBar, /Mi Perfil/);
 });

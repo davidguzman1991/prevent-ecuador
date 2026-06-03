@@ -5,6 +5,10 @@ export type DoctorProfile = {
   license_number: string | null;
   institution_name: string | null;
   city: string | null;
+  phone: string | null;
+  birth_date: string | null;
+  province_code: string | null;
+  province_name: string | null;
 };
 
 export type CurrentUser = {

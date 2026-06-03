@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.routes.admin_doctors import router as admin_doctors_router
 from app.api.routes.admin_prevent_records import router as admin_prevent_records_router
 from app.api.routes.auth import router as auth_router
+from app.api.routes.doctor_profile import router as doctor_profile_router
 from app.api.routes.doctor_prevent_records import router as doctor_prevent_records_router
 from app.api.routes.health import router as health_router
 from app.api.routes.prevent_records import router as prevent_records_router
@@ -14,6 +15,11 @@ api_router.include_router(
     doctor_prevent_records_router,
     prefix="/doctor/prevent-records",
     tags=["Doctor Prevent Records"],
+)
+api_router.include_router(
+    doctor_profile_router,
+    prefix="/doctor/profile",
+    tags=["Doctor Profile"],
 )
 api_router.include_router(
     admin_prevent_records_router,

@@ -44,7 +44,18 @@ def _generate_temporary_password(length: int = 14) -> str:
 
 def _profile_status(doctor: Doctor, user: AppUser | None) -> str:
     _ = user
-    if doctor.specialty or doctor.city:
+    required_values = [
+        doctor.specialty,
+        doctor.phone,
+        doctor.birth_date,
+        doctor.province_code,
+        doctor.province_name,
+        doctor.city,
+    ]
+    completed = sum(1 for value in required_values if value)
+    if completed == len(required_values):
+        return "complete"
+    if completed > 0:
         return "partial"
     return "pending"
 
@@ -73,6 +84,10 @@ def _doctor_response(row) -> AdminDoctorResponse:
         specialty=doctor.specialty,
         institution_name=doctor.institution_name,
         city=doctor.city,
+        phone=doctor.phone,
+        birth_date=doctor.birth_date,
+        province_code=doctor.province_code,
+        province_name=doctor.province_name,
         is_active=bool(user.is_active) if user is not None else False,
         created_at=doctor.created_at,
         total_records=int(total_records or 0),

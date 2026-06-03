@@ -43,6 +43,10 @@ export type AdminDoctor = {
   specialty: string | null;
   institution_name: string | null;
   city: string | null;
+  phone: string | null;
+  birth_date: string | null;
+  province_code: string | null;
+  province_name: string | null;
   is_active: boolean;
   created_at: string;
   total_records: number;

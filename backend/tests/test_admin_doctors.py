@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -140,6 +140,10 @@ class AdminDoctorsTest(unittest.TestCase):
                 specialty=doctor.specialty,
                 institution_name=None,
                 city=None,
+                phone=None,
+                birth_date=None,
+                province_code=None,
+                province_name=None,
                 is_active=True,
                 created_at=doctor.created_at,
                 total_records=0,
@@ -171,9 +175,19 @@ class AdminDoctorsTest(unittest.TestCase):
         user = AppUser(email="doctor@example.com", full_name="Doctor", role="doctor")
         pending = Doctor(display_name="Doctor")
         partial = Doctor(display_name="Doctor", city="QUITO")
+        complete = Doctor(
+            display_name="Doctor",
+            specialty="Cardiologia",
+            phone="+593999999999",
+            birth_date=date(1988, 8, 15),
+            province_code="17",
+            province_name="Pichincha",
+            city="Quito",
+        )
 
         self.assertEqual(_profile_status(pending, user), "pending")
         self.assertEqual(_profile_status(partial, user), "partial")
+        self.assertEqual(_profile_status(complete, user), "complete")
 
     def test_deactivate_doctor_sets_user_inactive_without_deleting(self) -> None:
         user = AppUser(

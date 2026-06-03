@@ -2449,6 +2449,13 @@ button {
   gap: 3px;
 }
 
+.auth-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .auth-status-bar span {
   color: var(--primary-dark);
   font-size: 0.72rem;
@@ -4054,7 +4061,7 @@ button {
 
   .prevent-results-modal {
     width: 100%;
-    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
     padding: 16px;
     border-radius: 20px;
   }
@@ -4097,11 +4104,14 @@ button {
   }
 
   .prevent-digital-risk-meter {
-    min-height: 220px;
+    order: -1;
+    min-height: 236px;
+    width: 100%;
   }
 
   .prevent-digital-risk-meter svg {
-    width: min(220px, 100%);
+    width: min(236px, 100%);
+    min-width: 196px;
   }
 
   .prevent-mini-risk-grid {
