@@ -956,7 +956,7 @@ export function PreventCalculator() {
       return;
     }
 
-    await submitPreventPayload(payload, true);
+    await submitPreventPayload(payload, false);
   };
 
   const handlePrintReport = () => {

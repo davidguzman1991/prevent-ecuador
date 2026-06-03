@@ -21,6 +21,10 @@ class Settings(BaseModel):
         "FRONTEND_ORIGINS",
         "http://localhost:3000,http://localhost:3001",
     )
+    FRONTEND_ORIGIN_REGEX: str = os.getenv(
+        "FRONTEND_ORIGIN_REGEX",
+        r"^https://prevent-ecuador(?:-[a-z0-9-]+)?\.vercel\.app$",
+    )
     SUPABASE_PROJECT_URL: str = os.getenv("SUPABASE_PROJECT_URL", "")
     SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
