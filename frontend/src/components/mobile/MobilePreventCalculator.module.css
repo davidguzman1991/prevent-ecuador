@@ -81,9 +81,70 @@
   line-height: 1.6;
 }
 
+.mobileForm,
 .placeholderGrid {
   display: grid;
   gap: 10px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span,
+.switchField span {
+  color: #a7b4c8;
+  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(9, 15, 29, 0.76);
+  color: #ffffff;
+  padding: 0 11px;
+  outline: none;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: rgba(0, 194, 184, 0.44);
+  box-shadow: 0 0 0 3px rgba(0, 194, 184, 0.1);
+}
+
+.switchGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.switchField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(9, 15, 29, 0.58);
+}
+
+.switchField input {
+  accent-color: #00c2b8;
 }
 
 .placeholderCard {
@@ -131,6 +192,21 @@
   opacity: 0.6;
 }
 
+.primaryButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.error {
+  padding: 11px 12px;
+  border: 1px solid rgba(217, 87, 95, 0.42);
+  border-radius: 12px;
+  background: rgba(217, 87, 95, 0.1);
+  color: #ffb4b8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 @media (max-width: 420px) {
   .shell {
     padding: 0;
@@ -143,4 +219,3 @@
     border-inline: 0;
   }
 }
-

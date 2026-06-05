@@ -1,8 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 import type { FormState, PreventResult } from "@/types/prevent";
+import {
+  buildPreventPayload,
+  mapPreventResultToMobileProps,
+  submitPreventCalculation,
+} from "@/lib/prevent-calculation";
 
 import MobileResultsDashboard, {
   type MobileResultsDashboardProps,
@@ -11,93 +16,82 @@ import styles from "./MobilePreventCalculator.module.css";
 
 type MobileCalculatorStep = "intro" | "results";
 
-const demoInputState: Pick<
+type MobileMinimumFormState = Pick<
   FormState,
-  "age" | "sex" | "model_variant" | "total_cholesterol" | "hdl" | "sbp" | "egfr" | "bmi"
-> = {
-  age: "52",
-  sex: "male",
-  model_variant: "base",
-  total_cholesterol: "210",
-  hdl: "48",
-  sbp: "138",
-  egfr: "92",
-  bmi: "28.4",
+  | "age"
+  | "sex"
+  | "total_cholesterol"
+  | "hdl"
+  | "sbp"
+  | "egfr"
+  | "bmi"
+  | "diabetes"
+  | "smoker"
+  | "antihypertensive_use"
+  | "statin_use"
+>;
+
+const initialMobileFormState: MobileMinimumFormState = {
+  age: "",
+  sex: "",
+  total_cholesterol: "",
+  hdl: "",
+  sbp: "",
+  egfr: "",
+  bmi: "",
+  diabetes: false,
+  smoker: false,
+  antihypertensive_use: false,
+  statin_use: false,
 };
 
-const demoPreventResult: Pick<
-  PreventResult,
-  | "cvd_risk"
-  | "ascvd_risk"
-  | "hf_risk"
-  | "cvd_risk_30y"
-  | "prevent_age"
-  | "risk_category"
-  | "clinical_interpretation"
-> = {
-  cvd_risk: 12.4,
-  ascvd_risk: 8.2,
-  hf_risk: 4.1,
-  cvd_risk_30y: 38.2,
-  prevent_age: 57.5,
-  risk_category: "Riesgo intermedio",
-  clinical_interpretation: {
-    source: "PREVENT Ecuador mobile demo",
-    basis: "Demo shell using existing PREVENT result shape",
-    risk_category: {
-      name: "Intermediate",
-      label: "Riesgo intermedio",
-      color: "orange",
-      description: "Categoría visual de 10 años para validación del shell móvil.",
-    },
-    recommendations: [],
-    disclaimer: "Demo visual; no conectado a API real.",
-    vascular_age_interpretation: {
-      chronological_age: 52,
-      vascular_age: 57.5,
-      difference: 5.5,
-      severity: "elevated",
-      color: "amber",
-      message: "La edad cardiovascular excede la cronológica por 5.5 años.",
-    },
-  },
-};
-
-function buildMobileResultsProps(
-  inputState: typeof demoInputState,
-  result: typeof demoPreventResult,
-): MobileResultsDashboardProps {
-  const chronologicalAge = Number.parseFloat(inputState.age);
-  const vascularAge = result.prevent_age;
-  const ageDelta = vascularAge !== null && Number.isFinite(chronologicalAge)
-    ? vascularAge - chronologicalAge
-    : null;
-
-  return {
-    cvd10: result.cvd_risk,
-    ascvd10: result.ascvd_risk,
-    hf10: result.hf_risk,
-    cvd30: result.cvd_risk_30y,
-    chronologicalAge: Number.isFinite(chronologicalAge) ? chronologicalAge : null,
-    cardiovascularAge: vascularAge,
-    cardiovascularAgeDelta: ageDelta,
-    riskCategory10y: result.risk_category,
-    keyFindings: [
-      "La presión arterial es el principal factor modificable.",
-      "La edad cardiovascular excede la cronológica por 5.5 años.",
-      "El riesgo acumulado a largo plazo es 38.2%.",
-    ],
-  };
+function parseMobileAge(age: string): number | null {
+  const value = Number(age.trim().replace(",", "."));
+  return Number.isFinite(value) ? value : null;
 }
 
 export default function MobilePreventCalculator() {
   const [step, setStep] = useState<MobileCalculatorStep>("intro");
-  const mobileResultsProps = useMemo(
-    () => buildMobileResultsProps(demoInputState, demoPreventResult),
-    [],
-  );
+  const [form, setForm] = useState<MobileMinimumFormState>(initialMobileFormState);
+  const [result, setResult] = useState<PreventResult | null>(null);
+  const [mobileResultsProps, setMobileResultsProps] =
+    useState<MobileResultsDashboardProps | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  if (step === "results") {
+  const updateField = (field: keyof MobileMinimumFormState, value: string | boolean) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+    setResult(null);
+    setMobileResultsProps(null);
+
+    try {
+      const payload = buildPreventPayload(form);
+      const nextResult = await submitPreventCalculation(payload);
+      const chronologicalAge = parseMobileAge(form.age);
+      setResult(nextResult);
+      setMobileResultsProps(mapPreventResultToMobileProps(nextResult, chronologicalAge));
+      setStep("results");
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "No se pudo calcular el riesgo PREVENT.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (step === "results" && mobileResultsProps) {
     return <MobileResultsDashboard {...mobileResultsProps} />;
   }
 
@@ -113,32 +107,129 @@ export default function MobilePreventCalculator() {
           <p className={styles.eyebrow}>CALCULADORA MÓVIL</p>
           <h1 className={styles.title}>Flujo móvil PREVENT</h1>
           <p className={styles.copy}>
-            Prototipo aislado para la futura experiencia app-like. Reutiliza los
-            tipos existentes del cálculo PREVENT y mantiene el resultado móvil
-            separado de la calculadora desktop.
+            Ingrese los datos mínimos para calcular PREVENT con el mismo endpoint
+            validado de la calculadora clínica.
           </p>
 
-          <div className={styles.placeholderGrid} aria-label="Pantallas pendientes">
-            <div className={styles.placeholderCard}>01 DATOS DEL PACIENTE</div>
-            <div className={styles.placeholderCard}>02 BIOMARCADORES</div>
-            <div className={styles.placeholderCard}>03 FACTORES CLÍNICOS</div>
-          </div>
-        </div>
+          <form className={styles.mobileForm} onSubmit={handleSubmit}>
+            <div className={styles.formGrid}>
+              <label className={styles.field}>
+                <span>Edad</span>
+                <input
+                  inputMode="decimal"
+                  required
+                  value={form.age}
+                  onChange={(event) => updateField("age", event.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>Sexo</span>
+                <select
+                  required
+                  value={form.sex}
+                  onChange={(event) => updateField("sex", event.target.value)}
+                >
+                  <option value="">Seleccione</option>
+                  <option value="female">Mujer</option>
+                  <option value="male">Hombre</option>
+                </select>
+              </label>
+              <label className={styles.field}>
+                <span>Colesterol total</span>
+                <input
+                  inputMode="decimal"
+                  required
+                  value={form.total_cholesterol}
+                  onChange={(event) => updateField("total_cholesterol", event.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>HDL</span>
+                <input
+                  inputMode="decimal"
+                  required
+                  value={form.hdl}
+                  onChange={(event) => updateField("hdl", event.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>PAS</span>
+                <input
+                  inputMode="decimal"
+                  required
+                  value={form.sbp}
+                  onChange={(event) => updateField("sbp", event.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>eGFR</span>
+                <input
+                  inputMode="decimal"
+                  required
+                  value={form.egfr}
+                  onChange={(event) => updateField("egfr", event.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>IMC</span>
+                <input
+                  inputMode="decimal"
+                  required
+                  value={form.bmi}
+                  onChange={(event) => updateField("bmi", event.target.value)}
+                />
+              </label>
+            </div>
 
-        <div className={styles.actions}>
-          <button
-            className={styles.primaryButton}
-            type="button"
-            onClick={() => setStep("results")}
-          >
-            Ver resultado demo
-          </button>
-          <button className={styles.secondaryButton} type="button" disabled>
-            Conexión API pendiente
-          </button>
+            <div className={styles.switchGrid}>
+              {[
+                ["diabetes", "Diabetes"],
+                ["smoker", "Fumador"],
+                ["antihypertensive_use", "Antihipertensivo"],
+                ["statin_use", "Estatina"],
+              ].map(([field, label]) => (
+                <label className={styles.switchField} key={field}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form[field as keyof MobileMinimumFormState])}
+                    onChange={(event) =>
+                      updateField(field as keyof MobileMinimumFormState, event.target.checked)
+                    }
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+
+            {error ? <div className={styles.error}>{error}</div> : null}
+
+            <div className={styles.actions}>
+              <button
+                className={styles.primaryButton}
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Calculando..." : "Calcular riesgo"}
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                disabled={!result}
+                onClick={() => {
+                  if (result) {
+                    setMobileResultsProps(
+                      mapPreventResultToMobileProps(result, parseMobileAge(form.age)),
+                    );
+                    setStep("results");
+                  }
+                }}
+              >
+                Ver último resultado
+              </button>
+            </div>
+          </form>
         </div>
       </section>
     </main>
   );
 }
-
