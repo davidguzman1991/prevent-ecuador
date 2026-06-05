@@ -1,5 +1,5 @@
-import { PreventCalculator } from "@/components/calculator/PreventCalculator";
+import { HomeResponsiveCalculator } from "@/components/HomeResponsiveCalculator";
 
 export default function HomePage() {
-  return <PreventCalculator />;
+  return <HomeResponsiveCalculator />;
 }

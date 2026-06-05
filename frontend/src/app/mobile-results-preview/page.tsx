@@ -1,0 +1,21 @@
+import MobileResultsDashboard from "@/components/mobile/results/MobileResultsDashboard";
+
+const mockResults = {
+  cvd10: 12.4,
+  ascvd10: 8.2,
+  hf10: 4.1,
+  cvd30: 38.2,
+  chronologicalAge: 52,
+  cardiovascularAge: 57.5,
+  cardiovascularAgeDelta: 5.5,
+  riskCategory10y: "Riesgo intermedio",
+  keyFindings: [
+    "La presión arterial es el principal factor modificable.",
+    "La edad cardiovascular excede la cronológica por 5.5 años.",
+    "El riesgo acumulado a largo plazo es 38.2%.",
+  ],
+};
+
+export default function MobileResultsPreviewPage() {
+  return <MobileResultsDashboard {...mockResults} />;
+}
