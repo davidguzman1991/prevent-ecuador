@@ -356,16 +356,13 @@ function getVisualRiskCategory(
 ): "low" | "borderline" | "intermediate" | "high" | null {
   if (risk === null) return null;
 
-  if (horizon === "10y") {
-    if (risk >= 20) return "high";
-    if (risk >= 7.5) return "intermediate";
-    if (risk >= 5) return "borderline";
-    return "low";
+  if (horizon !== "10y") {
+    return null;
   }
 
-  if (risk >= 40) return "high";
-  if (risk >= 20) return "intermediate";
-  if (risk >= 10) return "borderline";
+  if (risk >= 20) return "high";
+  if (risk >= 7.5) return "intermediate";
+  if (risk >= 5) return "borderline";
   return "low";
 }
 
@@ -1792,11 +1789,14 @@ function DigitalRiskDashboard({
   missingMessage: string | null;
 }) {
   const category = getVisualRiskCategory(risk, horizon);
-  const categoryTone = category ?? "pending";
+  const categoryTone = horizon === "30y" && risk !== null ? "cumulative" : category ?? "pending";
   const progress = risk === null ? 0 : Math.min(Math.max(risk, 0), 100);
   const dashOffset = 100 - progress;
   const riskLabel = risk !== null ? formatClinicalRisk(risk) : "--";
   const horizonLabel = horizon === "10y" ? "10 años" : "30 años";
+  const readoutLabel = horizon === "30y" && risk !== null
+    ? "RIESGO ACUMULADO"
+    : translateVisualRiskCategory(category);
 
   return (
     <section className={`prevent-digital-risk prevent-digital-risk-${categoryTone}`}>
@@ -1805,8 +1805,8 @@ function DigitalRiskDashboard({
         <h3>{getRiskTypeModalLabel(riskType)}</h3>
         <p>
           {horizon === "10y"
-            ? "Categorías visuales: bajo <5%, límite 5-7.4%, intermedio 7.5-19.9%, alto ≥20%."
-            : "Interpretar según contexto clínico y horizonte temporal."}
+            ? "Categoría visual de 10 años: bajo <5%, límite 5-7.4%, intermedio 7.5-19.9%, alto ≥20%."
+            : "Estimación acumulada a 30 años. AHAprevent entrega un valor numérico; no existe una clasificación oficial bajo/intermedio/alto para este horizonte."}
         </p>
       </div>
 
@@ -1824,7 +1824,7 @@ function DigitalRiskDashboard({
         </svg>
         <div className="prevent-digital-risk-readout">
           <strong>{riskLabel}</strong>
-          <span>{translateVisualRiskCategory(category)}</span>
+          <span>{readoutLabel}</span>
         </div>
       </div>
 
