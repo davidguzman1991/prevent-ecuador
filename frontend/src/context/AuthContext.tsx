@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
 import { getApiBaseUrl } from "@/lib/api";
@@ -41,7 +42,16 @@ async function fetchCurrentUser(accessToken: string): Promise<CurrentUser> {
   return (await response.json()) as CurrentUser;
 }
 
+function isAnonymousMobileCalculatorRoute(pathname: string | null): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.innerWidth < 768 &&
+    (pathname === "/" || pathname === "/mobile-preview" || pathname === "/mobile-results-preview")
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [session, setSession] = useState<Session | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setSession(data.session);
+      if (isAnonymousMobileCalculatorRoute(pathname)) {
+        setCurrentUser(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         if (data.session?.access_token) {
           const nextUser = await fetchCurrentUser(data.session.access_token);
@@ -124,6 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (isAnonymousMobileCalculatorRoute(pathname)) {
+        setCurrentUser(null);
+        setIsLoading(false);
+        return;
+      }
+
       void fetchCurrentUser(nextSession.access_token)
         .then((nextUser) => setCurrentUser(nextUser))
         .catch((authError) => {
@@ -137,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     setIsLoading(true);

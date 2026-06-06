@@ -15,6 +15,30 @@ export type MobileResultsDashboardProps = {
 };
 
 const ledBars = Array.from({ length: 25 }, (_, index) => index);
+const ascvdSparklinePoints: Array<[number, number]> = [
+  [0, 27],
+  [14, 22],
+  [28, 24],
+  [42, 15],
+  [56, 18],
+  [70, 6],
+  [84, 15],
+  [100, 10],
+  [116, 12],
+  [138, 5],
+];
+const hfSparklinePoints: Array<[number, number]> = [
+  [0, 30],
+  [15, 20],
+  [30, 26],
+  [45, 18],
+  [60, 17],
+  [76, 20],
+  [91, 4],
+  [106, 16],
+  [122, 19],
+  [138, 8],
+];
 
 function clampPercent(value: number | null) {
   if (value === null) return 0;
@@ -70,22 +94,32 @@ function LedRiskGauge({ risk }: { risk: number | null }) {
   );
 }
 
+function buildSparklinePath(points: Array<[number, number]>) {
+  const safePoints = points.filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+  if (!safePoints.length) return "M0 38";
+  return safePoints
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`)
+    .join(" ");
+}
+
 function Sparkline({
   tone,
-  path,
+  points,
 }: {
   tone: "ascvd" | "hf";
-  path: string;
+  points: Array<[number, number]>;
 }) {
   const stroke = tone === "ascvd" ? "#8b5cf6" : "#f59e0b";
+  const linePath = buildSparklinePath(points);
+  const fillPath = `${linePath} L138.0 38.0 L0.0 38.0 Z`;
 
   return (
     <svg className={styles.sparkline} viewBox="0 0 138 38" aria-hidden="true">
       <path
-        d={`${path} L138 38 L0 38 Z`}
+        d={fillPath}
         fill={tone === "ascvd" ? "rgba(139, 92, 246, 0.12)" : "rgba(245, 158, 11, 0.12)"}
       />
-      <path d={path} stroke={stroke} />
+      <path d={linePath} stroke={stroke} />
     </svg>
   );
 }
@@ -144,7 +178,7 @@ export default function MobileResultsDashboard({
             <strong className={`${styles.telemetryValue} ${styles.ascvdValue}`}>
               {formatPercent(ascvd10)}
             </strong>
-            <Sparkline tone="ascvd" path="M0 27 C12 20 19 26 30 19 S49 14 60 18 75 5 88 19 103 8 116 12 138 4" />
+            <Sparkline tone="ascvd" points={ascvdSparklinePoints} />
           </article>
 
           <article className={styles.telemetryCell}>
@@ -152,7 +186,7 @@ export default function MobileResultsDashboard({
             <strong className={`${styles.telemetryValue} ${styles.hfValue}`}>
               {formatPercent(hf10)}
             </strong>
-            <Sparkline tone="hf" path="M0 30 C11 21 18 16 29 25 S48 19 61 17 76 20 86 1 100 13 112 19 138 7" />
+            <Sparkline tone="hf" points={hfSparklinePoints} />
           </article>
         </section>
 
