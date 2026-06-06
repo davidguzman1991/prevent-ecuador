@@ -7,12 +7,12 @@ type CategoryTone = "low" | "borderline" | "intermediate" | "high" | "unknown";
 
 function formatPercent(value: number | null) {
   if (value === null) return "No calculado";
-  return `${value.toFixed(1)} %`;
+  return `${value.toFixed(1)}%`;
 }
 
 function formatLongTermRisk(value: number | null) {
   if (value === null) return "No disponible para este perfil";
-  return `${value.toFixed(1)} %`;
+  return `${value.toFixed(1)}%`;
 }
 
 function formatAge(value: number | null) {

@@ -91,12 +91,12 @@
   --risk-color: #38d9cc;
   --risk-glow: rgba(56, 217, 204, 0.48);
   position: absolute;
-  top: clamp(18px, 5vw, 24px);
+  top: clamp(14px, 4.2vw, 20px);
   left: 50%;
   transform: translateX(-50%);
   display: grid;
   place-items: center;
-  width: min(66vw, 218px);
+  width: min(60vw, 198px);
   max-width: 100%;
   overflow: hidden;
 }
@@ -167,14 +167,14 @@
   display: grid;
   place-items: center;
   max-width: 100%;
-  margin-top: clamp(78px, 22vw, 98px);
+  margin-top: clamp(88px, 25vw, 112px);
   text-align: center;
 }
 
 .heroValue {
   color: #ffffff;
-  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: clamp(44px, 12.8vw, 56px);
+  font-family: Geist, Inter, "Segoe UI", Arial, sans-serif;
+  font-size: clamp(44px, 12vw, 54px);
   font-weight: 900;
   line-height: 0.95;
   letter-spacing: 0;
