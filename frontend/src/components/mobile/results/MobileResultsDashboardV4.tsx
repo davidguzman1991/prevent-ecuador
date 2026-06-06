@@ -138,7 +138,7 @@ export default function MobileResultsDashboardV4({
 
         <section className={styles.secondaryGrid} aria-label="Riesgos clínicos complementarios">
           <article className={styles.secondaryCard}>
-            <span>ASCVD</span>
+            <span>Riesgo de ateroesclerosis (ASCVD)</span>
             <strong>{formatPercent(ascvd10)}</strong>
             <small>10 años</small>
           </article>
