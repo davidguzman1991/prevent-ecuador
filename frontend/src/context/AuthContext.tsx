@@ -44,9 +44,17 @@ async function fetchCurrentUser(accessToken: string): Promise<CurrentUser> {
 
 function isAnonymousMobileCalculatorRoute(pathname: string | null): boolean {
   if (typeof window === "undefined") return false;
+  const currentPathname = pathname ?? window.location.pathname;
+  const isMobileViewport =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 767px)").matches
+      : window.innerWidth < 768;
+
   return (
-    window.innerWidth < 768 &&
-    (pathname === "/" || pathname === "/mobile-preview" || pathname === "/mobile-results-preview")
+    isMobileViewport &&
+    (currentPathname === "/" ||
+      currentPathname === "/mobile-preview" ||
+      currentPathname === "/mobile-results-preview")
   );
 }
 
@@ -74,6 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (isAnonymousMobileCalculatorRoute(pathname)) {
+      setSession(null);
+      setCurrentUser(null);
+      setError("");
+      setIsLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
 
     const loadInitialSession = async () => {
       setIsLoading(true);

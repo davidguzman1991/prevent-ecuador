@@ -12,6 +12,8 @@ export type MobileResultsDashboardProps = {
   cardiovascularAgeDelta: number | null;
   riskCategory10y: string | null;
   keyFindings: string[];
+  onEditData?: () => void;
+  onNewCalculation?: () => void;
 };
 
 const ledBars = Array.from({ length: 25 }, (_, index) => index);
@@ -50,6 +52,11 @@ function formatPercent(value: number | null) {
   return `${value.toFixed(1)}%`;
 }
 
+function formatLongTermRisk(value: number | null) {
+  if (value === null) return "No calculado para este perfil";
+  return `${value.toFixed(1)}%`;
+}
+
 function formatAge(value: number | null) {
   if (value === null) return "No calculada";
   return `${value.toFixed(1)} Años`;
@@ -69,7 +76,7 @@ function LedRiskGauge({ risk }: { risk: number | null }) {
       className={styles.ledGauge}
       viewBox="0 0 224 16"
       role="img"
-      aria-label={`Riesgo acumulado ${formatPercent(risk)}`}
+      aria-label={`Riesgo acumulado ${formatLongTermRisk(risk)}`}
     >
       <defs>
         <linearGradient id="longTermRiskGradient" x1="0" x2="1" y1="0" y2="0">
@@ -134,11 +141,14 @@ export default function MobileResultsDashboard({
   cardiovascularAgeDelta,
   riskCategory10y,
   keyFindings,
+  onEditData,
+  onNewCalculation,
 }: MobileResultsDashboardProps) {
   const heroRiskOffset = 100 - clampPercent(cvd10);
   const heroRingStyle = {
     "--hero-risk-offset": heroRiskOffset,
   } as CSSProperties;
+  const hasResultActions = Boolean(onEditData || onNewCalculation);
 
   return (
     <main className={styles.viewport}>
@@ -208,7 +218,7 @@ export default function MobileResultsDashboard({
           <div className={styles.longTermLabel}>
             <span>RIESGO ACUMULADO A LARGO PLAZO</span>
             <br />
-            {formatPercent(cvd30)}
+            {formatLongTermRisk(cvd30)}
           </div>
           <LedRiskGauge risk={cvd30} />
         </section>
@@ -221,6 +231,21 @@ export default function MobileResultsDashboard({
             ))}
           </ul>
         </section>
+
+        {hasResultActions ? (
+          <div className={styles.resultActions} aria-label="Acciones de resultado móvil">
+            {onEditData ? (
+              <button className={styles.editButton} type="button" onClick={onEditData}>
+                Editar datos
+              </button>
+            ) : null}
+            {onNewCalculation ? (
+              <button className={styles.newButton} type="button" onClick={onNewCalculation}>
+                Nuevo cálculo
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className={styles.homeIndicator} aria-hidden="true" />
       </section>

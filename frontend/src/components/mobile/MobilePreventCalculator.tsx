@@ -94,8 +94,27 @@ export default function MobilePreventCalculator() {
     }
   };
 
+  const handleEditData = () => {
+    setError("");
+    setStep("intro");
+  };
+
+  const handleNewCalculation = () => {
+    setForm(initialMobileFormState);
+    setResult(null);
+    setMobileResultsProps(null);
+    setError("");
+    setStep("intro");
+  };
+
   if (step === "results" && mobileResultsProps) {
-    return <MobileResultsDashboard {...mobileResultsProps} />;
+    return (
+      <MobileResultsDashboard
+        {...mobileResultsProps}
+        onEditData={handleEditData}
+        onNewCalculation={handleNewCalculation}
+      />
+    );
   }
 
   return (
