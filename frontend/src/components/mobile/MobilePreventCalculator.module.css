@@ -286,14 +286,17 @@
   inset: 0;
   z-index: 50;
   display: grid;
-  place-items: end center;
+  place-items: center;
   padding: 18px 14px;
   background: rgba(3, 7, 18, 0.72);
   backdrop-filter: blur(14px);
+  overflow: hidden;
 }
 
 .calculatorModal {
   width: min(100%, 393px);
+  max-height: min(86vh, 520px);
+  overflow-y: auto;
   display: grid;
   gap: 14px;
   padding: 18px;
@@ -402,13 +405,11 @@
   }
 
   .modalBackdrop {
-    padding: 0;
+    padding: 16px;
   }
 
   .calculatorModal {
     width: 100%;
-    border-radius: 24px 24px 0 0;
-    border-inline: 0;
-    border-bottom: 0;
+    border-radius: 24px;
   }
 }
