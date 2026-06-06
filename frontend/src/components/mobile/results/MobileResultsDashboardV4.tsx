@@ -77,25 +77,10 @@ function RiskGauge({
 
   return (
     <div className={`${styles.gaugeShell} ${styles[`tone${tone}`]}`} style={gaugeStyle}>
-      <svg viewBox="0 0 180 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <circle className={styles.gaugeHalo} cx="90" cy="90" r="71" pathLength="100" />
-        <circle className={styles.gaugeTrack} cx="90" cy="90" r="62" pathLength="100" />
-        <circle className={styles.gaugeValue} cx="90" cy="90" r="62" pathLength="100" />
-        {Array.from({ length: 56 }, (_, index) => {
-          const angle = index * 6.43;
-          const isActive = index < Math.round((clampPercent(value) / 100) * 56);
-          return (
-            <line
-              className={isActive ? styles.gaugeTickActive : styles.gaugeTick}
-              key={angle}
-              x1="90"
-              y1="12"
-              x2="90"
-              y2={index % 4 === 0 ? "22" : "18"}
-              transform={`rotate(${angle} 90 90)`}
-            />
-          );
-        })}
+      <svg viewBox="0 0 180 112" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <path className={styles.gaugeHalo} d="M28 94 A62 62 0 0 1 152 94" pathLength="100" />
+        <path className={styles.gaugeTrack} d="M28 94 A62 62 0 0 1 152 94" pathLength="100" />
+        <path className={styles.gaugeValue} d="M28 94 A62 62 0 0 1 152 94" pathLength="100" />
       </svg>
     </div>
   );
@@ -145,9 +130,9 @@ export default function MobileResultsDashboardV4({
           <RiskGauge value={cvd10} tone={category.tone} />
           <div className={styles.heroReadout}>
             <strong className={styles.heroValue}>{formatPercent(cvd10)}</strong>
+            <small className={categoryClassName}>{category.label}</small>
             <span>Riesgo cardiovascular global</span>
             <em>10 años</em>
-            <small className={categoryClassName}>{category.label}</small>
           </div>
         </section>
 
@@ -169,10 +154,7 @@ export default function MobileResultsDashboardV4({
           <strong className={styles.ageValue}>{formatAge(cardiovascularAge)}</strong>
           <div className={styles.ageRows}>
             <span>Edad cronológica: {formatAge(chronologicalAge)}</span>
-            <span>
-              Diferencia:
-              <strong>{formatAgeDelta(cardiovascularAgeDelta)}</strong>
-            </span>
+            <span>Diferencia: {formatAgeDelta(cardiovascularAgeDelta)}</span>
           </div>
         </section>
 
