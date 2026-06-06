@@ -87,6 +87,18 @@
   gap: 6px;
 }
 
+.calculatedField {
+  min-width: 0;
+}
+
+.fieldLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
 .field span,
 .switchField span {
   color: #a7b4c8;
@@ -95,6 +107,27 @@
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.inlineCalcButton {
+  min-height: 24px;
+  border: 1px solid rgba(0, 194, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 194, 184, 0.1);
+  color: #8af5ed;
+  padding: 0 8px;
+  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.inlineCalcButton:focus-visible {
+  outline: 2px solid rgba(142, 197, 255, 0.74);
+  outline-offset: 2px;
 }
 
 .field input,
@@ -248,6 +281,114 @@
   line-height: 1.45;
 }
 
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: end center;
+  padding: 18px 14px;
+  background: rgba(3, 7, 18, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.calculatorModal {
+  width: min(100%, 393px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(13, 22, 39, 0.98), rgba(3, 7, 18, 0.98)),
+    #030712;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.68);
+}
+
+.modalHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.modalHeader p {
+  margin: 0;
+  color: #00c2b8;
+  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.modalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modalField {
+  display: grid;
+  gap: 7px;
+}
+
+.modalField span {
+  color: #a7b4c8;
+  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.modalField input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  background: rgba(9, 15, 29, 0.82);
+  color: #ffffff;
+  padding: 0 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.modalField input:focus {
+  border-color: rgba(0, 194, 184, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 194, 184, 0.12);
+}
+
+.modalNote {
+  margin: -2px 0 0;
+  color: #a7b4c8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.modalError {
+  margin: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(217, 87, 95, 0.42);
+  border-radius: 12px;
+  background: rgba(217, 87, 95, 0.1);
+  color: #ffb4b8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.modalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 @media (max-width: 420px) {
   .shell {
     padding: 0;
@@ -258,5 +399,16 @@
     min-height: 100vh;
     border-radius: 0;
     border-inline: 0;
+  }
+
+  .modalBackdrop {
+    padding: 0;
+  }
+
+  .calculatorModal {
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    border-inline: 0;
+    border-bottom: 0;
   }
 }

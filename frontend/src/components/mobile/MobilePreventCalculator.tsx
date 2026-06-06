@@ -28,6 +28,7 @@ import MobileResultsDashboardV4 from "./results/MobileResultsDashboardV4";
 import styles from "./MobilePreventCalculator.module.css";
 
 type MobileCalculatorStep = "intro" | "results";
+type MobileCalculatorModal = "egfr" | "bmi" | null;
 
 const USE_RESULTS_V4 = true;
 const USE_RESULTS_V3 = true;
@@ -85,9 +86,71 @@ const initialMobileFormState: MobileMinimumFormState = {
   patient_socioeconomic_level: "",
 };
 
+const initialBmiCalculatorState = {
+  weightKg: "",
+  heightCm: "",
+  error: "",
+};
+
+const initialEgfrCalculatorState = {
+  creatinine: "",
+  error: "",
+};
+
 function parseMobileAge(age: string): number | null {
   const value = Number(age.trim().replace(",", "."));
   return Number.isFinite(value) ? value : null;
+}
+
+function parseClinicalNumber(value: string): number {
+  return Number(value.trim().replace(",", "."));
+}
+
+function calculateBmiFromWeightAndHeight(weightKg: string, heightCm: string): string {
+  const weight = parseClinicalNumber(weightKg);
+  const height = parseClinicalNumber(heightCm);
+
+  if (!Number.isFinite(weight) || weight <= 0) {
+    throw new Error("Ingrese un peso mayor a 0 kg.");
+  }
+  if (!Number.isFinite(height) || height <= 0) {
+    throw new Error("Ingrese una talla mayor a 0 cm.");
+  }
+
+  const heightMeters = height / 100;
+  return (weight / (heightMeters * heightMeters)).toFixed(1);
+}
+
+function calculateCkdEpi2021Egfr(
+  creatinineMgDl: string,
+  ageValue: string,
+  sex: MobileMinimumFormState["sex"],
+): string {
+  const creatinine = parseClinicalNumber(creatinineMgDl);
+  const age = parseClinicalNumber(ageValue);
+
+  if (!Number.isFinite(creatinine) || creatinine <= 0) {
+    throw new Error("Ingrese una creatinina sérica mayor a 0 mg/dL.");
+  }
+  if (!Number.isFinite(age) || age <= 0) {
+    throw new Error("Ingrese la edad para calcular CKD-EPI.");
+  }
+  if (sex !== "male" && sex !== "female") {
+    throw new Error("Seleccione sexo masculino o femenino para calcular CKD-EPI.");
+  }
+
+  const isFemale = sex === "female";
+  const kappa = isFemale ? 0.7 : 0.9;
+  const alpha = isFemale ? -0.241 : -0.302;
+  const creatinineRatio = creatinine / kappa;
+  const egfr =
+    142 *
+    Math.pow(Math.min(creatinineRatio, 1), alpha) *
+    Math.pow(Math.max(creatinineRatio, 1), -1.2) *
+    Math.pow(0.9938, age) *
+    (isFemale ? 1.012 : 1);
+
+  return egfr.toFixed(1);
 }
 
 export default function MobilePreventCalculator() {
@@ -96,6 +159,9 @@ export default function MobilePreventCalculator() {
   const [result, setResult] = useState<PreventResult | null>(null);
   const [mobileResultsProps, setMobileResultsProps] =
     useState<MobileResultsDashboardProps | null>(null);
+  const [activeModal, setActiveModal] = useState<MobileCalculatorModal>(null);
+  const [bmiCalculator, setBmiCalculator] = useState(initialBmiCalculatorState);
+  const [egfrCalculator, setEgfrCalculator] = useState(initialEgfrCalculatorState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const cantonOptions = getCantonsByProvinceCode(form.patient_province_code);
@@ -113,6 +179,70 @@ export default function MobilePreventCalculator() {
       patient_province_code: provinceCode,
       patient_canton_code: "",
     }));
+  };
+
+  const closeCalculatorModal = () => {
+    setActiveModal(null);
+  };
+
+  const updateBmiCalculatorField = (
+    field: "weightKg" | "heightCm",
+    value: string,
+  ) => {
+    setBmiCalculator((current) => ({
+      ...current,
+      [field]: value,
+      error: "",
+    }));
+  };
+
+  const updateEgfrCalculatorField = (value: string) => {
+    setEgfrCalculator((current) => ({
+      ...current,
+      creatinine: value,
+      error: "",
+    }));
+  };
+
+  const handleUseCalculatedBmi = () => {
+    try {
+      const nextBmi = calculateBmiFromWeightAndHeight(
+        bmiCalculator.weightKg,
+        bmiCalculator.heightCm,
+      );
+      updateField("bmi", nextBmi);
+      setBmiCalculator((current) => ({ ...current, error: "" }));
+      setActiveModal(null);
+    } catch (bmiError) {
+      setBmiCalculator((current) => ({
+        ...current,
+        error:
+          bmiError instanceof Error
+            ? bmiError.message
+            : "No se pudo calcular el IMC.",
+      }));
+    }
+  };
+
+  const handleUseCalculatedEgfr = () => {
+    try {
+      const nextEgfr = calculateCkdEpi2021Egfr(
+        egfrCalculator.creatinine,
+        form.age,
+        form.sex,
+      );
+      updateField("egfr", nextEgfr);
+      setEgfrCalculator((current) => ({ ...current, error: "" }));
+      setActiveModal(null);
+    } catch (egfrError) {
+      setEgfrCalculator((current) => ({
+        ...current,
+        error:
+          egfrError instanceof Error
+            ? egfrError.message
+            : "No se pudo calcular eGFR CKD-EPI.",
+      }));
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -150,6 +280,9 @@ export default function MobilePreventCalculator() {
 
   const handleNewCalculation = () => {
     setForm(initialMobileFormState);
+    setBmiCalculator(initialBmiCalculatorState);
+    setEgfrCalculator(initialEgfrCalculatorState);
+    setActiveModal(null);
     setResult(null);
     setMobileResultsProps(null);
     setError("");
@@ -261,8 +394,17 @@ export default function MobilePreventCalculator() {
                   onChange={(event) => updateField("sbp", event.target.value)}
                 />
               </label>
-              <label className={styles.field}>
-                <span>eGFR</span>
+              <label className={`${styles.field} ${styles.calculatedField}`}>
+                <span className={styles.fieldLabelRow}>
+                  <span>eGFR</span>
+                  <button
+                    type="button"
+                    className={styles.inlineCalcButton}
+                    onClick={() => setActiveModal("egfr")}
+                  >
+                    Calcular
+                  </button>
+                </span>
                 <input
                   inputMode="decimal"
                   required
@@ -270,8 +412,17 @@ export default function MobilePreventCalculator() {
                   onChange={(event) => updateField("egfr", event.target.value)}
                 />
               </label>
-              <label className={styles.field}>
-                <span>IMC</span>
+              <label className={`${styles.field} ${styles.calculatedField}`}>
+                <span className={styles.fieldLabelRow}>
+                  <span>IMC</span>
+                  <button
+                    type="button"
+                    className={styles.inlineCalcButton}
+                    onClick={() => setActiveModal("bmi")}
+                  >
+                    Calcular
+                  </button>
+                </span>
                 <input
                   inputMode="decimal"
                   required
@@ -488,6 +639,111 @@ export default function MobilePreventCalculator() {
           </form>
         </div>
       </section>
+
+      {activeModal ? (
+        <div
+          className={styles.modalBackdrop}
+          role="presentation"
+          onClick={closeCalculatorModal}
+        >
+          <section
+            className={styles.calculatorModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-calculator-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {activeModal === "egfr" ? (
+              <>
+                <div className={styles.modalHeader}>
+                  <p>CKD-EPI 2021</p>
+                  <h2 id="mobile-calculator-modal-title">Calcular eGFR</h2>
+                </div>
+                <label className={styles.modalField}>
+                  <span>Creatinina sérica (mg/dL)</span>
+                  <input
+                    inputMode="decimal"
+                    value={egfrCalculator.creatinine}
+                    onChange={(event) => updateEgfrCalculatorField(event.target.value)}
+                    autoFocus
+                  />
+                </label>
+                <p className={styles.modalNote}>
+                  Usa la edad y el sexo ya ingresados en la calculadora.
+                </p>
+                {egfrCalculator.error ? (
+                  <p className={styles.modalError}>{egfrCalculator.error}</p>
+                ) : null}
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={closeCalculatorModal}
+                  >
+                    Regresar
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={handleUseCalculatedEgfr}
+                  >
+                    Calcular
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.modalHeader}>
+                  <p>Índice de masa corporal</p>
+                  <h2 id="mobile-calculator-modal-title">Calcular IMC</h2>
+                </div>
+                <div className={styles.modalGrid}>
+                  <label className={styles.modalField}>
+                    <span>Peso (kg)</span>
+                    <input
+                      inputMode="decimal"
+                      value={bmiCalculator.weightKg}
+                      onChange={(event) =>
+                        updateBmiCalculatorField("weightKg", event.target.value)
+                      }
+                      autoFocus
+                    />
+                  </label>
+                  <label className={styles.modalField}>
+                    <span>Talla (cm)</span>
+                    <input
+                      inputMode="decimal"
+                      value={bmiCalculator.heightCm}
+                      onChange={(event) =>
+                        updateBmiCalculatorField("heightCm", event.target.value)
+                      }
+                    />
+                  </label>
+                </div>
+                {bmiCalculator.error ? (
+                  <p className={styles.modalError}>{bmiCalculator.error}</p>
+                ) : null}
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={closeCalculatorModal}
+                  >
+                    Regresar
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={handleUseCalculatedBmi}
+                  >
+                    Calcular
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
