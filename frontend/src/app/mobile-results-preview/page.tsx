@@ -1,4 +1,7 @@
 import MobileResultsDashboard from "@/components/mobile/results/MobileResultsDashboard";
+import MobileResultsDashboardV2 from "@/components/mobile/results/MobileResultsDashboardV2";
+
+const USE_RESULTS_V2 = true;
 
 const mockResults = {
   cvd10: 12.4,
@@ -17,5 +20,9 @@ const mockResults = {
 };
 
 export default function MobileResultsPreviewPage() {
+  if (USE_RESULTS_V2) {
+    return <MobileResultsDashboardV2 {...mockResults} />;
+  }
+
   return <MobileResultsDashboard {...mockResults} />;
 }

@@ -12,9 +12,12 @@ import {
 import MobileResultsDashboard, {
   type MobileResultsDashboardProps,
 } from "./results/MobileResultsDashboard";
+import MobileResultsDashboardV2 from "./results/MobileResultsDashboardV2";
 import styles from "./MobilePreventCalculator.module.css";
 
 type MobileCalculatorStep = "intro" | "results";
+
+const USE_RESULTS_V2 = true;
 
 type MobileMinimumFormState = Pick<
   FormState,
@@ -108,6 +111,16 @@ export default function MobilePreventCalculator() {
   };
 
   if (step === "results" && mobileResultsProps) {
+    if (USE_RESULTS_V2) {
+      return (
+        <MobileResultsDashboardV2
+          {...mobileResultsProps}
+          onEditData={handleEditData}
+          onNewCalculation={handleNewCalculation}
+        />
+      );
+    }
+
     return (
       <MobileResultsDashboard
         {...mobileResultsProps}
