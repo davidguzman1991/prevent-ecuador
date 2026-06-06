@@ -75,6 +75,9 @@ export default function MobilePreventCalculator() {
 
     try {
       const payload = buildPreventPayload(form);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Mobile PREVENT payload", payload);
+      }
       const nextResult = await submitPreventCalculation(payload);
       const chronologicalAge = parseMobileAge(form.age);
       setResult(nextResult);

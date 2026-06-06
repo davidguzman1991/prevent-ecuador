@@ -81,6 +81,8 @@ export function buildPreventPayload(
     smoker: formState.smoker,
     antihypertensive_use: formState.antihypertensive_use,
     statin_use: formState.statin_use,
+    physician_name: "",
+    physician_specialty: "",
   };
 }
 
@@ -95,10 +97,17 @@ export async function submitPreventCalculation(
 
   if (!response.ok) {
     const errorBody = (await response.json().catch(() => null)) as unknown;
+    if (process.env.NODE_ENV === "development") {
+      console.log("Mobile PREVENT response/error", errorBody);
+    }
     throw new Error(extractErrorMessage(errorBody));
   }
 
-  return (await response.json()) as PreventResult;
+  const result = (await response.json()) as PreventResult;
+  if (process.env.NODE_ENV === "development") {
+    console.log("Mobile PREVENT response/error", result);
+  }
+  return result;
 }
 
 export function mapPreventResultToMobileProps(
@@ -127,4 +136,3 @@ export function mapPreventResultToMobileProps(
       : buildFallbackKeyFindings(result, chronologicalAge),
   };
 }
-
