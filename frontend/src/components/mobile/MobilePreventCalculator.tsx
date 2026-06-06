@@ -14,10 +14,12 @@ import MobileResultsDashboard, {
 } from "./results/MobileResultsDashboard";
 import MobileResultsDashboardV2 from "./results/MobileResultsDashboardV2";
 import MobileResultsDashboardV3 from "./results/MobileResultsDashboardV3";
+import MobileResultsDashboardV4 from "./results/MobileResultsDashboardV4";
 import styles from "./MobilePreventCalculator.module.css";
 
 type MobileCalculatorStep = "intro" | "results";
 
+const USE_RESULTS_V4 = true;
 const USE_RESULTS_V3 = true;
 const USE_RESULTS_V2 = true;
 
@@ -113,6 +115,16 @@ export default function MobilePreventCalculator() {
   };
 
   if (step === "results" && mobileResultsProps) {
+    if (USE_RESULTS_V4) {
+      return (
+        <MobileResultsDashboardV4
+          {...mobileResultsProps}
+          onEditData={handleEditData}
+          onNewCalculation={handleNewCalculation}
+        />
+      );
+    }
+
     if (USE_RESULTS_V3) {
       return (
         <MobileResultsDashboardV3

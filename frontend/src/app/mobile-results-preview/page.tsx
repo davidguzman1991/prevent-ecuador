@@ -1,7 +1,9 @@
 import MobileResultsDashboard from "@/components/mobile/results/MobileResultsDashboard";
 import MobileResultsDashboardV2 from "@/components/mobile/results/MobileResultsDashboardV2";
 import MobileResultsDashboardV3 from "@/components/mobile/results/MobileResultsDashboardV3";
+import MobileResultsDashboardV4 from "@/components/mobile/results/MobileResultsDashboardV4";
 
+const USE_RESULTS_V4 = true;
 const USE_RESULTS_V3 = true;
 const USE_RESULTS_V2 = true;
 
@@ -22,6 +24,10 @@ const mockResults = {
 };
 
 export default function MobileResultsPreviewPage() {
+  if (USE_RESULTS_V4) {
+    return <MobileResultsDashboardV4 {...mockResults} />;
+  }
+
   if (USE_RESULTS_V3) {
     return <MobileResultsDashboardV3 {...mockResults} />;
   }
