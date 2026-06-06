@@ -13,10 +13,12 @@ import MobileResultsDashboard, {
   type MobileResultsDashboardProps,
 } from "./results/MobileResultsDashboard";
 import MobileResultsDashboardV2 from "./results/MobileResultsDashboardV2";
+import MobileResultsDashboardV3 from "./results/MobileResultsDashboardV3";
 import styles from "./MobilePreventCalculator.module.css";
 
 type MobileCalculatorStep = "intro" | "results";
 
+const USE_RESULTS_V3 = true;
 const USE_RESULTS_V2 = true;
 
 type MobileMinimumFormState = Pick<
@@ -79,7 +81,7 @@ export default function MobilePreventCalculator() {
     try {
       const payload = buildPreventPayload(form);
       if (process.env.NODE_ENV === "development") {
-        console.log("Mobile PREVENT payload", payload);
+        console.log("Payload móvil PREVENT", payload);
       }
       const nextResult = await submitPreventCalculation(payload);
       const chronologicalAge = parseMobileAge(form.age);
@@ -111,6 +113,16 @@ export default function MobilePreventCalculator() {
   };
 
   if (step === "results" && mobileResultsProps) {
+    if (USE_RESULTS_V3) {
+      return (
+        <MobileResultsDashboardV3
+          {...mobileResultsProps}
+          onEditData={handleEditData}
+          onNewCalculation={handleNewCalculation}
+        />
+      );
+    }
+
     if (USE_RESULTS_V2) {
       return (
         <MobileResultsDashboardV2
@@ -132,7 +144,7 @@ export default function MobilePreventCalculator() {
 
   return (
     <main className={styles.shell}>
-      <section className={styles.panel} aria-label="PREVENT Ecuador mobile calculator preview">
+      <section className={styles.panel} aria-label="Calculadora móvil PREVENT Ecuador">
         <header className={styles.header}>
           <strong className={styles.brand}>PREVENT ECUADOR</strong>
         </header>

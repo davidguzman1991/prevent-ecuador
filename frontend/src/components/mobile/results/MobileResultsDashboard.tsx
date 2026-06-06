@@ -152,7 +152,7 @@ export default function MobileResultsDashboard({
 
   return (
     <main className={styles.viewport}>
-      <section className={styles.dashboard} aria-label="PREVENT Ecuador mobile results dashboard demo">
+      <section className={styles.dashboard} aria-label="Resultados móviles PREVENT Ecuador">
         <header className={styles.hud}>
           <strong className={styles.brand}>PREVENT ECUADOR</strong>
         </header>

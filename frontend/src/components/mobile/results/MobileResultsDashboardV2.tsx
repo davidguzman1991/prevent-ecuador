@@ -16,24 +16,24 @@ function clampPercent(value: number | null) {
 }
 
 function formatPercent(value: number | null) {
-  if (value === null) return "Not calculated";
+  if (value === null) return "No calculado";
   return `${value.toFixed(1)}%`;
 }
 
 function formatLongTermRisk(value: number | null) {
-  if (value === null) return "Not available for this profile";
+  if (value === null) return "No disponible para este perfil";
   return `${value.toFixed(1)}%`;
 }
 
 function formatAge(value: number | null) {
-  if (value === null) return "Not calculated";
-  return `${value.toFixed(1)} years`;
+  if (value === null) return "No calculada";
+  return `${value.toFixed(1)} años`;
 }
 
 function formatAgeDelta(value: number | null) {
-  if (value === null) return "Not available";
+  if (value === null) return "No disponible";
   const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(1)} years older`;
+  return `${sign}${value.toFixed(1)} años mayor`;
 }
 
 function HeroGauge({ value }: { value: number | null }) {
@@ -138,40 +138,40 @@ export default function MobileResultsDashboardV2({
 
   return (
     <main className={styles.viewport}>
-      <section className={styles.dashboard} aria-label="PREVENT Ecuador mobile results dashboard">
+      <section className={styles.dashboard} aria-label="Resultados móviles PREVENT Ecuador">
         <header className={styles.header}>
           <span className={styles.brand}>PREVENT ECUADOR</span>
         </header>
 
-        <section className={styles.hero} aria-label="Global CVD risk at 10 years">
+        <section className={styles.hero} aria-label="Riesgo cardiovascular global a 10 años">
           <HeroGauge value={cvd10} />
           <div className={styles.heroReadout}>
             <strong className={styles.heroValue}>{formatPercent(cvd10)}</strong>
-            <span>GLOBAL CVD RISK</span>
-            <em>10 YEARS</em>
+            <span>RIESGO CARDIOVASCULAR GLOBAL</span>
+            <em>10 AÑOS</em>
           </div>
         </section>
 
-        <section className={styles.telemetryGrid} aria-label="Secondary risks">
-          <TelemetryCard label="ASCVD" value={ascvd10} tone="ascvd" />
-          <TelemetryCard label="HEART FAILURE" value={hf10} tone="hf" />
+        <section className={styles.telemetryGrid} aria-label="Riesgos secundarios">
+          <TelemetryCard label="RIESGO ASCVD" value={ascvd10} tone="ascvd" />
+          <TelemetryCard label="INSUFICIENCIA CARDÍACA" value={hf10} tone="hf" />
         </section>
 
-        <section className={styles.ageCard} aria-label="Cardiovascular age">
-          <span className={styles.cardKicker}>CARDIOVASCULAR AGE</span>
+        <section className={styles.ageCard} aria-label="Edad cardiovascular">
+          <span className={styles.cardKicker}>EDAD CARDIOVASCULAR</span>
           <strong className={styles.ageValue}>{formatAge(cardiovascularAge)}</strong>
           <p>
             <span>{formatAgeDelta(cardiovascularAgeDelta)}</span>
             <br />
-            than chronological age
+            respecto a la edad cronológica
           </p>
-          <small>Chronological age: {chronologicalAge ?? "Not available"} years</small>
+          <small>Edad cronológica: {chronologicalAge ?? "No disponible"} años</small>
         </section>
 
-        <section className={styles.longTermCard} aria-label="Accumulated risk at 30 years">
+        <section className={styles.longTermCard} aria-label="Riesgo acumulado a 30 años">
           <div>
-            <span className={styles.cardKicker}>ACCUMULATED RISK</span>
-            <strong>30 YEARS</strong>
+            <span className={styles.cardKicker}>RIESGO ACUMULADO</span>
+            <strong>30 AÑOS</strong>
           </div>
           <span className={styles.longTermValue}>{formatLongTermRisk(cvd30)}</span>
           <LongTermBar value={cvd30} />
@@ -185,13 +185,13 @@ export default function MobileResultsDashboardV2({
             onClick={() => setIsInterpretationOpen((current) => !current)}
           >
             <span aria-hidden="true">{isInterpretationOpen ? "▲" : "▼"}</span>
-            Clinical Interpretation
+            Interpretación clínica
           </button>
 
           {isInterpretationOpen ? (
             <div className={styles.interpretationBody}>
               <div>
-                <h2>Key findings</h2>
+                <h2>Hallazgos clave</h2>
                 <ul>
                   {keyFindings.map((finding) => (
                     <li key={finding}>{finding}</li>
@@ -199,17 +199,18 @@ export default function MobileResultsDashboardV2({
                 </ul>
               </div>
               <div>
-                <h2>Clinical comments</h2>
+                <h2>Comentarios clínicos</h2>
                 <p>
-                  Results reflect PREVENT absolute risk estimates. Long-term accumulated risk is
-                  reported numerically and is not assigned low, intermediate, or high categories.
+                  Los resultados reflejan estimaciones de riesgo absoluto PREVENT. El riesgo
+                  acumulado a largo plazo se informa solo como valor numérico y no recibe categorías
+                  bajo, intermedio o alto.
                 </p>
               </div>
               <div>
-                <h2>Recommendations</h2>
+                <h2>Recomendaciones</h2>
                 <p>
-                  Review modifiable risk factors, confirm measurements, and use clinician judgment
-                  for shared decision-making.
+                  Revisar factores de riesgo modificables, confirmar las mediciones y aplicar
+                  criterio clínico para la toma de decisiones compartida.
                 </p>
               </div>
             </div>
@@ -217,12 +218,12 @@ export default function MobileResultsDashboardV2({
         </section>
       </section>
 
-      <nav className={styles.actions} aria-label="Result actions">
+      <nav className={styles.actions} aria-label="Acciones del resultado">
         <button className={styles.editButton} type="button" onClick={onEditData}>
-          Edit Data
+          Editar datos
         </button>
         <button className={styles.newButton} type="button" onClick={onNewCalculation}>
-          New Calculation
+          Nuevo cálculo
         </button>
       </nav>
     </main>
