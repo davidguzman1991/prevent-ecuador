@@ -155,10 +155,6 @@ export default function MobileResultsDashboard({
       <section className={styles.dashboard} aria-label="PREVENT Ecuador mobile results dashboard demo">
         <header className={styles.hud}>
           <strong className={styles.brand}>PREVENT ECUADOR</strong>
-          <span className={styles.systemStatus}>
-            <span className={styles.led} aria-hidden="true" />
-            SYS OK
-          </span>
         </header>
 
         <section

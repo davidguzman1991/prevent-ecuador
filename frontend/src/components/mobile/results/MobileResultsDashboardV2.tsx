@@ -42,7 +42,7 @@ function HeroGauge({ value }: { value: number | null }) {
 
   return (
     <div className={styles.heroGauge} aria-hidden="true">
-      <svg viewBox="0 0 220 160">
+      <svg viewBox="0 0 220 160" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="heroGaugeGradientV2" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="#1dded2" />
@@ -141,7 +141,6 @@ export default function MobileResultsDashboardV2({
       <section className={styles.dashboard} aria-label="PREVENT Ecuador mobile results dashboard">
         <header className={styles.header}>
           <span className={styles.brand}>PREVENT ECUADOR</span>
-          <span className={styles.status}>Clinical Engine</span>
         </header>
 
         <section className={styles.hero} aria-label="Global CVD risk at 10 years">

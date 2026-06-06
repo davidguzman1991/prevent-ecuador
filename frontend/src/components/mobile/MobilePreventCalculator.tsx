@@ -135,7 +135,6 @@ export default function MobilePreventCalculator() {
       <section className={styles.panel} aria-label="PREVENT Ecuador mobile calculator preview">
         <header className={styles.header}>
           <strong className={styles.brand}>PREVENT ECUADOR</strong>
-          <span className={styles.badge}>MOBILE SHELL</span>
         </header>
 
         <div className={styles.content}>

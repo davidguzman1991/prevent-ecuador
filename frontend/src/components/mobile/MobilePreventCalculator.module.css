@@ -28,7 +28,7 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
 }
@@ -37,17 +37,6 @@
   font-size: 14px;
   font-weight: 850;
   letter-spacing: 0.06em;
-}
-
-.badge {
-  padding: 7px 9px;
-  border: 1px solid rgba(0, 194, 184, 0.22);
-  border-radius: 999px;
-  color: #00c2b8;
-  background: rgba(0, 194, 184, 0.08);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
 }
 
 .content {
