@@ -2,6 +2,10 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 
+import {
+  DoctorCreatedCredentialsModal,
+  type DoctorCreatedCredentials,
+} from "@/components/admin/DoctorCreatedCredentialsModal";
 import { AuthStatusBar } from "@/components/AuthStatusBar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
@@ -111,6 +115,8 @@ function AdminDashboard() {
   const [error, setError] = useState("");
   const [doctorMessage, setDoctorMessage] = useState("");
   const [createdTemporaryPassword, setCreatedTemporaryPassword] = useState("");
+  const [createdDoctorCredentials, setCreatedDoctorCredentials] =
+    useState<DoctorCreatedCredentials | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -145,6 +151,7 @@ function AdminDashboard() {
     setEditingDoctor(null);
     setDoctorMessage("");
     setCreatedTemporaryPassword("");
+    setCreatedDoctorCredentials(null);
     setIsDoctorModalOpen(true);
   };
 
@@ -160,6 +167,7 @@ function AdminDashboard() {
     setEditingDoctor(doctor);
     setDoctorMessage("");
     setCreatedTemporaryPassword("");
+    setCreatedDoctorCredentials(null);
     setIsDoctorModalOpen(true);
   };
 
@@ -213,12 +221,32 @@ function AdminDashboard() {
       const savedDoctor = (await response.json()) as AdminDoctor | AdminDoctorCreateResponse;
       await refreshDoctors();
       setIsDoctorModalOpen(false);
-      setCreatedTemporaryPassword("temporary_password" in savedDoctor ? savedDoctor.temporary_password : "");
-      setDoctorMessage(
-        editingDoctor
-          ? "Médico actualizado."
-          : "Médico creado. Entregue la contraseña temporal y recomiende cambio en el primer acceso.",
-      );
+      if (!editingDoctor && "temporary_password" in savedDoctor) {
+        const nextCredentials: DoctorCreatedCredentials | null =
+          savedDoctor.email && savedDoctor.temporary_password
+            ? {
+                fullName: savedDoctor.full_name ?? savedDoctor.display_name,
+                email: savedDoctor.email,
+                temporaryPassword: savedDoctor.temporary_password,
+              }
+            : null;
+
+        if (nextCredentials) {
+          setCreatedDoctorCredentials(nextCredentials);
+          setCreatedTemporaryPassword("");
+          setDoctorMessage("");
+        } else {
+          setCreatedDoctorCredentials(null);
+          setCreatedTemporaryPassword(savedDoctor.temporary_password);
+          setDoctorMessage(
+            "Médico creado. Entregue la contraseña temporal y recomiende cambio en el primer acceso.",
+          );
+        }
+      } else {
+        setCreatedDoctorCredentials(null);
+        setCreatedTemporaryPassword("");
+        setDoctorMessage("Médico actualizado.");
+      }
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el médico.");
     } finally {
@@ -296,7 +324,7 @@ function AdminDashboard() {
 
       {error ? <div className="prevent-alert">{error}</div> : null}
       {doctorMessage ? <div className="prevent-alert prevent-alert-soft">{doctorMessage}</div> : null}
-      {createdTemporaryPassword ? (
+      {createdTemporaryPassword && !createdDoctorCredentials ? (
         <div className="prevent-alert prevent-alert-soft">
           Contraseña temporal generada: <strong>{createdTemporaryPassword}</strong>. Cópiela ahora; no se mostrará nuevamente.
         </div>
@@ -513,6 +541,16 @@ function AdminDashboard() {
             </div>
           </section>
         </div>
+      ) : null}
+
+      {createdDoctorCredentials ? (
+        <DoctorCreatedCredentialsModal
+          credentials={createdDoctorCredentials}
+          onClose={() => {
+            setCreatedDoctorCredentials(null);
+            setCreatedTemporaryPassword("");
+          }}
+        />
       ) : null}
     </main>
   );

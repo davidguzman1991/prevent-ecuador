@@ -2652,6 +2652,134 @@ button {
   grid-column: 1 / -1;
 }
 
+.admin-credentials-backdrop {
+  z-index: 42;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(30, 136, 229, 0.2), transparent 28rem),
+    rgba(2, 6, 14, 0.76);
+}
+
+.admin-credentials-modal {
+  position: relative;
+  width: min(820px, 100%);
+  display: grid;
+  gap: 18px;
+  border-color: rgba(142, 197, 255, 0.2);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(0, 194, 184, 0.14), transparent 17rem),
+    radial-gradient(circle at 0% 0%, rgba(30, 136, 229, 0.16), transparent 18rem),
+    linear-gradient(180deg, rgba(8, 20, 39, 0.99), rgba(5, 11, 24, 0.99));
+}
+
+.admin-credentials-header h3 {
+  color: #ffffff;
+  letter-spacing: 0;
+}
+
+.admin-credentials-header p {
+  max-width: 48ch;
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.admin-credentials-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-credential-item {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid rgba(142, 197, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(5, 11, 24, 0.58);
+}
+
+.admin-credential-item span,
+.admin-credentials-message h4 {
+  color: #8ec5ff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-credential-item strong {
+  color: #ffffff;
+  font-size: 0.96rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.admin-credential-secret {
+  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.03em;
+}
+
+.admin-credentials-message {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(142, 197, 255, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(11, 27, 51, 0.72), rgba(5, 11, 24, 0.7));
+}
+
+.admin-credentials-message h4,
+.admin-credentials-message p {
+  margin: 0;
+}
+
+.admin-credentials-message p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.admin-credentials-message pre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(2, 6, 14, 0.48);
+  color: #d7e2f2;
+  font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.58;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-credentials-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.admin-credentials-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 44;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  border: 1px solid rgba(34, 197, 94, 0.26);
+  border-radius: 999px;
+  background: rgba(8, 20, 39, 0.96);
+  color: #86efac;
+  font-size: 0.88rem;
+  font-weight: 850;
+  box-shadow: var(--shadow-md);
+}
+
 .methodology-shell {
   width: min(1540px, 100%);
   margin: 0 auto;
@@ -4331,12 +4459,29 @@ button {
 
   .dashboard-filter-grid,
   .dashboard-detail-grid,
-  .dashboard-research-grid {
+  .dashboard-research-grid,
+  .admin-credentials-grid,
+  .admin-credentials-actions {
     grid-template-columns: 1fr;
   }
 
   .dashboard-modal {
     padding: 20px;
+  }
+
+  .admin-credentials-modal {
+    max-height: min(92vh, 860px);
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .admin-credentials-message pre {
+    max-height: 220px;
+    font-size: 0.78rem;
+  }
+
+  .admin-credentials-toast {
+    bottom: 16px;
   }
 }
 
