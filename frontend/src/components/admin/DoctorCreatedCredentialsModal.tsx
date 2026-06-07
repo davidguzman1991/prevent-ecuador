@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const PREVENT_ACCESS_URL = "https://prevent-ecuador-9ffp.vercel.app";
+const PREVENT_ACCESS_URL = process.env.NEXT_PUBLIC_APP_URL || "/";
 
 export type DoctorCreatedCredentials = {
   fullName: string;

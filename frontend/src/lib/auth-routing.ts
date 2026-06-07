@@ -1,7 +1,7 @@
 export type UserRole = "doctor" | "global_admin" | string;
 
-export function homeForRole(role: UserRole | null | undefined): "/admin" | "/" {
-  return role === "global_admin" ? "/admin" : "/";
+export function homeForRole(role: UserRole | null | undefined): "/admin" | "/calculadora" {
+  return role === "global_admin" ? "/admin" : "/calculadora";
 }
 
 export function canAccessRoleRoute(

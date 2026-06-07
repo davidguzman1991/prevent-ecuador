@@ -93,11 +93,7 @@ async function fetchAdminDoctors(accessToken: string): Promise<AdminDoctor[]> {
 }
 
 export default function AdminDashboardPage() {
-  return (
-    <ProtectedRoute requiredRole="global_admin">
-      <AdminDashboard />
-    </ProtectedRoute>
-  );
+  return <AdminDashboard />;
 }
 
 function AdminDashboard() {

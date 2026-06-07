@@ -52,7 +52,7 @@ function isAnonymousMobileCalculatorRoute(pathname: string | null): boolean {
 
   return (
     isMobileViewport &&
-    (currentPathname === "/" ||
+    (currentPathname === "/calculadora" ||
       currentPathname === "/mobile-preview" ||
       currentPathname === "/mobile-results-preview")
   );

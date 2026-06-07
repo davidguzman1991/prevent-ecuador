@@ -9,9 +9,17 @@ const calculatorSource = readFileSync(
   new URL("../src/components/calculator/PreventCalculator.tsx", import.meta.url),
   "utf8",
 );
+const homePageSource = readFileSync(
+  new URL("../src/app/page.tsx", import.meta.url),
+  "utf8",
+);
+const calculatorPageSource = readFileSync(
+  new URL("../src/app/calculadora/page.tsx", import.meta.url),
+  "utf8",
+);
 
 test("doctor is redirected to calculator after login", () => {
-  assert.equal(homeForRole("doctor"), "/");
+  assert.equal(homeForRole("doctor"), "/calculadora");
 });
 
 test("global_admin is redirected to admin home after login", () => {
@@ -52,4 +60,18 @@ test("doctor calculator shows non-blocking profile reminder CTA", () => {
   assert.match(calculatorSource, /Completar perfil médico/);
   assert.ok(calculatorSource.includes('href="/doctor/profile"'));
   assert.match(calculatorSource, /currentUser\?\.role !== "doctor"/);
+});
+
+test("home route is public landing and calculator route reuses calculator", () => {
+  assert.match(homePageSource, /PREVENT Ecuador/);
+  assert.match(homePageSource, /Usar calculadora PREVENT/);
+  assert.match(homePageSource, /Acceder a PREVENT Profesional/);
+  assert.match(homePageSource, /href="\/calculadora"/);
+  assert.match(homePageSource, /href="\/login"/);
+  assert.match(calculatorPageSource, /HomeResponsiveCalculator/);
+});
+
+test("calculator exposes link back to public home", () => {
+  assert.match(calculatorSource, /Volver al inicio/);
+  assert.match(calculatorSource, /href="\/"/);
 });

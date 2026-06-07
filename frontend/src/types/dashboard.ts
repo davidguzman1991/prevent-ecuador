@@ -23,6 +23,7 @@ export type DashboardRecord = {
   visibility_scope?: string | null;
   created_modality?: string | null;
   request_id?: string | null;
+  notes?: string | null;
 };
 
 export type DashboardListResponse = {

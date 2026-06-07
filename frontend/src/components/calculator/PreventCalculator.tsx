@@ -503,6 +503,8 @@ export function PreventCalculator() {
     initialCkdEpiCalculatorState,
   );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
+  const [patientId, setPatientId] = useState("");
+  const [followUpActive, setFollowUpActive] = useState(false);
   const feedbackTimeoutRef = useRef<number | null>(null);
   const selectedProvince = ECUADOR_PROVINCES.find(
     (province) => province.code === form.patient_province_code,
@@ -812,6 +814,8 @@ export function PreventCalculator() {
     setBmiCalculator(initialBmiCalculatorState);
     setCkdEpiCalculator(initialCkdEpiCalculatorState);
     setUsesCustomSpecialty(false);
+    setPatientId("");
+    setFollowUpActive(false);
   };
 
   const handleEditResultData = () => {
@@ -952,6 +956,21 @@ export function PreventCalculator() {
       patient_ethnicity: form.patient_ethnicity,
       patient_socioeconomic_level: form.patient_socioeconomic_level,
     };
+    if (isDoctorSession) {
+      if (patientId.trim()) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(patientId.trim())) {
+          payload.patient_id = patientId.trim();
+        }
+      }
+      let combinedNotes = "";
+      if (followUpActive) {
+        combinedNotes += "[Seguimiento de control] ";
+      }
+      if (combinedNotes) {
+        payload.notes = combinedNotes.trim();
+      }
+    }
     if (selectedProvince) {
       payload.patient_province_code = selectedProvince.code;
       payload.patient_province_name = selectedProvince.name;
@@ -997,638 +1016,699 @@ export function PreventCalculator() {
 
   return (
     <main className="prevent-shell">
-      <PrivacyConsentModal />
+        <PrivacyConsentModal />
 
-      <div className="prevent-layout">
-        <aside className="prevent-sidebar" aria-label="Navegación clínica">
-          <div className="prevent-sidebar-logo">
-            <strong>
-              PREVENT
-              <br />
-              Ecuador
-            </strong>
-          </div>
-          <div className="prevent-brand-mark">PE</div>
-          <div className="prevent-sidebar-actions">
-            <Link className="prevent-dashboard-link" href={currentUser ? clinicalHomeHref : "/dashboard"}>
+        <div className="prevent-layout">
+          <aside className="prevent-sidebar" aria-label="Navegación clínica">
+            <div className="prevent-sidebar-logo">
+              <strong>
+                PREVENT
+                <br />
+                Ecuador
+              </strong>
+            </div>
+            <div className="prevent-brand-mark">PE</div>
+            <div className="prevent-sidebar-actions">
+              <Link className="prevent-dashboard-link" href="/">
+                Volver al inicio
+              </Link>
+              <Link className="prevent-dashboard-link" href={currentUser ? clinicalHomeHref : "/login"}>
+                {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
+              </Link>
+              <Link className="prevent-methodology-link" href="/metodologia">
+                Metodología
+              </Link>
+            </div>
+            <div className="prevent-sidebar-intro">
+              <span className="prevent-kicker">Plataforma científica validada</span>
+              <p>
+                Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca a
+                10 y 30 años, con captura estructurada para investigación
+                poblacional.
+              </p>
+              <div className="prevent-hero-badges prevent-sidebar-badges" aria-label="Alcance PREVENT">
+                <span>PREVENT</span>
+                <span>10 años</span>
+                <span>30 años</span>
+                <span>CVD</span>
+                <span>ASCVD</span>
+                <span>HF</span>
+              </div>
+              <p className="prevent-sidebar-project">
+                PREVENT Ecuador integra estratificación clínica y variables
+                poblacionales para apoyar investigación cardio-reno-metabólica,
+                auditoría científica y futuros indicadores territoriales.
+              </p>
+            </div>
+            <div className="prevent-sidebar-credit">
+              <span>Desarrollado por</span>
+              <strong>Dr. David Guzmán</strong>
+              <p>Médico · Investigador</p>
+            </div>
+            <Link className="prevent-mobile-login-link" href={currentUser ? clinicalHomeHref : "/login"}>
               {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
             </Link>
-            <Link className="prevent-methodology-link" href="/metodologia">
-              Metodología
+            <Link className="prevent-mobile-login-link" href="/">
+              Volver al inicio
             </Link>
-          </div>
-          <div className="prevent-sidebar-intro">
-            <span className="prevent-kicker">Plataforma científica validada</span>
-            <p>
-              Cálculo PREVENT de riesgo CVD, ASCVD e insuficiencia cardíaca a
-              10 y 30 años, con captura estructurada para investigación
-              poblacional.
-            </p>
-            <div className="prevent-hero-badges prevent-sidebar-badges" aria-label="Alcance PREVENT">
-              <span>PREVENT</span>
-              <span>10 años</span>
-              <span>30 años</span>
-              <span>CVD</span>
-              <span>ASCVD</span>
-              <span>HF</span>
-            </div>
-            <p className="prevent-sidebar-project">
-              PREVENT Ecuador integra estratificación clínica y variables
-              poblacionales para apoyar investigación cardio-reno-metabólica,
-              auditoría científica y futuros indicadores territoriales.
-            </p>
-          </div>
-          <div className="prevent-sidebar-credit">
-            <span>Desarrollado por</span>
-            <strong>Dr. David Guzmán</strong>
-            <p>Médico · Investigador</p>
-          </div>
-          <Link className="prevent-mobile-login-link" href={currentUser ? clinicalHomeHref : "/dashboard"}>
-            {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
-          </Link>
-        </aside>
+          </aside>
 
-        <section className="prevent-main-column" id="ingreso">
-          {currentUser ? (
-            <section className="prevent-clinical-session" aria-label="Sesión clínica activa">
-              <div>
-                <span>Sesión clínica activa</span>
-                <strong>Bienvenido {authenticatedLabel}</strong>
-                <p>Todos los cálculos realizados se guardarán automáticamente en su cuenta.</p>
-              </div>
-              <div className="prevent-clinical-session-actions">
-                <Link className="prevent-button prevent-button-secondary" href={clinicalHomeHref}>
-                  {clinicalHomeLabel}
+          <section className="prevent-main-column" id="ingreso">
+            {currentUser ? (
+              <section className="prevent-clinical-session" aria-label="Sesión clínica activa">
+                <div>
+                  <span>Sesión clínica activa</span>
+                  <strong>Bienvenido {authenticatedLabel}</strong>
+                  <p>Todos los cálculos realizados se guardarán automáticamente en su cuenta.</p>
+                </div>
+                <div className="prevent-clinical-session-actions">
+                  <Link className="prevent-button prevent-button-secondary" href={clinicalHomeHref}>
+                    {clinicalHomeLabel}
+                  </Link>
+                  <button
+                    className="prevent-button prevent-button-secondary"
+                    type="button"
+                    onClick={() => void handleAuthenticatedLogout()}
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {shouldShowPendingDoctorProfileCard ? (
+              <section className="prevent-profile-reminder" aria-label="Perfil médico pendiente">
+                <div>
+                  <span>Perfil médico pendiente</span>
+                  <strong>Perfil médico pendiente</strong>
+                  <p>
+                    Complete su perfil profesional para mejorar la identificación de sus
+                    evaluaciones y habilitar una experiencia completa en PREVENT Ecuador.
+                  </p>
+                </div>
+                <Link className="prevent-button prevent-button-primary" href="/doctor/profile">
+                  Completar perfil médico
                 </Link>
-                <button
-                  className="prevent-button prevent-button-secondary"
-                  type="button"
-                  onClick={() => void handleAuthenticatedLogout()}
-                >
-                  Cerrar sesión
-                </button>
-              </div>
-            </section>
-          ) : null}
-
-          {shouldShowPendingDoctorProfileCard ? (
-            <section className="prevent-profile-reminder" aria-label="Perfil médico pendiente">
-              <div>
-                <span>Perfil médico pendiente</span>
-                <strong>Perfil médico pendiente</strong>
-                <p>
-                  Complete su perfil profesional para mejorar la identificación de sus
-                  evaluaciones y habilitar una experiencia completa en PREVENT Ecuador.
-                </p>
-              </div>
-              <Link className="prevent-button prevent-button-primary" href="/doctor/profile">
-                Completar perfil médico
-              </Link>
-            </section>
-          ) : null}
-
-          <header className="prevent-hero-card prevent-hero-card-banner">
-            <div className="prevent-hero-logo prevent-hero-logo-banner">
-              <Image
-                src="/logo%20hero.webp"
-                alt="PREVENT Ecuador"
-                width={1280}
-                height={520}
-                priority
-                className="h-auto w-full object-contain"
-              />
-            </div>
-          </header>
-
-          <section className="prevent-mode-panel" aria-label="Selector de modo del modelo">
-            <span className="prevent-mode-icon" aria-hidden="true">⚙</span>
-            <label className="prevent-mode-field">
-              <span className="prevent-mode-label">Modo de cálculo</span>
-              <select
-                className="prevent-mode-select"
-                value={manualVariantSelection ? "manual" : "auto"}
-                onChange={handleCalculationModeChange}
-              >
-                <option value="auto">Automático</option>
-                <option value="manual">Manual</option>
-              </select>
-            </label>
-            {manualVariantSelection ? (
-              <label className="prevent-mode-field">
-                <span className="prevent-mode-label">Variante</span>
-                <select
-                  className="prevent-mode-select"
-                  name="model_variant"
-                  value={form.model_variant}
-                  onChange={handleInputChange}
-                >
-                  <option value="base">Base</option>
-                  <option value="uacr">UACR</option>
-                  <option value="hba1c">HbA1c</option>
-                  <option value="sdi">SDI</option>
-                  <option value="full">Full</option>
-                </select>
-              </label>
-            ) : null}
-          </section>
-
-          <form className="prevent-form" onSubmit={handleSubmit} noValidate>
-            <FormSection
-              title="DATOS DEL PACIENTE"
-              description="Datos básicos para el cálculo principal."
-              icon="patient"
-              defaultOpen
-            >
-              <div className="prevent-form-grid">
-                <Field
-                  label="Edad"
-                  name="age"
-                  type="number"
-                  value={form.age}
-                  onChange={handleInputChange}
-                  required
-                  min="30"
-                  max="79"
-                  step="1"
-                  placeholder="Ej. 50"
-                  validationRule={FIELD_VALIDATION_RULES.age}
-                  warning={getFieldWarning(form, "age")}
-                />
-                <SelectField
-                  label="Sexo"
-                  name="sex"
-                  value={form.sex}
-                  onChange={handleInputChange}
-                  required
-                  options={[
-                    { label: "Seleccionar", value: "" },
-                    { label: "Masculino", value: "male" },
-                    { label: "Femenino", value: "female" },
-                  ]}
-                />
-                <Field
-                  label="Presión arterial sistólica (mmHg)"
-                  name="sbp"
-                  type="number"
-                  value={form.sbp}
-                  onChange={handleInputChange}
-                  required
-                  min="90"
-                  max="200"
-                  step="0.1"
-                  validationRule={FIELD_VALIDATION_RULES.sbp}
-                  warning={getFieldWarning(form, "sbp")}
-                />
-                <Field
-                  label="Colesterol total (mg/dL)"
-                  name="total_cholesterol"
-                  type="number"
-                  value={form.total_cholesterol}
-                  onChange={handleInputChange}
-                  required
-                  min="130"
-                  max="320"
-                  step="0.1"
-                  validationRule={FIELD_VALIDATION_RULES.total_cholesterol}
-                  warning={getFieldWarning(form, "total_cholesterol")}
-                />
-                <Field
-                  label="HDL (mg/dL)"
-                  name="hdl"
-                  type="number"
-                  value={form.hdl}
-                  onChange={handleInputChange}
-                  required
-                  min="20"
-                  max="100"
-                  step="0.1"
-                  validationRule={FIELD_VALIDATION_RULES.hdl}
-                  warning={getFieldWarning(form, "hdl")}
-                />
-                <EgfrField
-                  value={form.egfr}
-                  onChange={handleInputChange}
-                  calculator={ckdEpiCalculator}
-                  onToggleCalculator={() =>
-                    setCkdEpiCalculator((current) => ({
-                      ...current,
-                      isOpen: !current.isOpen,
-                      error: "",
-                    }))
-                  }
-                  onCalculatorChange={handleCkdEpiCalculatorChange}
-                  onCalculate={handleCalculateCkdEpi}
-                  validationRule={FIELD_VALIDATION_RULES.egfr}
-                  warning={getFieldWarning(form, "egfr")}
-                />
-                <BmiField
-                  value={form.bmi}
-                  onChange={handleInputChange}
-                  calculator={bmiCalculator}
-                  onToggleCalculator={() =>
-                    setBmiCalculator((current) => ({
-                      ...current,
-                      isOpen: !current.isOpen,
-                      error: "",
-                    }))
-                  }
-                  onCalculatorChange={handleBmiCalculatorChange}
-                  onCalculate={handleCalculateBmi}
-                  validationRule={FIELD_VALIDATION_RULES.bmi}
-                  warning={bmiWarning}
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              title="ANTECEDENTES Y TRATAMIENTOS"
-              description="Factores de riesgo adicionales."
-              icon="treatment"
-            >
-              <div className="prevent-switch-grid">
-                <CheckboxField
-                  label="Diabetes"
-                  name="diabetes"
-                  checked={form.diabetes}
-                  onChange={handleInputChange}
-                />
-                <CheckboxField
-                  label="Tabaquismo"
-                  name="smoker"
-                  checked={form.smoker}
-                  onChange={handleInputChange}
-                />
-                <CheckboxField
-                  label="Antihipertensivos"
-                  name="antihypertensive_use"
-                  checked={form.antihypertensive_use}
-                  onChange={handleInputChange}
-                />
-                <CheckboxField
-                  label="Uso de estatinas"
-                  name="statin_use"
-                  checked={form.statin_use}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              title="Datos geográficos para análisis poblacional"
-              description="Estos datos permiten analizar la distribución territorial del riesgo cardio-reno-metabólico. No reemplazan la evaluación clínica individual."
-              icon="geo"
-            >
-              <div className="prevent-form-grid">
-                <SelectField
-                  label="Provincia del paciente"
-                  name="patient_province_code"
-                  value={form.patient_province_code}
-                  onChange={handleProvinceChange}
-                  options={[
-                    { label: "No especificada", value: "" },
-                    ...ECUADOR_PROVINCES.map((province) => ({
-                      label: province.name,
-                      value: province.code,
-                    })),
-                  ]}
-                />
-                <SelectField
-                  label="Cantón del paciente"
-                  name="patient_canton_code"
-                  value={form.patient_canton_code}
-                  onChange={handleInputChange}
-                  disabled={!form.patient_province_code}
-                  options={[
-                    {
-                      label: form.patient_province_code
-                        ? "No especificado"
-                        : "Seleccione provincia primero",
-                      value: "",
-                    },
-                    ...cantonOptions.map((canton) => ({
-                      label: canton.name,
-                      value: canton.code,
-                    })),
-                  ]}
-                />
-                <SelectField
-                  label="Zona de residencia"
-                  name="patient_area_type"
-                  value={form.patient_area_type}
-                  onChange={handleInputChange}
-                  options={[
-                    { label: "No especificado", value: "unknown" },
-                    { label: "Urbana", value: "urban" },
-                    { label: "Rural", value: "rural" },
-                  ]}
-                />
-                <SelectField
-                  label="Fuente del dato geográfico"
-                  name="patient_geo_source"
-                  value={form.patient_geo_source}
-                  onChange={handleInputChange}
-                  options={[
-                    { label: "Reportado por paciente", value: "self_reported" },
-                    { label: "Asignado por clínica", value: "clinic_assigned" },
-                    { label: "Importado", value: "imported" },
-                    { label: "No especificado", value: "unknown" },
-                  ]}
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              title="Determinantes sociales de salud (Opcional)"
-              description="Variables para análisis epidemiológico y métricas poblacionales futuras. No modifican el cálculo PREVENT individual."
-              icon="social"
-            >
-              <div className="prevent-form-grid">
-                <SelectField
-                  label="Cobertura sanitaria habitual"
-                  name="patient_health_coverage"
-                  value={form.patient_health_coverage}
-                  onChange={handleInputChange}
-                  options={HEALTH_COVERAGE_OPTIONS}
-                />
-                <SelectField
-                  label="Nivel educativo"
-                  name="patient_education_level"
-                  value={form.patient_education_level}
-                  onChange={handleInputChange}
-                  options={EDUCATION_LEVEL_OPTIONS}
-                />
-                <SelectField
-                  label="Situación laboral"
-                  name="patient_employment_status"
-                  value={form.patient_employment_status}
-                  onChange={handleInputChange}
-                  options={EMPLOYMENT_STATUS_OPTIONS}
-                />
-                <SelectField
-                  label="Autoidentificación étnica"
-                  name="patient_ethnicity"
-                  value={form.patient_ethnicity}
-                  onChange={handleInputChange}
-                  options={ETHNICITY_OPTIONS}
-                />
-                <SelectField
-                  label="Nivel socioeconómico percibido"
-                  name="patient_socioeconomic_level"
-                  value={form.patient_socioeconomic_level}
-                  onChange={handleInputChange}
-                  options={SOCIOECONOMIC_LEVEL_OPTIONS}
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              title="BIOMARCADORES OPCIONALES"
-              description="Variables adicionales para variantes extendidas del modelo."
-              icon="biomarker"
-            >
-              <div className="prevent-form-grid">
-                <Field
-                  label="Relación albúmina/creatinina urinaria (UACR)"
-                  name="uacr"
-                  type="number"
-                  value={form.uacr}
-                  onChange={handleInputChange}
-                  step="0.1"
-                  help="Útil para las variantes UACR y FULL."
-                  guidance="Opcional para variantes UACR/FULL; interprete según contexto clínico."
-                />
-                <Field
-                  label="Hemoglobina glicosilada (HbA1c)"
-                  name="hba1c"
-                  type="text"
-                  value={form.hba1c}
-                  onChange={handleInputChange}
-                  inputMode="decimal"
-                  step="0.1"
-                  help="Útil para las variantes HbA1c y FULL."
-                  guidance="Acepta coma o punto decimal. Opcional para variantes HbA1c/FULL."
-                />
-                <Field
-                  label="Índice social (SDI, opcional)"
-                  name="sdi"
-                  type="number"
-                  value={form.sdi}
-                  onChange={handleInputChange}
-                  min="1"
-                  step="1"
-                  help="Decil 1 a 10; útil para las variantes SDI y FULL."
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              title="PROFESIONAL RESPONSABLE"
-              description="Datos para trazabilidad del informe clínico."
-              icon="physician"
-              defaultOpen
-            >
-              <div className="prevent-form-grid">
-                <Field
-                  label="Nombre del médico"
-                  name="physician_name"
-                  type="text"
-                  value={form.physician_name}
-                  onChange={handleInputChange}
-                  required
-                />
-                <PhysicianSpecialtyField
-                  value={form.physician_specialty}
-                  usesCustomSpecialty={usesCustomSpecialty}
-                  onSelectChange={handleSpecialtySelectionChange}
-                  onCustomChange={handleInputChange}
-                />
-              </div>
-            </FormSection>
-
-            {variantHelperMessage ? (
-              <p className="prevent-helper-note prevent-helper-note-card">{variantHelperMessage}</p>
+              </section>
             ) : null}
 
-            {error ? <div className="prevent-alert">{error}</div> : null}
-
-            <div className="prevent-actions">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="prevent-button prevent-button-primary"
-                aria-busy={isSubmitting}
-              >
-                {isSubmitting ? "Calculando riesgo..." : "CALCULAR RIESGO"}
-              </button>
-              <button
-                type="button"
-                className="prevent-button prevent-button-secondary"
-                onClick={handleResetCalculation}
-              >
-                LIMPIAR FORMULARIO
-              </button>
-            </div>
-            {isSubmitting || submitFeedback ? (
-              <p className="prevent-submit-feedback" role="status" aria-live="polite">
-                {isSubmitting ? "Calculando riesgo..." : submitFeedback}
-              </p>
-            ) : null}
-          </form>
-        </section>
-      </div>
-      {isSaveDecisionOpen ? (
-        <div className="prevent-results-modal-backdrop">
-          <section
-            className="prevent-save-decision-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="prevent-save-decision-title"
-          >
-            <header className="prevent-results-modal-header">
-              <div>
-                <span className="prevent-kicker">Panel clínico</span>
-                <h2 id="prevent-save-decision-title">Guardar evaluación</h2>
-                <p>
-                  Ha realizado un cálculo PREVENT. ¿Desea guardar esta evaluación
-                  en su panel clínico?
-                </p>
+            <header className="prevent-hero-card prevent-hero-card-banner">
+              <div className="prevent-hero-logo prevent-hero-logo-banner">
+                <Image
+                  src="/logo%20hero.webp"
+                  alt="PREVENT Ecuador"
+                  width={1280}
+                  height={520}
+                  priority
+                  className="h-auto w-full object-contain"
+                />
               </div>
             </header>
 
-            <label className="prevent-save-decision-remember">
-              <input
-                type="checkbox"
-                checked={rememberSaveDecision}
-                onChange={(event) => setRememberSaveDecision(event.target.checked)}
-              />
-              <span>Recordar mi elección durante esta sesión</span>
-            </label>
+            <div className="desktop-split-layout">
+              <div className="desktop-form-column">
+                <section className="prevent-mode-panel" aria-label="Selector de modo del modelo">
+                  <span className="prevent-mode-icon" aria-hidden="true">⚙</span>
+                  <label className="prevent-mode-field">
+                    <span className="prevent-mode-label">Modo de cálculo</span>
+                    <select
+                      className="prevent-mode-select"
+                      value={manualVariantSelection ? "manual" : "auto"}
+                      onChange={handleCalculationModeChange}
+                    >
+                      <option value="auto">Automático</option>
+                      <option value="manual">Manual</option>
+                    </select>
+                  </label>
+                  {manualVariantSelection ? (
+                    <label className="prevent-mode-field">
+                      <span className="prevent-mode-label">Variante</span>
+                      <select
+                        className="prevent-mode-select"
+                        name="model_variant"
+                        value={form.model_variant}
+                        onChange={handleInputChange}
+                      >
+                        <option value="base">Base</option>
+                        <option value="uacr">UACR</option>
+                        <option value="hba1c">HbA1c</option>
+                        <option value="sdi">SDI</option>
+                        <option value="full">Full</option>
+                      </select>
+                    </label>
+                  ) : null}
+                </section>
 
-            <footer className="prevent-results-modal-actions prevent-save-decision-actions">
-              <button
-                className="prevent-button prevent-button-primary"
-                type="button"
-                onClick={() => handleSaveDecision("save")}
-              >
-                Guardar evaluación
-              </button>
-              <button
-                className="prevent-button prevent-button-secondary"
-                type="button"
-                onClick={() => handleSaveDecision("skip")}
-              >
-                Calcular sin guardar
-              </button>
-              <button
-                className="prevent-button prevent-button-secondary"
-                type="button"
-                onClick={handleCancelSaveDecision}
-              >
-                Cancelar
-              </button>
-            </footer>
+                <form className="prevent-form" onSubmit={handleSubmit} noValidate style={{ marginTop: "16px" }}>
+                  {isDoctorSession ? (
+                    <div className="desktop-doctor-toolbar">
+                      <h4 className="desktop-doctor-toolbar-title">Opciones de Sesión Médica</h4>
+                      <div className="desktop-doctor-toolbar-inputs">
+                        <label className="prevent-field">
+                          <span className="prevent-field-label">ID del Paciente (UUID)</span>
+                          <input
+                            className="prevent-input"
+                            type="text"
+                            placeholder="Ej. 123e4567-e89b..."
+                            value={patientId}
+                            onChange={(e) => setPatientId(e.target.value)}
+                          />
+                        </label>
+                        <label className="prevent-field" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginTop: "24px" }}>
+                          <input
+                            type="checkbox"
+                            checked={followUpActive}
+                            onChange={(e) => setFollowUpActive(e.target.checked)}
+                            style={{ width: "18px", height: "18px", accentColor: "var(--primary)" }}
+                          />
+                          <span className="prevent-field-label" style={{ margin: 0 }}>Seguimiento de control</span>
+                        </label>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <FormSection
+                    title="DATOS DEL PACIENTE"
+                    description="Datos básicos para el cálculo principal."
+                    icon="patient"
+                    defaultOpen
+                  >
+                    <div className="prevent-form-grid">
+                      <Field
+                        label="Edad"
+                        name="age"
+                        type="number"
+                        value={form.age}
+                        onChange={handleInputChange}
+                        required
+                        min="30"
+                        max="79"
+                        step="1"
+                        placeholder="Ej. 50"
+                        validationRule={FIELD_VALIDATION_RULES.age}
+                        warning={getFieldWarning(form, "age")}
+                      />
+                      <SelectField
+                        label="Sexo"
+                        name="sex"
+                        value={form.sex}
+                        onChange={handleInputChange}
+                        required
+                        options={[
+                          { label: "Seleccionar", value: "" },
+                          { label: "Masculino", value: "male" },
+                          { label: "Femenino", value: "female" },
+                        ]}
+                      />
+                      <Field
+                        label="Presión arterial sistólica (mmHg)"
+                        name="sbp"
+                        type="number"
+                        value={form.sbp}
+                        onChange={handleInputChange}
+                        required
+                        min="90"
+                        max="200"
+                        step="0.1"
+                        validationRule={FIELD_VALIDATION_RULES.sbp}
+                        warning={getFieldWarning(form, "sbp")}
+                      />
+                      <Field
+                        label="Colesterol total (mg/dL)"
+                        name="total_cholesterol"
+                        type="number"
+                        value={form.total_cholesterol}
+                        onChange={handleInputChange}
+                        required
+                        min="130"
+                        max="320"
+                        step="0.1"
+                        validationRule={FIELD_VALIDATION_RULES.total_cholesterol}
+                        warning={getFieldWarning(form, "total_cholesterol")}
+                      />
+                      <Field
+                        label="HDL (mg/dL)"
+                        name="hdl"
+                        type="number"
+                        value={form.hdl}
+                        onChange={handleInputChange}
+                        required
+                        min="20"
+                        max="100"
+                        step="0.1"
+                        validationRule={FIELD_VALIDATION_RULES.hdl}
+                        warning={getFieldWarning(form, "hdl")}
+                      />
+                      <EgfrField
+                        value={form.egfr}
+                        onChange={handleInputChange}
+                        calculator={ckdEpiCalculator}
+                        onToggleCalculator={() =>
+                          setCkdEpiCalculator((current) => ({
+                            ...current,
+                            isOpen: !current.isOpen,
+                            error: "",
+                          }))
+                        }
+                        onCalculatorChange={handleCkdEpiCalculatorChange}
+                        onCalculate={handleCalculateCkdEpi}
+                        validationRule={FIELD_VALIDATION_RULES.egfr}
+                        warning={getFieldWarning(form, "egfr")}
+                      />
+                      <BmiField
+                        value={form.bmi}
+                        onChange={handleInputChange}
+                        calculator={bmiCalculator}
+                        onToggleCalculator={() =>
+                          setBmiCalculator((current) => ({
+                            ...current,
+                            isOpen: !current.isOpen,
+                            error: "",
+                          }))
+                        }
+                        onCalculatorChange={handleBmiCalculatorChange}
+                        onCalculate={handleCalculateBmi}
+                        validationRule={FIELD_VALIDATION_RULES.bmi}
+                        warning={bmiWarning}
+                      />
+                    </div>
+                  </FormSection>
+
+                  <FormSection
+                    title="ANTECEDENTES Y TRATAMIENTOS"
+                    description="Factores de riesgo adicionales."
+                    icon="treatment"
+                  >
+                    <div className="prevent-switch-grid">
+                      <CheckboxField
+                        label="Diabetes"
+                        name="diabetes"
+                        checked={form.diabetes}
+                        onChange={handleInputChange}
+                      />
+                      <CheckboxField
+                        label="Tabaquismo"
+                        name="smoker"
+                        checked={form.smoker}
+                        onChange={handleInputChange}
+                      />
+                      <CheckboxField
+                        label="Antihipertensivos"
+                        name="antihypertensive_use"
+                        checked={form.antihypertensive_use}
+                        onChange={handleInputChange}
+                      />
+                      <CheckboxField
+                        label="Uso de estatinas"
+                        name="statin_use"
+                        checked={form.statin_use}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </FormSection>
+
+                  <FormSection
+                    title="Datos geográficos para análisis poblacional"
+                    description="Estos datos permiten analizar la distribución territorial del riesgo cardio-reno-metabólico. No reemplazan la evaluación clínica individual."
+                    icon="geo"
+                  >
+                    <div className="prevent-form-grid">
+                      <SelectField
+                        label="Provincia del paciente"
+                        name="patient_province_code"
+                        value={form.patient_province_code}
+                        onChange={handleProvinceChange}
+                        options={[
+                          { label: "No especificada", value: "" },
+                          ...ECUADOR_PROVINCES.map((province) => ({
+                            label: province.name,
+                            value: province.code,
+                          })),
+                        ]}
+                      />
+                      <SelectField
+                        label="Cantón del paciente"
+                        name="patient_canton_code"
+                        value={form.patient_canton_code}
+                        onChange={handleInputChange}
+                        disabled={!form.patient_province_code}
+                        options={[
+                          {
+                            label: form.patient_province_code
+                              ? "No especificado"
+                              : "Seleccione provincia primero",
+                            value: "",
+                          },
+                          ...cantonOptions.map((canton) => ({
+                            label: canton.name,
+                            value: canton.code,
+                          })),
+                        ]}
+                      />
+                      <SelectField
+                        label="Zona de residencia"
+                        name="patient_area_type"
+                        value={form.patient_area_type}
+                        onChange={handleInputChange}
+                        options={[
+                          { label: "No especificado", value: "unknown" },
+                          { label: "Urbana", value: "urban" },
+                          { label: "Rural", value: "rural" },
+                        ]}
+                      />
+                      <SelectField
+                        label="Fuente del dato geográfico"
+                        name="patient_geo_source"
+                        value={form.patient_geo_source}
+                        onChange={handleInputChange}
+                        options={[
+                          { label: "Reportado por paciente", value: "self_reported" },
+                          { label: "Asignado por clínica", value: "clinic_assigned" },
+                          { label: "Importado", value: "imported" },
+                          { label: "No especificado", value: "unknown" },
+                        ]}
+                      />
+                    </div>
+                  </FormSection>
+
+                  <FormSection
+                    title="Determinantes sociales de salud (Opcional)"
+                    description="Variables para análisis epidemiológico y métricas poblacionales futuras. No modifican el cálculo PREVENT individual."
+                    icon="social"
+                  >
+                    <div className="prevent-form-grid">
+                      <SelectField
+                        label="Cobertura sanitaria habitual"
+                        name="patient_health_coverage"
+                        value={form.patient_health_coverage}
+                        onChange={handleInputChange}
+                        options={HEALTH_COVERAGE_OPTIONS}
+                      />
+                      <SelectField
+                        label="Nivel educativo"
+                        name="patient_education_level"
+                        value={form.patient_education_level}
+                        onChange={handleInputChange}
+                        options={EDUCATION_LEVEL_OPTIONS}
+                      />
+                      <SelectField
+                        label="Situación laboral"
+                        name="patient_employment_status"
+                        value={form.patient_employment_status}
+                        onChange={handleInputChange}
+                        options={EMPLOYMENT_STATUS_OPTIONS}
+                      />
+                      <SelectField
+                        label="Autoidentificación étnica"
+                        name="patient_ethnicity"
+                        value={form.patient_ethnicity}
+                        onChange={handleInputChange}
+                        options={ETHNICITY_OPTIONS}
+                      />
+                      <SelectField
+                        label="Nivel socioeconómico percibido"
+                        name="patient_socioeconomic_level"
+                        value={form.patient_socioeconomic_level}
+                        onChange={handleInputChange}
+                        options={SOCIOECONOMIC_LEVEL_OPTIONS}
+                      />
+                    </div>
+                  </FormSection>
+
+                  <FormSection
+                    title="BIOMARCADORES OPCIONALES"
+                    description="Variables adicionales para variantes extendidas del modelo."
+                    icon="biomarker"
+                  >
+                    <div className="prevent-form-grid">
+                      <Field
+                        label="Relación albúmina/creatinina urinaria (UACR)"
+                        name="uacr"
+                        type="number"
+                        value={form.uacr}
+                        onChange={handleInputChange}
+                        step="0.1"
+                        help="Útil para las variantes UACR y FULL."
+                        guidance="Opcional para variantes UACR/FULL; interprete según contexto clínico."
+                      />
+                      <Field
+                        label="Hemoglobina glicosilada (HbA1c)"
+                        name="hba1c"
+                        type="text"
+                        value={form.hba1c}
+                        onChange={handleInputChange}
+                        inputMode="decimal"
+                        step="0.1"
+                        help="Útil para las variantes HbA1c y FULL."
+                        guidance="Acepta coma o punto decimal. Opcional para variantes HbA1c/FULL."
+                      />
+                      <Field
+                        label="Índice social (SDI, opcional)"
+                        name="sdi"
+                        type="number"
+                        value={form.sdi}
+                        onChange={handleInputChange}
+                        min="1"
+                        step="1"
+                        help="Decil 1 a 10; útil para las variantes SDI y FULL."
+                      />
+                    </div>
+                  </FormSection>
+
+                  <FormSection
+                    title="PROFESIONAL RESPONSABLE"
+                    description="Datos para trazabilidad del informe clínico."
+                    icon="physician"
+                    defaultOpen
+                  >
+                    <div className="prevent-form-grid">
+                      <Field
+                        label="Nombre del médico"
+                        name="physician_name"
+                        type="text"
+                        value={form.physician_name}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      <PhysicianSpecialtyField
+                        value={form.physician_specialty}
+                        usesCustomSpecialty={usesCustomSpecialty}
+                        onSelectChange={handleSpecialtySelectionChange}
+                        onCustomChange={handleInputChange}
+                      />
+                    </div>
+                  </FormSection>
+
+                  {variantHelperMessage ? (
+                    <p className="prevent-helper-note prevent-helper-note-card">{variantHelperMessage}</p>
+                  ) : null}
+
+                  {error ? <div className="prevent-alert">{error}</div> : null}
+
+                  <div className="prevent-actions">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="prevent-button prevent-button-primary"
+                      aria-busy={isSubmitting}
+                    >
+                      {isSubmitting ? "Calculando riesgo..." : "CALCULAR RIESGO"}
+                    </button>
+                    <button
+                      type="button"
+                      className="prevent-button prevent-button-secondary"
+                      onClick={handleResetCalculation}
+                    >
+                      LIMPIAR FORMULARIO
+                    </button>
+                  </div>
+                  {isSubmitting || submitFeedback ? (
+                    <p className="prevent-submit-feedback" role="status" aria-live="polite">
+                      {isSubmitting ? "Calculando riesgo..." : submitFeedback}
+                    </p>
+                  ) : null}
+                </form>
+              </div>
+
+              <div className="desktop-sticky-results">
+                {result ? (
+                  <DesktopResultsPanel
+                    result={result}
+                    riskType={riskType}
+                    horizon={riskHorizon}
+                    hasUncalculatedChanges={hasUncalculatedChanges}
+                    canPrint={Boolean(recordId)}
+                    onRiskTypeChange={setRiskType}
+                    onHorizonChange={setRiskHorizon}
+                    onNewCalculation={handleResetCalculation}
+                    onPrint={handlePrintReport}
+                  />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "340px", textAlign: "center", color: "var(--muted)", padding: "20px" }}>
+                    <span style={{ fontSize: "3.2rem", marginBottom: "16px" }}>🩺</span>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "var(--text)", marginBottom: "8px" }}>Esperando Datos Clínicos</h3>
+                    <p style={{ fontSize: "0.85rem", maxWidth: "280px", margin: "0 auto", lineHeight: "1.5" }}>
+                      Complete los datos del paciente a la izquierda y presione &quot;CALCULAR RIESGO&quot; para ver los resultados aquí de forma interactiva.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
         </div>
-      ) : null}
-      {result && isResultsModalOpen ? (
-        <ResultsModal
-          result={result}
-          riskType={riskType}
-          horizon={riskHorizon}
-          hasUncalculatedChanges={hasUncalculatedChanges}
-          canPrint={Boolean(recordId)}
-          onRiskTypeChange={setRiskType}
-          onHorizonChange={setRiskHorizon}
-          onClose={() => setIsResultsModalOpen(false)}
-          onEditData={handleEditResultData}
-          onNewCalculation={handleResetCalculation}
-          onPrint={handlePrintReport}
-        />
-      ) : null}
-      {result ? (
-        <div id="prevent-print-report" aria-label="Reporte imprimible PREVENT">
-          <header className="print-report-header">
-            <div className="print-report-heading">
-              <span className="print-report-kicker">
-                PREVENT <EcuadorIdentity showFlag={false} />
-              </span>
-              <h1>Informe clínico de riesgo cardiovascular</h1>
-              <p>Fecha: {new Date().toLocaleString("es-EC")}</p>
-            </div>
-            <div className="print-report-meta">
-              <span>{translateModelVariant(result.model_variant)}</span>
-              <span>{form.physician_name || "Médico no registrado"}</span>
-            </div>
-          </header>
+        {isSaveDecisionOpen ? (
+          <div className="prevent-results-modal-backdrop">
+            <section
+              className="prevent-save-decision-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="prevent-save-decision-title"
+            >
+              <header className="prevent-results-modal-header">
+                <div>
+                  <span className="prevent-kicker">Panel clínico</span>
+                  <h2 id="prevent-save-decision-title">Guardar evaluación</h2>
+                  <p>
+                    Ha realizado un cálculo PREVENT. ¿Desea guardar esta evaluación
+                    en su panel clínico?
+                  </p>
+                </div>
+              </header>
 
-          <section className="print-report-section">
-            <div className="print-report-results">
-              <PrintResultCard
-                label="Riesgo global"
-                value={`10 años: ${formatRiskValue(result.cvd_risk, "cvd")}`}
-                secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "cvd"))}`}
-              />
-              <PrintResultCard
-                label="ASCVD"
-                value={`10 años: ${formatRiskValue(result.ascvd_risk, "ascvd")}`}
-                secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "ascvd"))}`}
-              />
-              <PrintResultCard
-                label="HF"
-                value={`10 años: ${formatRiskValue(result.hf_risk, "hf")}`}
-                secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "hf"))}`}
-              />
-              <PrintResultCard label="Edad cardiovascular equivalente" value={formatPreventAge(result.prevent_age)} />
-            </div>
-            <p className="print-metric-note">
-              Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
-            </p>
-          </section>
+              <label className="prevent-save-decision-remember">
+                <input
+                  type="checkbox"
+                  checked={rememberSaveDecision}
+                  onChange={(event) => setRememberSaveDecision(event.target.checked)}
+                />
+                <span>Recordar mi elección durante esta sesión</span>
+              </label>
 
-          <section className="print-report-section">
-            <div className="print-report-grid">
-              <ReportItem label="Edad" value={`${form.age} años`} />
-              <ReportItem label="Sexo" value={form.sex === "female" ? "Femenino" : "Masculino"} />
-              <ReportItem label="SBP" value={`${form.sbp} mmHg`} />
-              <ReportItem label="Colesterol total" value={`${form.total_cholesterol} mg/dL`} />
-              <ReportItem label="HDL" value={`${form.hdl} mg/dL`} />
-              <ReportItem label="eGFR" value={`${form.egfr} mL/min/1.73m²`} />
-              <ReportItem label="IMC" value={form.bmi || "No registrado"} />
-              <ReportItem label="Diabetes" value={form.diabetes ? "Sí" : "No"} />
-              <ReportItem label="Tabaquismo" value={form.smoker ? "Sí" : "No"} />
-            </div>
-          </section>
-
-          {result.clinical_interpretation ? (
-            <section className="print-report-section print-report-clinical-section">
-              <h2>Perfil clínico cardiometabólico</h2>
-              <PrintClinicalSummary interpretation={result.clinical_interpretation} />
-              <PrintRiskProfile interpretation={result.clinical_interpretation} />
+              <footer className="prevent-results-modal-actions prevent-save-decision-actions">
+                <button
+                  className="prevent-button prevent-button-primary"
+                  type="button"
+                  onClick={() => handleSaveDecision("save")}
+                >
+                  Guardar evaluación
+                </button>
+                <button
+                  className="prevent-button prevent-button-secondary"
+                  type="button"
+                  onClick={() => handleSaveDecision("skip")}
+                >
+                  Calcular sin guardar
+                </button>
+                <button
+                  className="prevent-button prevent-button-secondary"
+                  type="button"
+                  onClick={handleCancelSaveDecision}
+                >
+                  Cancelar
+                </button>
+              </footer>
             </section>
-          ) : null}
+          </div>
+        ) : null}
+        {result && isResultsModalOpen ? (
+          <ResultsModal
+            result={result}
+            riskType={riskType}
+            horizon={riskHorizon}
+            hasUncalculatedChanges={hasUncalculatedChanges}
+            canPrint={Boolean(recordId)}
+            onRiskTypeChange={setRiskType}
+            onHorizonChange={setRiskHorizon}
+            onClose={() => setIsResultsModalOpen(false)}
+            onEditData={handleEditResultData}
+            onNewCalculation={handleResetCalculation}
+            onPrint={handlePrintReport}
+          />
+        ) : null}
+        {result ? (
+          <div id="prevent-print-report" aria-label="Reporte imprimible PREVENT">
+            <header className="print-report-header">
+              <div className="print-report-heading">
+                <span className="print-report-kicker">
+                  PREVENT <EcuadorIdentity showFlag={false} />
+                </span>
+                <h1>Informe clínico de riesgo cardiovascular</h1>
+                <p>Fecha: {new Date().toLocaleString("es-EC")}</p>
+              </div>
+              <div className="print-report-meta">
+                <span>{translateModelVariant(result.model_variant)}</span>
+                <span>{form.physician_name || "Médico no registrado"}</span>
+              </div>
+            </header>
 
-          <section className="print-report-section print-report-technical-section">
-            <h2>Valores técnicos calculados</h2>
-            <p>CVD 10 años exacto: {formatResearchRisk(result.cvd_risk)}</p>
-            <p>ASCVD 10 años exacto: {formatResearchRisk(result.ascvd_risk)}</p>
-            <p>HF 10 años exacto: {formatResearchRisk(result.hf_risk)}</p>
-            <p>CVD 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "cvd"))}</p>
-            <p>ASCVD 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "ascvd"))}</p>
-            <p>HF 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "hf"))}</p>
-          </section>
+            <section className="print-report-section">
+              <div className="print-report-results">
+                <PrintResultCard
+                  label="Riesgo global"
+                  value={`10 años: ${formatRiskValue(result.cvd_risk, "cvd")}`}
+                  secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "cvd"))}`}
+                />
+                <PrintResultCard
+                  label="ASCVD"
+                  value={`10 años: ${formatRiskValue(result.ascvd_risk, "ascvd")}`}
+                  secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "ascvd"))}`}
+                />
+                <PrintResultCard
+                  label="HF"
+                  value={`10 años: ${formatRiskValue(result.hf_risk, "hf")}`}
+                  secondary={`30 años: ${formatThirtyYearRiskValue(getThirtyYearRisk(result, "hf"))}`}
+                />
+                <PrintResultCard label="Edad cardiovascular equivalente" value={formatPreventAge(result.prevent_age)} />
+              </div>
+              <p className="print-metric-note">
+                Estimación derivada del riesgo cardiovascular PREVENT a 10 años. Representa la edad aproximada de una persona con perfil cardiovascular óptimo que tendría un riesgo equivalente. No corresponde a una salida oficial del paquete AHAprevent.
+              </p>
+            </section>
 
-          <footer className="print-clinical-footer">
-            <p>
-              PREVENT Ecuador es una implementación clínica independiente basada en las
-              ecuaciones PREVENT publicadas por la American Heart Association (AHA).
-            </p>
-            <p>
-              Validación técnica contrastada con el paquete oficial R PREVENT-AHA y la
-              calculadora web PREVENT.
-            </p>
-            <p>Desarrollado por Dr. David Guzmán — ANOVA Research Group.</p>
-            <p>Herramienta de apoyo a la decisión clínica. No reemplaza el juicio médico profesional.</p>
-          </footer>
+            <section className="print-report-section">
+              <div className="print-report-grid">
+                <ReportItem label="Edad" value={`${form.age} años`} />
+                <ReportItem label="Sexo" value={form.sex === "female" ? "Femenino" : "Masculino"} />
+                <ReportItem label="SBP" value={`${form.sbp} mmHg`} />
+                <ReportItem label="Colesterol total" value={`${form.total_cholesterol} mg/dL`} />
+                <ReportItem label="HDL" value={`${form.hdl} mg/dL`} />
+                <ReportItem label="eGFR" value={`${form.egfr} mL/min/1.73m²`} />
+                <ReportItem label="IMC" value={form.bmi || "No registrado"} />
+                <ReportItem label="Diabetes" value={form.diabetes ? "Sí" : "No"} />
+                <ReportItem label="Tabaquismo" value={form.smoker ? "Sí" : "No"} />
+              </div>
+            </section>
+
+            {result.clinical_interpretation ? (
+              <section className="print-report-section print-report-clinical-section">
+                <h2>Perfil clínico cardiometabólico</h2>
+                <PrintClinicalSummary interpretation={result.clinical_interpretation} />
+                <PrintRiskProfile interpretation={result.clinical_interpretation} />
+              </section>
+            ) : null}
+
+            <section className="print-report-section print-report-technical-section">
+              <h2>Valores técnicos calculados</h2>
+              <p>CVD 10 años exacto: {formatResearchRisk(result.cvd_risk)}</p>
+              <p>ASCVD 10 años exacto: {formatResearchRisk(result.ascvd_risk)}</p>
+              <p>HF 10 años exacto: {formatResearchRisk(result.hf_risk)}</p>
+              <p>CVD 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "cvd"))}</p>
+              <p>ASCVD 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "ascvd"))}</p>
+              <p>HF 30 años exacto: {formatResearchRisk(getThirtyYearRisk(result, "hf"))}</p>
+            </section>
+
+            <footer className="print-clinical-footer">
+              <p>
+                PREVENT Ecuador es una implementación clínica independiente basada en las
+                ecuaciones PREVENT publicadas por la American Heart Association (AHA).
+              </p>
+              <p>
+                Validación técnica contrastada con el paquete oficial R PREVENT-AHA y la
+                calculadora web PREVENT.
+              </p>
+              <p>Desarrollado por Dr. David Guzmán — ANOVA Research Group.</p>
+              <p>Herramienta de apoyo a la decisión clínica. No reemplaza el juicio médico profesional.</p>
+            </footer>
         </div>
       ) : null}
       <SiteFooter />
@@ -1661,15 +1741,6 @@ function ResultsModal({
   onNewCalculation: () => void;
   onPrint: () => void;
 }) {
-  const selectedRisk = getRiskForHorizon(result, riskType, horizon);
-  const selectedWarnings = getOutcomeWarnings(result, riskType);
-  const insufficientReason = getInsufficientResultReason(result);
-  const selectedMissingMessage =
-    selectedRisk === null
-      ? getInsufficientResultMessage(insufficientReason) ??
-        getMissingRiskMessage(result, riskType)
-      : null;
-
   return (
     <div className="prevent-results-modal-backdrop">
       <section
@@ -1682,9 +1753,7 @@ function ResultsModal({
           <div>
             <span className="prevent-panel-badge">Resultado PREVENT</span>
             <h2 id="prevent-results-modal-title">Resultado PREVENT</h2>
-            <p>
-              Estimación de riesgo cardio-reno-metabólico a 10 y 30 años.
-            </p>
+            <p>Estimación de riesgo cardio-reno-metabólico a 10 y 30 años.</p>
           </div>
           <button
             type="button"
@@ -1696,101 +1765,17 @@ function ResultsModal({
           </button>
         </header>
 
-        <div className="prevent-results-modal-controls">
-          <div className="prevent-tab-row" aria-label="Desenlaces PREVENT">
-            <button
-              type="button"
-              className={`prevent-tab ${riskType === "cvd" ? "is-active" : ""}`}
-              onClick={() => onRiskTypeChange("cvd")}
-            >
-              Global
-            </button>
-            <button
-              type="button"
-              className={`prevent-tab ${riskType === "ascvd" ? "is-active" : ""}`}
-              onClick={() => onRiskTypeChange("ascvd")}
-            >
-              ASCVD
-            </button>
-            <button
-              type="button"
-              className={`prevent-tab ${riskType === "hf" ? "is-active" : ""}`}
-              onClick={() => onRiskTypeChange("hf")}
-            >
-              IC
-            </button>
-          </div>
-
-          <div className="prevent-horizon-toggle" aria-label="Horizonte temporal">
-            <button
-              type="button"
-              className={horizon === "10y" ? "is-active" : ""}
-              onClick={() => onHorizonChange("10y")}
-            >
-              10 años
-            </button>
-            <button
-              type="button"
-              className={horizon === "30y" ? "is-active" : ""}
-              onClick={() => onHorizonChange("30y")}
-            >
-              30 años
-            </button>
-          </div>
-        </div>
-
-        {hasUncalculatedChanges ? (
-          <div className="prevent-stale-notice">
-            Cambios no recalculados. Presione “Calcular riesgo” para actualizar
-            la evaluación con los datos visibles.
-          </div>
-        ) : null}
-
-        <DigitalRiskDashboard
-          risk={selectedRisk}
+        <DesktopResultsPanel
+          result={result}
           riskType={riskType}
           horizon={horizon}
-          missingMessage={selectedMissingMessage}
+          hasUncalculatedChanges={hasUncalculatedChanges}
+          canPrint={canPrint}
+          onRiskTypeChange={onRiskTypeChange}
+          onHorizonChange={onHorizonChange}
+          onNewCalculation={onNewCalculation}
+          onPrint={onPrint}
         />
-
-        <section className="prevent-complement-card" aria-label="Riesgos complementarios">
-          <div>
-            <span className="prevent-rail-kicker">Riesgos complementarios</span>
-            <p>Valores completos recibidos desde el motor PREVENT.</p>
-          </div>
-          <div className="prevent-mini-risk-grid">
-            {(["cvd", "ascvd", "hf"] as RiskType[]).map((outcome) => (
-              <MiniRiskCard
-                key={outcome}
-                label={getRiskTypeCode(outcome)}
-                tenYearRisk={getRiskForHorizon(result, outcome, "10y")}
-                thirtyYearRisk={getRiskForHorizon(result, outcome, "30y")}
-              />
-            ))}
-          </div>
-        </section>
-
-        {selectedRisk === null && selectedWarnings.length > 0 ? (
-          <ul className="prevent-warning-list">
-            {selectedWarnings.map((warning) => (
-              <li key={formatWarningDetail(warning)}>{formatWarningDetail(warning)}</li>
-            ))}
-          </ul>
-        ) : null}
-
-        {showClinicalContext && result.clinical_interpretation ? (
-          <ClinicalInterpretationPanel interpretation={result.clinical_interpretation} />
-        ) : null}
-
-        <CardiovascularAgeCard
-          value={result.prevent_age}
-          interpretation={result.clinical_interpretation ?? null}
-        />
-
-        <div className="prevent-responsible-note">
-          PREVENT estima riesgo probabilístico poblacional. No reemplaza el
-          juicio clínico.
-        </div>
 
         <footer className="prevent-results-modal-actions">
           <button
@@ -1800,24 +1785,166 @@ function ResultsModal({
           >
             Editar datos
           </button>
-          <button
-            type="button"
-            className="prevent-button prevent-button-secondary"
-            onClick={onNewCalculation}
-          >
-            Nuevo cálculo
-          </button>
-          <button
-            type="button"
-            onClick={onPrint}
-            disabled={!canPrint}
-            className="prevent-button prevent-button-primary prevent-download"
-          >
-            Imprimir / guardar PDF
-          </button>
         </footer>
       </section>
     </div>
+  );
+}
+
+function DesktopResultsPanel({
+  result,
+  riskType,
+  horizon,
+  hasUncalculatedChanges,
+  canPrint,
+  onRiskTypeChange,
+  onHorizonChange,
+  onNewCalculation,
+  onPrint,
+}: {
+  result: PreventResult;
+  riskType: RiskType;
+  horizon: RiskHorizon;
+  hasUncalculatedChanges: boolean;
+  canPrint: boolean;
+  onRiskTypeChange: (riskType: RiskType) => void;
+  onHorizonChange: (horizon: RiskHorizon) => void;
+  onNewCalculation: () => void;
+  onPrint: () => void;
+}) {
+  const selectedRisk = getRiskForHorizon(result, riskType, horizon);
+  const selectedWarnings = getOutcomeWarnings(result, riskType);
+  const insufficientReason = getInsufficientResultReason(result);
+  const selectedMissingMessage =
+    selectedRisk === null
+      ? getInsufficientResultMessage(insufficientReason) ??
+        getMissingRiskMessage(result, riskType)
+      : null;
+
+  return (
+    <section aria-label="Resultados de la evaluación" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <header className="prevent-panel-header" style={{ borderBottom: "1px solid var(--line)", paddingBottom: "12px" }}>
+        <span className="prevent-panel-badge">Resultado PREVENT</span>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: "800", margin: "8px 0 4px" }}>Resultado PREVENT</h2>
+        <p style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+          Estimación de riesgo cardio-reno-metabólico a 10 y 30 años.
+        </p>
+      </header>
+
+      <div className="prevent-results-modal-controls" style={{ padding: 0 }}>
+        <div className="prevent-tab-row" aria-label="Desenlaces PREVENT">
+          <button
+            type="button"
+            className={`prevent-tab ${riskType === "cvd" ? "is-active" : ""}`}
+            onClick={() => onRiskTypeChange("cvd")}
+          >
+            Global
+          </button>
+          <button
+            type="button"
+            className={`prevent-tab ${riskType === "ascvd" ? "is-active" : ""}`}
+            onClick={() => onRiskTypeChange("ascvd")}
+          >
+            ASCVD
+          </button>
+          <button
+            type="button"
+            className={`prevent-tab ${riskType === "hf" ? "is-active" : ""}`}
+            onClick={() => onRiskTypeChange("hf")}
+          >
+            IC
+          </button>
+        </div>
+
+        <div className="prevent-horizon-toggle" aria-label="Horizonte temporal" style={{ marginTop: "10px" }}>
+          <button
+            type="button"
+            className={horizon === "10y" ? "is-active" : ""}
+            onClick={() => onHorizonChange("10y")}
+          >
+            10 años
+          </button>
+          <button
+            type="button"
+            className={horizon === "30y" ? "is-active" : ""}
+            onClick={() => onHorizonChange("30y")}
+          >
+            30 años
+          </button>
+        </div>
+      </div>
+
+      {hasUncalculatedChanges ? (
+        <div className="prevent-stale-notice" style={{ fontSize: "0.8rem", padding: "8px", borderRadius: "8px", background: "var(--warning-soft)", color: "var(--warning)" }}>
+          Cambios no recalculados. Presione “Calcular riesgo” para actualizar.
+        </div>
+      ) : null}
+
+      <DigitalRiskDashboard
+        risk={selectedRisk}
+        riskType={riskType}
+        horizon={horizon}
+        missingMessage={selectedMissingMessage}
+      />
+
+      <section className="prevent-complement-card" aria-label="Riesgos complementarios" style={{ padding: "16px" }}>
+        <div>
+          <span className="prevent-rail-kicker" style={{ fontSize: "0.75rem" }}>Riesgos complementarios</span>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "4px 0 8px" }}>Valores completos del motor PREVENT.</p>
+        </div>
+        <div className="prevent-mini-risk-grid" style={{ gap: "8px" }}>
+          {(["cvd", "ascvd", "hf"] as RiskType[]).map((outcome) => (
+            <MiniRiskCard
+              key={outcome}
+              label={getRiskTypeCode(outcome)}
+              tenYearRisk={getRiskForHorizon(result, outcome, "10y")}
+              thirtyYearRisk={getRiskForHorizon(result, outcome, "30y")}
+            />
+          ))}
+        </div>
+      </section>
+
+      {selectedRisk === null && selectedWarnings.length > 0 ? (
+        <ul className="prevent-warning-list" style={{ paddingLeft: "16px", fontSize: "0.8rem" }}>
+          {selectedWarnings.map((warning) => (
+            <li key={formatWarningDetail(warning)}>{formatWarningDetail(warning)}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      {showClinicalContext && result.clinical_interpretation ? (
+        <ClinicalInterpretationPanel interpretation={result.clinical_interpretation} />
+      ) : null}
+
+      <CardiovascularAgeCard
+        value={result.prevent_age}
+        interpretation={result.clinical_interpretation ?? null}
+      />
+
+      <div className="prevent-responsible-note" style={{ fontSize: "0.72rem", color: "var(--muted-2)", lineHeight: "1.4" }}>
+        PREVENT estima riesgo probabilístico poblacional. No reemplaza el juicio clínico.
+      </div>
+
+      <footer className="prevent-results-modal-actions" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: 0 }}>
+        <button
+          type="button"
+          onClick={onPrint}
+          disabled={!canPrint}
+          className="prevent-button prevent-button-primary prevent-download"
+          style={{ width: "100%", height: "46px" }}
+        >
+          Imprimir / guardar PDF
+        </button>
+        <button
+          type="button"
+          className="prevent-button prevent-button-secondary"
+          onClick={onNewCalculation}
+          style={{ width: "100%", height: "46px" }}
+        >
+          Nuevo cálculo
+        </button>
+      </footer>
+    </section>
   );
 }
 

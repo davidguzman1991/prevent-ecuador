@@ -28,7 +28,7 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 16px;
   font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
 }
@@ -37,6 +37,20 @@
   font-size: 14px;
   font-weight: 850;
   letter-spacing: 0.06em;
+}
+
+.homeLink {
+  color: #8ec5ff;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.homeLink:focus-visible {
+  outline: 2px solid rgba(142, 197, 255, 0.74);
+  outline-offset: 3px;
 }
 
 .content {

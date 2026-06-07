@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 
 import type { FormState, PreventResult } from "@/types/prevent";
 import {
@@ -334,6 +335,9 @@ export default function MobilePreventCalculator() {
       <section className={styles.panel} aria-label="Calculadora PREVENT Ecuador">
         <header className={styles.header}>
           <strong className={styles.brand}>PREVENT ECUADOR</strong>
+          <Link className={styles.homeLink} href="/">
+            Volver al inicio
+          </Link>
         </header>
 
         <div className={styles.content}>

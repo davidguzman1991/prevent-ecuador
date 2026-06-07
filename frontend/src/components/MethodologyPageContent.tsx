@@ -157,7 +157,7 @@ const REFERENCES = [
 export function MethodologyPageContent() {
   return (
     <div className="methodology-page">
-      <Link href="/" className="methodology-floating-calculator-link">
+      <Link href="/calculadora" className="methodology-floating-calculator-link">
         Volver a la calculadora
       </Link>
       <header className="methodology-hero">

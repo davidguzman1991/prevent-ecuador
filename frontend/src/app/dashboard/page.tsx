@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 import { DashboardOverview } from "@/components/DashboardOverview";
 import { PinGate } from "@/components/PinGate";
@@ -351,6 +352,21 @@ function formatThirtyYearResearchRisk(risk: number | null): string {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { currentUser, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (currentUser) {
+      if (currentUser.role === "doctor") {
+        router.replace("/doctor");
+      } else if (currentUser.role === "global_admin") {
+        router.replace("/admin");
+      }
+    } else {
+      router.replace("/login");
+    }
+  }, [currentUser, authLoading, router]);
+
   const [filters, setFilters] = useState<DashboardFilters>(initialFilters);
   const [records, setRecords] = useState<DashboardListItem[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<DashboardDetail | null>(null);
@@ -506,6 +522,14 @@ export default function DashboardPage() {
     void loadRecords(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAccess, adminApiKey]);
+
+  if (authLoading) {
+    return (
+      <div className="theme-light theme-light-wrapper" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <p style={{ fontWeight: "700", color: "var(--muted)" }}>Redireccionando...</p>
+      </div>
+    );
+  }
 
   const handleFilterChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,

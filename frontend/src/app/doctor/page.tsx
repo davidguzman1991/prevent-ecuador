@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { AuthStatusBar } from "@/components/AuthStatusBar";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
 import { getApiBaseUrl } from "@/lib/api";
 import { formatClinicalRisk } from "@/lib/risk-format";
@@ -40,14 +38,6 @@ async function fetchDoctorRecords(accessToken: string): Promise<DashboardRecord[
 }
 
 export default function DoctorDashboardPage() {
-  return (
-    <ProtectedRoute requiredRole="doctor">
-      <DoctorDashboard />
-    </ProtectedRoute>
-  );
-}
-
-function DoctorDashboard() {
   const { accessToken } = useAuth();
   const [records, setRecords] = useState<DashboardRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +63,12 @@ function DoctorDashboard() {
     return new Set(patientIds).size || records.length;
   }, [records]);
 
-  const latestRecords = records.slice(0, 8);
+  const followUpAlerts = useMemo(() => {
+    // Check if follow-up flag is saved in notes
+    return records.filter((r) => r.notes?.includes("[Seguimiento de control]"));
+  }, [records]);
+
+  const latestRecords = records.slice(0, 20);
 
   const handleExport = async (format: "csv" | "xlsx") => {
     if (!accessToken) return;
@@ -105,46 +100,118 @@ function DoctorDashboard() {
   };
 
   return (
-    <main className="role-dashboard-shell">
-      <AuthStatusBar />
-      <section className="role-dashboard-header">
-        <span className="prevent-panel-badge">Panel médico</span>
-        <h1>Mis evaluaciones PREVENT</h1>
+    <div style={{ paddingTop: "22px" }}>
+      <section className="role-dashboard-header" style={{ marginBottom: "24px" }}>
+        <span className="prevent-panel-badge">Resumen Clínico</span>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: "900", margin: "8px 0 4px" }}>Mis Evaluaciones PREVENT</h1>
+        <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: 0 }}>
+          Monitoree la salud cardiovascular de su cohorte de pacientes y administre seguimientos preventivos.
+        </p>
       </section>
 
-      {error ? <div className="prevent-alert">{error}</div> : null}
+      {error ? <div className="prevent-alert" style={{ marginBottom: "20px" }}>{error}</div> : null}
 
-      <section className="role-kpi-grid">
-        <MetricCard label="Total pacientes" value={String(uniquePatients)} />
-        <MetricCard label="Total evaluaciones" value={String(records.length)} />
-        <MetricCard label="Registros privados" value={String(records.filter((record) => record.visibility_scope === "doctor_private").length)} />
+      {/* KPI Cards Grid */}
+      <section className="role-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "24px" }}>
+        <MetricCard label="Total Pacientes Registrados" value={String(uniquePatients)} icon="👥" />
+        <MetricCard label="Total Evaluaciones Realizadas" value={String(records.length)} icon="📈" />
+        <MetricCard label="Seguimientos de Control Activos" value={String(followUpAlerts.length)} icon="🔔" />
       </section>
 
-      <section className="role-actions">
-        <Link className="dashboard-button dashboard-button-primary" href="/">
-          Volver a calculadora
+      {/* Follow-up Alerts Widget */}
+      {followUpAlerts.length > 0 ? (
+        <section 
+          style={{ 
+            marginBottom: "24px", 
+            padding: "20px", 
+            borderRadius: "16px", 
+            background: "var(--warning-soft)", 
+            border: "1px solid rgba(217, 119, 6, 0.15)" 
+          }}
+        >
+          <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: "var(--warning)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>🔔</span> Pacientes en seguimiento de control activo ({followUpAlerts.length})
+          </h3>
+          <p style={{ fontSize: "0.85rem", color: "var(--muted)", margin: "4px 0 12px" }}>
+            Los siguientes pacientes tienen programado un control preventivo cercano:
+          </p>
+          <div style={{ display: "grid", gap: "10px" }}>
+            {followUpAlerts.slice(0, 4).map((alert) => (
+              <div 
+                key={alert.id} 
+                style={{ 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center", 
+                  padding: "10px 14px", 
+                  background: "#ffffff", 
+                  border: "1px solid var(--line)", 
+                  borderRadius: "10px",
+                  fontSize: "0.88rem"
+                }}
+              >
+                <div>
+                  Paciente ID: <strong style={{ color: "var(--text)" }}>{alert.patient_id ? `${alert.patient_id.slice(0, 8)}...` : "ID General"}</strong>
+                  <span style={{ color: "var(--muted-2)", marginLeft: "12px" }}>Evaluación: {formatDate(alert.created_at)}</span>
+                </div>
+                <strong style={{ color: "var(--primary-dark)" }}>CVD 10a: {formatClinicalRisk(alert.cvd_risk)}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Actions Bar */}
+      <section className="role-actions" style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "32px", alignItems: "center" }}>
+        <Link 
+          className="prevent-button prevent-button-primary" 
+          href="/doctor/calculator"
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: "800" }}
+        >
+          <span>🩺</span> Nueva Evaluación
         </Link>
-        <Link className="dashboard-button dashboard-button-secondary" href="/doctor/profile">
-          Mi Perfil
-        </Link>
-        <button className="dashboard-button dashboard-button-secondary" type="button" onClick={() => void handleExport("csv")} disabled={isExporting !== null}>
+        <button 
+          className="prevent-button prevent-button-secondary" 
+          type="button" 
+          onClick={() => void handleExport("csv")} 
+          disabled={isExporting !== null}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
           {isExporting === "csv" ? "Exportando..." : "Exportar CSV"}
         </button>
-        <button className="dashboard-button dashboard-button-secondary" type="button" onClick={() => void handleExport("xlsx")} disabled={isExporting !== null}>
-          {isExporting === "xlsx" ? "Exportando..." : "Exportar XLSX"}
+        <button 
+          className="prevent-button prevent-button-secondary" 
+          type="button" 
+          onClick={() => void handleExport("xlsx")} 
+          disabled={isExporting !== null}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
+          {isExporting === "xlsx" ? "Exportando..." : "Exportar Excel"}
         </button>
       </section>
 
-      <RecordsTable records={latestRecords} isLoading={isLoading} emptyMessage="No hay evaluaciones privadas registradas." />
-    </main>
+      {/* Recent Evaluations Table */}
+      <RecordsTable 
+        records={latestRecords} 
+        isLoading={isLoading} 
+        emptyMessage="No hay evaluaciones clínicas registradas en su cuenta." 
+      />
+    </div>
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
-    <article className="role-kpi">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <article className="prevent-card" style={{ padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+      <span style={{ fontSize: "2.2rem" }}>{icon}</span>
+      <div>
+        <span style={{ display: "block", color: "var(--muted)", fontSize: "0.82rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          {label}
+        </span>
+        <strong style={{ display: "block", color: "var(--text)", fontSize: "1.7rem", fontWeight: "900", marginTop: "4px" }}>
+          {value}
+        </strong>
+      </div>
     </article>
   );
 }
@@ -159,32 +226,62 @@ function RecordsTable({
   emptyMessage: string;
 }) {
   return (
-    <section className="role-table-section">
-      <h2>Últimas evaluaciones</h2>
-      {isLoading ? <p>Cargando registros...</p> : null}
-      {!isLoading && records.length === 0 ? <p>{emptyMessage}</p> : null}
+    <section className="role-table-section prevent-card" style={{ padding: "24px" }}>
+      <h2 style={{ fontSize: "1.1rem", fontWeight: "800", margin: "0 0 16px" }}>Últimas Evaluaciones Guardadas</h2>
+      {isLoading ? <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Cargando registros...</p> : null}
+      {!isLoading && records.length === 0 ? <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{emptyMessage}</p> : null}
       {records.length > 0 ? (
-        <div className="role-table-wrap">
-          <table className="role-table">
+        <div className="role-table-wrap" style={{ overflowX: "auto" }}>
+          <table className="role-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Médico</th>
-                <th>Edad</th>
-                <th>CVD 10a</th>
-                <th>Tipo</th>
+              <tr style={{ borderBottom: "2px solid var(--line)" }}>
+                <th style={{ padding: "12px 8px", fontSize: "0.85rem", fontWeight: "800", color: "var(--muted-2)" }}>Fecha</th>
+                <th style={{ padding: "12px 8px", fontSize: "0.85rem", fontWeight: "800", color: "var(--muted-2)" }}>Paciente ID</th>
+                <th style={{ padding: "12px 8px", fontSize: "0.85rem", fontWeight: "800", color: "var(--muted-2)" }}>Edad</th>
+                <th style={{ padding: "12px 8px", fontSize: "0.85rem", fontWeight: "800", color: "var(--muted-2)" }}>CVD 10a</th>
+                <th style={{ padding: "12px 8px", fontSize: "0.85rem", fontWeight: "800", color: "var(--muted-2)" }}>Seguimiento</th>
+                <th style={{ padding: "12px 8px", fontSize: "0.85rem", fontWeight: "800", color: "var(--muted-2)" }}>Tipo</th>
               </tr>
             </thead>
             <tbody>
-              {records.map((record) => (
-                <tr key={record.id}>
-                  <td>{formatDate(record.created_at)}</td>
-                  <td>{record.physician_name}</td>
-                  <td>{record.patient_age}</td>
-                  <td>{formatClinicalRisk(record.cvd_risk)}</td>
-                  <td>{record.visibility_scope ?? "No definido"}</td>
-                </tr>
-              ))}
+              {records.map((record) => {
+                const isFollowUp = record.notes?.includes("[Seguimiento de control]");
+                return (
+                  <tr key={record.id} style={{ borderBottom: "1px solid var(--line)" }}>
+                    <td style={{ padding: "12px 8px", fontSize: "0.9rem" }}>{formatDate(record.created_at)}</td>
+                    <td style={{ padding: "12px 8px", fontSize: "0.9rem", fontWeight: "700" }}>
+                      {record.patient_id ? `${record.patient_id.slice(0, 8)}...` : "General"}
+                    </td>
+                    <td style={{ padding: "12px 8px", fontSize: "0.9rem" }}>{record.patient_age} años</td>
+                    <td style={{ padding: "12px 8px", fontSize: "0.9rem", fontWeight: "700", color: "var(--primary-dark)" }}>
+                      {formatClinicalRisk(record.cvd_risk)}
+                    </td>
+                    <td style={{ padding: "12px 8px", fontSize: "0.9rem" }}>
+                      {isFollowUp ? (
+                        <span 
+                          className="profile-status-badge profile-status-complete"
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            fontSize: "0.75rem",
+                            fontWeight: "800",
+                            background: "var(--primary-soft)",
+                            color: "var(--primary-dark)"
+                          }}
+                        >
+                          Activo
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--muted-2)", fontSize: "0.85rem" }}>Inactivo</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "12px 8px", fontSize: "0.85rem", color: "var(--muted)" }}>
+                      {record.visibility_scope === "doctor_private" ? "Privado" : "Público"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

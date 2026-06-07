@@ -180,7 +180,7 @@ function DoctorProfileEditor() {
       </section>
 
       <section className="role-actions">
-        <Link className="dashboard-button dashboard-button-primary" href="/">
+        <Link className="dashboard-button dashboard-button-primary" href="/calculadora">
           Volver a la calculadora
         </Link>
         <Link className="dashboard-button dashboard-button-secondary" href="/doctor">
@@ -192,7 +192,7 @@ function DoctorProfileEditor() {
       {message ? (
         <div className="prevent-alert prevent-alert-soft prevent-alert-action">
           <span>{message}</span>
-          <Link className="dashboard-button dashboard-button-primary" href="/">
+          <Link className="dashboard-button dashboard-button-primary" href="/calculadora">
             Volver a la calculadora
           </Link>
         </div>
@@ -255,7 +255,7 @@ function DoctorProfileEditor() {
               <button className="dashboard-button dashboard-button-primary" type="submit" disabled={isSaving}>
                 {isSaving ? "Guardando..." : "Guardar perfil"}
               </button>
-              <Link className="dashboard-button dashboard-button-secondary" href="/">
+              <Link className="dashboard-button dashboard-button-secondary" href="/calculadora">
                 Volver a la calculadora
               </Link>
             </footer>
