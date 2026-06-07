@@ -5278,3 +5278,295 @@ button {
   font-size: 0.85rem;
 }
 
+/* ==========================================
+   PHASE 1 LANDING PAGE & CALCULATOR LIGHT THEME OVERRIDES
+   ========================================== */
+.theme-light .public-landing-shell {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.theme-light .public-landing-nav {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+
+.theme-light .public-landing-brand {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.theme-light .public-landing-nav a {
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.theme-light .public-landing-nav a:hover {
+  color: var(--primary);
+}
+
+.theme-light .public-landing-hero {
+  background: radial-gradient(circle at 100% 0%, rgba(13, 148, 136, 0.04), transparent 32rem), var(--bg-soft);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-light .public-landing-visual {
+  background: radial-gradient(circle at 50% 50%, rgba(13, 148, 136, 0.06), transparent 70%), var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.theme-light .public-landing-visual::after {
+  display: none;
+}
+
+.theme-light .public-landing-image {
+  position: relative !important;
+  width: 85% !important;
+  height: auto !important;
+  max-height: 280px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(13, 148, 136, 0.12));
+}
+
+.theme-light .public-landing-copy h1 {
+  color: var(--text);
+}
+
+.theme-light .public-landing-copy p {
+  color: var(--muted);
+}
+
+.theme-light .public-landing-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
+}
+
+.theme-light .public-landing-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(13, 148, 136, 0.28);
+}
+
+.theme-light .public-landing-card-professional {
+  background: var(--bg-soft);
+}
+
+.theme-light .public-landing-card span {
+  color: var(--primary);
+}
+
+.theme-light .public-landing-card h2,
+.theme-light .public-landing-about h2 {
+  color: var(--text);
+}
+
+.theme-light .public-landing-card p,
+.theme-light .public-landing-about p {
+  color: var(--muted);
+}
+
+.theme-light .public-landing-about {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Calculator Modal Results & Save Decision Modal overrides */
+.theme-light .prevent-results-modal-backdrop,
+.theme-light .prevent-save-decision-modal-backdrop {
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.theme-light .prevent-results-modal,
+.theme-light .prevent-save-decision-modal {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .prevent-results-modal-header h2,
+.theme-light .prevent-save-decision-modal h2 {
+  color: var(--text);
+}
+
+.theme-light .prevent-results-modal-header p,
+.theme-light .prevent-save-decision-modal p {
+  color: var(--muted);
+}
+
+.theme-light .prevent-digital-risk {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.theme-light .prevent-digital-risk::before {
+  opacity: 0.25;
+  mask-image: radial-gradient(circle at 78% 50%, #000 0 16rem, transparent 25rem);
+}
+
+.theme-light .prevent-digital-risk-copy span {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-color: rgba(13, 148, 136, 0.2);
+}
+
+.theme-light .prevent-digital-risk-copy h3 {
+  color: var(--text);
+}
+
+.theme-light .prevent-digital-risk-copy p,
+.theme-light .prevent-digital-risk-missing {
+  color: var(--muted);
+}
+
+.theme-light .prevent-digital-risk-readout strong {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.theme-light .prevent-digital-risk-readout span {
+  color: var(--muted-2);
+}
+
+.theme-light .prevent-digital-risk-track {
+  stroke: var(--line);
+}
+
+.theme-light .prevent-mini-risk-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+
+.theme-light .prevent-mini-risk-card strong {
+  color: var(--text);
+}
+
+.theme-light .prevent-mini-risk-card span {
+  color: var(--muted);
+}
+
+.theme-light .prevent-gauge-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.theme-light .prevent-complement-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.theme-light .prevent-responsible-note {
+  background: var(--primary-soft);
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  color: var(--primary-dark);
+}
+
+.theme-light .prevent-horizon-toggle,
+.theme-light .prevent-tab-row {
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.theme-light .prevent-horizon-toggle button,
+.theme-light .prevent-tab {
+  color: var(--muted);
+}
+
+.theme-light .prevent-horizon-toggle button.is-active,
+.theme-light .prevent-tab.is-active {
+  background: var(--primary);
+  color: #ffffff !important;
+}
+
+.theme-light .prevent-modal-close {
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.theme-light .prevent-modal-close:hover {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-color: rgba(13, 148, 136, 0.3);
+}
+
+/* Redesign Form and Hero logo limits */
+.theme-light .prevent-hero-card-banner {
+  padding: 12px 24px;
+}
+
+.theme-light .prevent-hero-logo-banner img {
+  max-height: 80px;
+}
+
+/* Warnings and highlights */
+.theme-light .prevent-alert {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.theme-light .prevent-alert-soft {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+.theme-light .prevent-input-warning {
+  border-color: rgba(217, 119, 6, 0.5);
+  background: var(--warning-soft);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.08);
+}
+
+.theme-light .prevent-field-warning {
+  color: var(--warning);
+}
+
+/* Checklist and Switch styling overrides */
+.theme-light .prevent-switch {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.theme-light .prevent-switch:hover {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: var(--bg-soft);
+}
+
+.theme-light .prevent-switch.is-active {
+  border-color: rgba(16, 185, 129, 0.38);
+  background: var(--success-soft);
+  color: var(--text);
+}
+
+.theme-light .prevent-switch-control {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.theme-light .prevent-switch.is-active .prevent-switch-control {
+  background: var(--primary);
+}
+
+/* BMI and eGFR inline widgets overrides */
+.theme-light .prevent-bmi-calculator {
+  background: var(--bg);
+  box-shadow: none;
+  border-color: var(--line);
+}
+
+.theme-light .prevent-egfr-calculator-note {
+  background: var(--primary-soft);
+  border-color: rgba(13, 148, 136, 0.2);
+  color: var(--muted);
+}
+
+

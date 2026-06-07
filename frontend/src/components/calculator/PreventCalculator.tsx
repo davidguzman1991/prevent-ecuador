@@ -1015,7 +1015,8 @@ export function PreventCalculator() {
   };
 
   return (
-    <main className="prevent-shell">
+    <div className="theme-light theme-light-wrapper">
+      <main className="prevent-shell">
         <PrivacyConsentModal />
 
         <div className="prevent-layout">
@@ -1117,10 +1118,11 @@ export function PreventCalculator() {
                 <Image
                   src="/logo%20hero.webp"
                   alt="PREVENT Ecuador"
-                  width={1280}
-                  height={520}
+                  width={240}
+                  height={60}
                   priority
-                  className="h-auto w-full object-contain"
+                  style={{ maxHeight: "60px", width: "auto", margin: "0 auto" }}
+                  className="h-auto object-contain"
                 />
               </div>
             </header>
@@ -1711,8 +1713,9 @@ export function PreventCalculator() {
             </footer>
         </div>
       ) : null}
-      <SiteFooter />
-    </main>
+        <SiteFooter />
+      </main>
+    </div>
   );
 }
 
