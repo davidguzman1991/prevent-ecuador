@@ -231,6 +231,33 @@ function isStructuredWarning(warning: PreventWarning | string): warning is Preve
   return typeof warning === "object" && warning !== null && "message" in warning;
 }
 
+function hasPendingDoctorProfile(currentUser: ReturnType<typeof useAuth>["currentUser"]): boolean {
+  if (currentUser?.role !== "doctor") {
+    return false;
+  }
+
+  const profile = currentUser.doctor_profile;
+  if (!profile) {
+    return true;
+  }
+
+  if (profile.profile_status === "pending" || profile.profile_status === "partial") {
+    return true;
+  }
+  if (profile.profile_status === "complete") {
+    return false;
+  }
+
+  return [
+    profile.display_name,
+    profile.specialty,
+    profile.phone,
+    profile.birth_date,
+    profile.province_code,
+    profile.city,
+  ].some((value) => !value?.trim());
+}
+
 function getWarningMessage(warning: PreventWarning | string): string {
   return isStructuredWarning(warning) ? warning.message : warning;
 }
@@ -501,6 +528,7 @@ export function PreventCalculator() {
   const clinicalHomeLabel =
     currentUser?.role === "global_admin" ? "Panel administrador" : "Mis evaluaciones";
   const isDoctorSession = currentUser?.role === "doctor";
+  const shouldShowPendingDoctorProfileCard = hasPendingDoctorProfile(currentUser);
 
   const handleAuthenticatedLogout = async () => {
     await signOut();
@@ -1040,6 +1068,22 @@ export function PreventCalculator() {
                   Cerrar sesión
                 </button>
               </div>
+            </section>
+          ) : null}
+
+          {shouldShowPendingDoctorProfileCard ? (
+            <section className="prevent-profile-reminder" aria-label="Perfil médico pendiente">
+              <div>
+                <span>Perfil médico pendiente</span>
+                <strong>Perfil médico pendiente</strong>
+                <p>
+                  Complete su perfil profesional para mejorar la identificación de sus
+                  evaluaciones y habilitar una experiencia completa en PREVENT Ecuador.
+                </p>
+              </div>
+              <Link className="prevent-button prevent-button-primary" href="/doctor/profile">
+                Completar perfil médico
+              </Link>
             </section>
           ) : null}
 

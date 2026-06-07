@@ -971,6 +971,53 @@ button {
   white-space: nowrap;
 }
 
+.prevent-profile-reminder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(142, 197, 255, 0.22);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(30, 136, 229, 0.18), transparent 18rem),
+    linear-gradient(135deg, rgba(11, 27, 51, 0.96), rgba(5, 11, 24, 0.94));
+  box-shadow: var(--shadow-sm);
+}
+
+.prevent-profile-reminder span {
+  display: block;
+  color: #8ec5ff;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.prevent-profile-reminder strong {
+  display: block;
+  margin-top: 4px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.prevent-profile-reminder p {
+  max-width: 66ch;
+  margin: 6px 0 0;
+  color: #c8d5e8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.prevent-profile-reminder .prevent-button {
+  min-height: 44px;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+
 .prevent-alert {
   padding: 14px 16px;
   border: 1px solid rgba(194, 65, 12, 0.18);
@@ -4061,6 +4108,14 @@ button {
 
   .prevent-clinical-session-actions .prevent-button {
     flex: 1 1 180px;
+  }
+
+  .prevent-profile-reminder {
+    grid-template-columns: 1fr;
+  }
+
+  .prevent-profile-reminder .prevent-button {
+    width: 100%;
   }
 
   .prevent-results-column {

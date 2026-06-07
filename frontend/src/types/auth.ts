@@ -9,6 +9,7 @@ export type DoctorProfile = {
   birth_date: string | null;
   province_code: string | null;
   province_name: string | null;
+  profile_status?: "pending" | "partial" | "complete";
 };
 
 export type CurrentUser = {
