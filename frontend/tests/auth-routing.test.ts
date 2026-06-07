@@ -9,6 +9,10 @@ const calculatorSource = readFileSync(
   new URL("../src/components/calculator/PreventCalculator.tsx", import.meta.url),
   "utf8",
 );
+const responsiveCalculatorSource = readFileSync(
+  new URL("../src/components/HomeResponsiveCalculator.tsx", import.meta.url),
+  "utf8",
+);
 const homePageSource = readFileSync(
   new URL("../src/app/page.tsx", import.meta.url),
   "utf8",
@@ -17,9 +21,17 @@ const calculatorPageSource = readFileSync(
   new URL("../src/app/calculadora/page.tsx", import.meta.url),
   "utf8",
 );
+const doctorCalculatorPageSource = readFileSync(
+  new URL("../src/app/doctor/calculator/page.tsx", import.meta.url),
+  "utf8",
+);
+const doctorLayoutSource = readFileSync(
+  new URL("../src/app/doctor/layout.tsx", import.meta.url),
+  "utf8",
+);
 
-test("doctor is redirected to calculator after login", () => {
-  assert.equal(homeForRole("doctor"), "/calculadora");
+test("doctor is redirected to professional calculator after login", () => {
+  assert.equal(homeForRole("doctor"), "/doctor/calculator");
 });
 
 test("global_admin is redirected to admin home after login", () => {
@@ -69,6 +81,36 @@ test("home route is public landing and calculator route reuses calculator", () =
   assert.match(homePageSource, /href="\/calculadora"/);
   assert.match(homePageSource, /href="\/login"/);
   assert.match(calculatorPageSource, /HomeResponsiveCalculator/);
+});
+
+test("public and doctor calculator wrappers are explicitly separated", () => {
+  assert.match(calculatorSource, /export function PublicPreventCalculator/);
+  assert.match(calculatorSource, /export function DoctorPreventCalculator/);
+  assert.match(calculatorSource, /function PreventCalculatorCore/);
+  assert.match(responsiveCalculatorSource, /PublicPreventCalculator/);
+  assert.doesNotMatch(responsiveCalculatorSource, /DoctorPreventCalculator/);
+  assert.match(doctorCalculatorPageSource, /DoctorPreventCalculator/);
+});
+
+test("public calculator mode does not expose doctor save behavior", () => {
+  assert.match(calculatorSource, /const isDoctorMode = mode === "doctor"/);
+  assert.match(calculatorSource, /const isDoctorSession = isDoctorMode && currentUser\?\.role === "doctor"/);
+  assert.match(calculatorSource, /isDoctorSession \? \(/);
+  assert.match(calculatorSource, /if \(isDoctorSession\) \{/);
+  assert.match(calculatorSource, /submitPreventPayload\(payload, false\)/);
+});
+
+test("doctor calculator can include private metadata", () => {
+  assert.match(calculatorSource, /payload\.patient_id = patientId\.trim\(\)/);
+  assert.match(calculatorSource, /followUpActive/);
+  assert.match(calculatorSource, /payload\.notes = combinedNotes\.trim\(\)/);
+  assert.match(calculatorSource, /desktop-doctor-toolbar/);
+});
+
+test("calculator route access is public while doctor calculator stays protected", () => {
+  assert.doesNotMatch(calculatorPageSource, /ProtectedRoute/);
+  assert.match(doctorLayoutSource, /ProtectedRoute requiredRole="doctor"/);
+  assert.match(doctorLayoutSource, /href: "\/doctor\/calculator"/);
 });
 
 test("calculator exposes link back to public home", () => {

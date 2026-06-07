@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { PreventCalculator } from "@/components/calculator/PreventCalculator";
+import { PublicPreventCalculator } from "@/components/calculator/PreventCalculator";
 import MobilePreventCalculator from "@/components/mobile/MobilePreventCalculator";
 
 const MOBILE_BREAKPOINT_PX = 768;
@@ -27,6 +27,5 @@ export function HomeResponsiveCalculator() {
     };
   }, []);
 
-  return isMobile ? <MobilePreventCalculator /> : <PreventCalculator />;
+  return isMobile ? <MobilePreventCalculator /> : <PublicPreventCalculator />;
 }
-

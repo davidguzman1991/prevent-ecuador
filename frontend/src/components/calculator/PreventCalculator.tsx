@@ -41,6 +41,7 @@ const showClinicalContext = false;
 
 type RiskHorizon = "10y" | "30y";
 type DoctorSavePreference = "save" | "skip";
+type PreventCalculatorMode = "public" | "doctor";
 type CkdEpiCalculatorState = {
   isOpen: boolean;
   creatinine: string;
@@ -479,7 +480,23 @@ function getMissingRiskMessage(
   return "Datos insuficientes para calcular este desenlace.";
 }
 
+type PreventCalculatorCoreProps = {
+  mode: PreventCalculatorMode;
+};
+
+export function PublicPreventCalculator() {
+  return <PreventCalculatorCore mode="public" />;
+}
+
+export function DoctorPreventCalculator() {
+  return <PreventCalculatorCore mode="doctor" />;
+}
+
 export function PreventCalculator() {
+  return <DoctorPreventCalculator />;
+}
+
+function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
   const router = useRouter();
   const { accessToken, currentUser, session, signOut } = useAuth();
   const [form, setForm] = useState<FormState>(initialFormState);
@@ -529,8 +546,11 @@ export function PreventCalculator() {
   const clinicalHomeHref = currentUser?.role === "global_admin" ? "/admin" : "/doctor";
   const clinicalHomeLabel =
     currentUser?.role === "global_admin" ? "Panel administrador" : "Mis evaluaciones";
-  const isDoctorSession = currentUser?.role === "doctor";
-  const shouldShowPendingDoctorProfileCard = hasPendingDoctorProfile(currentUser);
+  const isDoctorMode = mode === "doctor";
+  const isDoctorSession = isDoctorMode && currentUser?.role === "doctor";
+  const shouldShowPendingDoctorProfileCard =
+    isDoctorMode && hasPendingDoctorProfile(currentUser);
+  const shouldShowClinicalNavigation = isDoctorMode && Boolean(currentUser);
 
   const handleAuthenticatedLogout = async () => {
     await signOut();
@@ -1033,8 +1053,8 @@ export function PreventCalculator() {
               <Link className="prevent-dashboard-link" href="/">
                 Volver al inicio
               </Link>
-              <Link className="prevent-dashboard-link" href={currentUser ? clinicalHomeHref : "/login"}>
-                {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
+              <Link className="prevent-dashboard-link" href={shouldShowClinicalNavigation ? clinicalHomeHref : "/login"}>
+                {shouldShowClinicalNavigation ? clinicalHomeLabel : "Iniciar sesión"}
               </Link>
               <Link className="prevent-methodology-link" href="/metodologia">
                 Metodología
@@ -1066,8 +1086,8 @@ export function PreventCalculator() {
               <strong>Dr. David Guzmán</strong>
               <p>Médico · Investigador</p>
             </div>
-            <Link className="prevent-mobile-login-link" href={currentUser ? clinicalHomeHref : "/login"}>
-              {currentUser ? clinicalHomeLabel : "Iniciar sesión"}
+            <Link className="prevent-mobile-login-link" href={shouldShowClinicalNavigation ? clinicalHomeHref : "/login"}>
+              {shouldShowClinicalNavigation ? clinicalHomeLabel : "Iniciar sesión"}
             </Link>
             <Link className="prevent-mobile-login-link" href="/">
               Volver al inicio
@@ -1075,7 +1095,7 @@ export function PreventCalculator() {
           </aside>
 
           <section className="prevent-main-column" id="ingreso">
-            {currentUser ? (
+            {isDoctorMode && currentUser ? (
               <section className="prevent-clinical-session" aria-label="Sesión clínica activa">
                 <div>
                   <span>Sesión clínica activa</span>

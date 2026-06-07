@@ -1,6 +1,6 @@
 "use client";
 
-import { PreventCalculator } from "@/components/calculator/PreventCalculator";
+import { DoctorPreventCalculator } from "@/components/calculator/PreventCalculator";
 
 export default function DoctorCalculatorPage() {
   return (
@@ -12,7 +12,7 @@ export default function DoctorCalculatorPage() {
           Realice la evaluación cardio-reno-metabólica del paciente. Los resultados se guardarán automáticamente en su panel.
         </p>
       </header>
-      <PreventCalculator />
+      <DoctorPreventCalculator />
     </div>
   );
 }
