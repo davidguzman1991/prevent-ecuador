@@ -994,6 +994,21 @@ button {
   color: var(--warning);
 }
 
+.prevent-alert-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.prevent-alert-action .dashboard-button {
+  min-height: 40px;
+  padding-inline: 14px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+}
+
 .prevent-actions {
   display: flex;
   gap: 12px;

@@ -58,6 +58,7 @@ test("doctor profile page exposes editable professional profile fields", () => {
     "Cantón/Ciudad",
     "Institución",
     "Guardar perfil",
+    "Volver a la calculadora",
   ]) {
     assert.match(doctorProfilePage, new RegExp(label));
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { AuthStatusBar } from "@/components/AuthStatusBar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -178,8 +179,24 @@ function DoctorProfileEditor() {
         </p>
       </section>
 
+      <section className="role-actions">
+        <Link className="dashboard-button dashboard-button-primary" href="/">
+          Volver a la calculadora
+        </Link>
+        <Link className="dashboard-button dashboard-button-secondary" href="/doctor">
+          Mis evaluaciones
+        </Link>
+      </section>
+
       {error ? <div className="prevent-alert">{error}</div> : null}
-      {message ? <div className="prevent-alert prevent-alert-soft">{message}</div> : null}
+      {message ? (
+        <div className="prevent-alert prevent-alert-soft prevent-alert-action">
+          <span>{message}</span>
+          <Link className="dashboard-button dashboard-button-primary" href="/">
+            Volver a la calculadora
+          </Link>
+        </div>
+      ) : null}
 
       <section className="role-kpi-grid">
         <MetricCard label="Estado del perfil" value={profile ? profileStatusLabel(profile.profile_status) : "..."} />
@@ -238,6 +255,9 @@ function DoctorProfileEditor() {
               <button className="dashboard-button dashboard-button-primary" type="submit" disabled={isSaving}>
                 {isSaving ? "Guardando..." : "Guardar perfil"}
               </button>
+              <Link className="dashboard-button dashboard-button-secondary" href="/">
+                Volver a la calculadora
+              </Link>
             </footer>
           </form>
         ) : null}
