@@ -12,12 +12,13 @@ export default function HomePage() {
               PREVENT <span>Ecuador</span>
             </Link>
             <div className="integra-nav-links">
-              <Link href="#pilares">Pilares</Link>
-              <Link href="#calculadora-preview">Calculadora</Link>
-              <Link href="#profesional">Profesionales</Link>
+              <Link href="/">Inicio</Link>
+              <Link href="/calculadora">Calculadora</Link>
+              <Link href="#profesional">PREVENT Professional</Link>
               <Link href="#investigacion">Investigación</Link>
+              <Link href="/metodologia">Metodología</Link>
               <Link href="/login" className="integra-nav-btn">
-                Acceso Profesional
+                Acceso
               </Link>
             </div>
           </div>
@@ -27,12 +28,12 @@ export default function HomePage() {
         <header className="integra-hero">
           <div className="integra-hero-grid">
             <div className="integra-hero-left">
-              <span className="integra-badge">Plataforma Nacional</span>
+              <span className="integra-badge">PREVENT Ecuador</span>
               <h1 className="integra-hero-title">
-                Plataforma de Investigación Clínica y Cardiometabólica
+                Evaluación de Riesgo Clínico, Investigación y Salud Poblacional
               </h1>
               <p className="integra-hero-subtitle">
-                Fortaleciendo la práctica médica en el contexto ecuatoriano mediante la estandarización del riesgo y la recopilación de datos clínicos orientada a la investigación.
+                La plataforma médica unificada para la evaluación integral del riesgo cardiovascular, la estimación del riesgo de insuficiencia cardíaca y la prevención cardiometabólica en el Ecuador. Diseñada para integrar la práctica clínica del día a día, la investigación científica y la generación de datos epidemiológicos a escala nacional.
               </p>
               
               <div className="integra-hero-actions">
@@ -55,61 +56,63 @@ export default function HomePage() {
             </div>
 
             <div className="integra-hero-right">
-              {/* Visual Calculator Mockup Card */}
-              <div className="integra-mock-card">
-                <div className="integra-mock-card-header">
-                  <div className="integra-mock-dots">
-                    <span className="dot dot-red"></span>
-                    <span className="dot dot-yellow"></span>
-                    <span className="dot dot-green"></span>
+              {/* Visual Calculator Mockup Card - Entire Card is Clickable CTA */}
+              <Link href="/calculadora" className="integra-mock-card-link">
+                <div className="integra-mock-card">
+                  <div className="integra-mock-card-header">
+                    <div className="integra-mock-dots">
+                      <span className="dot dot-red"></span>
+                      <span className="dot dot-yellow"></span>
+                      <span className="dot dot-green"></span>
+                    </div>
+                    <span className="integra-mock-title">Calculadora de Riesgo</span>
                   </div>
-                  <span className="integra-mock-title">Calculadora de Riesgo</span>
-                </div>
-                <div className="integra-mock-card-body">
-                  <div className="integra-mock-field-row">
-                    <div className="integra-mock-field">
-                      <label>Edad</label>
-                      <div className="integra-mock-input">58</div>
+                  <div className="integra-mock-card-body">
+                    <div className="integra-mock-field-row">
+                      <div className="integra-mock-field">
+                        <label>Edad</label>
+                        <div className="integra-mock-input">58</div>
+                      </div>
+                      <div className="integra-mock-field">
+                        <label>Género</label>
+                        <div className="integra-mock-input">Femenino</div>
+                      </div>
                     </div>
                     <div className="integra-mock-field">
-                      <label>Género</label>
-                      <div className="integra-mock-input">Femenino</div>
+                      <label>Presión Arterial Sistólica</label>
+                      <div className="integra-mock-input">135 mmHg</div>
                     </div>
-                  </div>
-                  <div className="integra-mock-field">
-                    <label>Presión Arterial Sistólica</label>
-                    <div className="integra-mock-input">135 mmHg</div>
-                  </div>
-                  <div className="integra-mock-field-row">
-                    <div className="integra-mock-field">
-                      <label>Fumador</label>
-                      <div className="integra-mock-toggle active">Sí</div>
+                    <div className="integra-mock-field-row">
+                      <div className="integra-mock-field">
+                        <label>Fumador</label>
+                        <div className="integra-mock-toggle active">Sí</div>
+                      </div>
+                      <div className="integra-mock-field">
+                        <label>Diabetes</label>
+                        <div className="integra-mock-toggle active">Sí</div>
+                      </div>
                     </div>
-                    <div className="integra-mock-field">
-                      <label>Diabetes</label>
-                      <div className="integra-mock-toggle active">Sí</div>
+                    
+                    <div className="integra-mock-calc-btn">
+                      Calcular Riesgo
                     </div>
-                  </div>
-                  
-                  <Link href="/calculadora" className="integra-mock-calc-btn">
-                    Calcular Riesgo
-                  </Link>
 
-                  <div className="integra-mock-result-box">
-                    <div className="integra-mock-chart">
-                      <svg viewBox="0 0 100 40" className="integra-mock-sparkline" aria-hidden="true">
-                        <path d="M 0,35 Q 25,25 50,28 T 100,5" fill="none" stroke="#0d9488" strokeWidth="3" />
-                        <circle cx="100" cy="5" r="4" fill="#0d9488" />
-                      </svg>
-                    </div>
-                    <div className="integra-mock-result-text">
-                      <span className="result-label">Riesgo Estimado</span>
-                      <strong className="result-value">7.5%</strong>
-                      <span className="result-badge alert-moderate">Moderado</span>
+                    <div className="integra-mock-result-box">
+                      <div className="integra-mock-chart">
+                        <svg viewBox="0 0 100 40" className="integra-mock-sparkline" aria-hidden="true">
+                          <path d="M 0,35 Q 25,25 50,28 T 100,5" fill="none" stroke="#0d9488" strokeWidth="3" />
+                          <circle cx="100" cy="5" r="4" fill="#0d9488" />
+                        </svg>
+                      </div>
+                      <div className="integra-mock-result-text">
+                        <span className="result-label">Riesgo Estimado</span>
+                        <strong className="result-value">7.5%</strong>
+                        <span className="result-badge alert-moderate">Moderado</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </header>
@@ -128,21 +131,21 @@ export default function HomePage() {
             <div className="pillar-card">
               <div className="pillar-icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
                 </svg>
               </div>
-              <h3>Soporte de Decisión Clínica</h3>
-              <p>Herramientas dinámicas fundamentadas en consensos internacionales adaptados, que asisten al profesional durante la consulta médica.</p>
+              <h3>Evaluación de Riesgo</h3>
+              <p>Evaluación matemática precisa del eje cardiovascular, renal y metabólico para predecir eventos a 10 años y a lo largo de la vida.</p>
             </div>
 
             <div className="pillar-card">
               <div className="pillar-icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
                 </svg>
               </div>
-              <h3>Estratificación de Riesgo</h3>
-              <p>Evaluación matemática precisa del eje cardiovascular, renal y metabólico para predecir eventos a 10 años y a lo largo de la vida.</p>
+              <h3>Soporte de Decisión Clínica</h3>
+              <p>Herramientas dinámicas fundamentadas en consensos internacionales adaptados, que asisten al profesional durante la consulta médica.</p>
             </div>
 
             <div className="pillar-card">
