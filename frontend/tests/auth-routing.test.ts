@@ -117,6 +117,8 @@ test("public calculator submits an anonymous base PREVENT payload", () => {
     "egfr",
     "diabetes",
     "smoker",
+    "antihypertensive_use",
+    "statin_use",
     'model_variant: "base"',
   ]) {
     assert.match(publicPayload, new RegExp(requiredField.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -131,13 +133,11 @@ test("public calculator submits an anonymous base PREVENT payload", () => {
     "uacr",
     "hba1c",
     "sdi",
-    "antihypertensive_use",
-    "statin_use",
   ]) {
     assert.doesNotMatch(publicPayload, new RegExp(privateField));
   }
 
-  assert.match(calculatorSource, /if \(isPublicMode && form\.bmi\.trim\(\)\) \{/);
+  assert.match(calculatorSource, /if \(isPublicMode && !form\.bmi\.trim\(\)\) \{/);
   assert.match(calculatorSource, /payload\.bmi = parseClinicalNumber\(form\.bmi\)/);
 });
 
@@ -153,6 +153,8 @@ test("public calculator supports optional weight and height BMI without doctor m
   assert.match(calculatorSource, /function PublicBmiFields/);
   assert.match(calculatorSource, /Peso \(kg\)/);
   assert.match(calculatorSource, /Talla \(cm\)/);
+  assert.match(calculatorSource, /Tratamiento para presión arterial/);
+  assert.match(calculatorSource, /Tratamiento con estatina/);
   assert.match(calculatorSource, /IMC calculado/);
   assert.match(calculatorSource, /Para calcular riesgo de insuficiencia cardíaca, agregue peso y talla\./);
   assert.doesNotMatch(responsiveCalculatorSource, /DoctorPreventCalculator/);

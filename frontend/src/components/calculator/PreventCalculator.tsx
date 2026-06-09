@@ -1011,6 +1011,8 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
           egfr: parseClinicalNumber(form.egfr),
           diabetes: form.diabetes,
           smoker: form.smoker,
+          antihypertensive_use: form.antihypertensive_use,
+          statin_use: form.statin_use,
           model_variant: "base",
         }
       : {
@@ -1038,6 +1040,11 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
           patient_ethnicity: form.patient_ethnicity,
           patient_socioeconomic_level: form.patient_socioeconomic_level,
         };
+    if (isPublicMode && !form.bmi.trim()) {
+      setError("Ingrese peso y talla válidos para calcular IMC y completar el riesgo de insuficiencia cardíaca.");
+      setIsSubmitting(false);
+      return;
+    }
     if (isPublicMode && form.bmi.trim()) {
       payload.bmi = parseClinicalNumber(form.bmi);
     }
@@ -1420,6 +1427,22 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
                           />
                           <CheckboxField
                             label="Uso de estatinas"
+                            name="statin_use"
+                            checked={form.statin_use}
+                            onChange={handleInputChange}
+                          />
+                        </>
+                      ) : null}
+                      {isPublicMode ? (
+                        <>
+                          <CheckboxField
+                            label="Tratamiento para presión arterial"
+                            name="antihypertensive_use"
+                            checked={form.antihypertensive_use}
+                            onChange={handleInputChange}
+                          />
+                          <CheckboxField
+                            label="Tratamiento con estatina"
                             name="statin_use"
                             checked={form.statin_use}
                             onChange={handleInputChange}
@@ -2620,7 +2643,8 @@ function PublicBmiFields({
         min="1"
         step="0.1"
         placeholder="Ej. 70"
-        help="Opcional. Permite calcular riesgo de insuficiencia cardíaca."
+        required
+        help="Necesario para calcular el IMC y el riesgo de insuficiencia cardíaca."
       />
       <Field
         label="Talla (cm)"
@@ -2631,7 +2655,8 @@ function PublicBmiFields({
         min="1"
         step="0.1"
         placeholder="Ej. 170"
-        help="Opcional. Se usa solo para calcular IMC."
+        required
+        help="Necesaria para calcular el IMC y el riesgo de insuficiencia cardíaca."
       />
       <div
         className="prevent-helper-note prevent-helper-note-card"
