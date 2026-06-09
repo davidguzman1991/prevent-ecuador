@@ -289,8 +289,8 @@ export default function HomePage() {
                   <span>Simulaciones de riesgo</span>
                 </div>
                 <div className="stat-card">
-                  <strong>FHIR</strong>
-                  <span>Estándar interoperable</span>
+                  <strong>Registro Cardiometabólico</strong>
+                  <span>Construcción de evidencia ecuatoriana</span>
                 </div>
               </div>
               <Link href="/metodologia" className="integra-btn integra-btn-outline">
