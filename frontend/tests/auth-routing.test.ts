@@ -76,8 +76,8 @@ test("doctor calculator shows non-blocking profile reminder CTA", () => {
 
 test("home route is public landing and calculator route reuses calculator", () => {
   assert.match(homePageSource, /PREVENT Ecuador/);
-  assert.match(homePageSource, /Usar calculadora PREVENT/);
-  assert.match(homePageSource, /Acceder a PREVENT Profesional/);
+  assert.match(homePageSource, /Usar Calculadora/);
+  assert.match(homePageSource, /Acceso Profesional/);
   assert.match(homePageSource, /href="\/calculadora"/);
   assert.match(homePageSource, /href="\/login"/);
   assert.match(calculatorPageSource, /HomeResponsiveCalculator/);
@@ -94,10 +94,68 @@ test("public and doctor calculator wrappers are explicitly separated", () => {
 
 test("public calculator mode does not expose doctor save behavior", () => {
   assert.match(calculatorSource, /const isDoctorMode = mode === "doctor"/);
+  assert.match(calculatorSource, /const isPublicMode = mode === "public"/);
   assert.match(calculatorSource, /const isDoctorSession = isDoctorMode && currentUser\?\.role === "doctor"/);
   assert.match(calculatorSource, /isDoctorSession \? \(/);
   assert.match(calculatorSource, /if \(isDoctorSession\) \{/);
   assert.match(calculatorSource, /submitPreventPayload\(payload, false\)/);
+});
+
+test("public calculator submits an anonymous base PREVENT payload", () => {
+  const publicPayloadMatch = calculatorSource.match(
+    /const payload: Record<string, unknown> = isPublicMode\s+\? \{(?<payload>[\s\S]*?)\}\s+: \{/,
+  );
+  assert.ok(publicPayloadMatch?.groups?.payload);
+  const publicPayload = publicPayloadMatch.groups.payload;
+
+  for (const requiredField of [
+    "age",
+    "sex",
+    "total_cholesterol",
+    "hdl",
+    "sbp",
+    "egfr",
+    "diabetes",
+    "smoker",
+    'model_variant: "base"',
+  ]) {
+    assert.match(publicPayload, new RegExp(requiredField.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+
+  for (const privateField of [
+    "patient_id",
+    "physician_name",
+    "physician_specialty",
+    "patient_province_code",
+    "patient_health_coverage",
+    "uacr",
+    "hba1c",
+    "sdi",
+    "antihypertensive_use",
+    "statin_use",
+  ]) {
+    assert.doesNotMatch(publicPayload, new RegExp(privateField));
+  }
+
+  assert.match(calculatorSource, /if \(isPublicMode && form\.bmi\.trim\(\)\) \{/);
+  assert.match(calculatorSource, /payload\.bmi = parseClinicalNumber\(form\.bmi\)/);
+});
+
+test("public calculator hides doctor-only controls behind doctor mode", () => {
+  assert.match(calculatorSource, /\{isDoctorMode \? \(\s*<section className="prevent-mode-panel"/);
+  assert.match(calculatorSource, /\{isDoctorSession \? \(\s*<div className="desktop-doctor-toolbar">/);
+  assert.match(calculatorSource, /\{isDoctorMode \? \(\s*<BmiField/);
+  assert.match(calculatorSource, /\{isDoctorMode \? \(\s*<>\s*<FormSection\s+title="Datos geográficos para análisis poblacional"/);
+  assert.match(calculatorSource, /\{result && isDoctorMode \? \(/);
+});
+
+test("public calculator supports optional weight and height BMI without doctor metadata", () => {
+  assert.match(calculatorSource, /function PublicBmiFields/);
+  assert.match(calculatorSource, /Peso \(kg\)/);
+  assert.match(calculatorSource, /Talla \(cm\)/);
+  assert.match(calculatorSource, /IMC calculado/);
+  assert.match(calculatorSource, /Para calcular riesgo de insuficiencia cardíaca, agregue peso y talla\./);
+  assert.doesNotMatch(responsiveCalculatorSource, /DoctorPreventCalculator/);
 });
 
 test("doctor calculator can include private metadata", () => {
@@ -105,12 +163,30 @@ test("doctor calculator can include private metadata", () => {
   assert.match(calculatorSource, /followUpActive/);
   assert.match(calculatorSource, /payload\.notes = combinedNotes\.trim\(\)/);
   assert.match(calculatorSource, /desktop-doctor-toolbar/);
+  assert.match(calculatorSource, /Guardar evaluación/);
+  assert.match(calculatorSource, /Imprimir \/ guardar PDF/);
 });
 
 test("calculator route access is public while doctor calculator stays protected", () => {
   assert.doesNotMatch(calculatorPageSource, /ProtectedRoute/);
   assert.match(doctorLayoutSource, /ProtectedRoute requiredRole="doctor"/);
   assert.match(doctorLayoutSource, /href: "\/doctor\/calculator"/);
+});
+
+test("public calculator displays CVD ASCVD and HF risks at 10 and 30 years", () => {
+  assert.match(calculatorSource, /function PublicResultsPanel/);
+  assert.match(calculatorSource, /function PublicRiskDetails/);
+  assert.match(calculatorSource, /Global CVD 10 años/);
+  for (const resultLabel of [
+    "CVD 10 years",
+    "CVD 30 years",
+    "ASCVD 10 years",
+    "ASCVD 30 years",
+    "HF 10 years",
+    "HF 30 years",
+  ]) {
+    assert.match(calculatorSource, new RegExp(resultLabel));
+  }
 });
 
 test("calculator exposes link back to public home", () => {

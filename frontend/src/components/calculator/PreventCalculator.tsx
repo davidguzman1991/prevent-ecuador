@@ -47,6 +47,11 @@ type CkdEpiCalculatorState = {
   creatinine: string;
   error: string;
 };
+type PublicBmiInputState = {
+  weightKg: string;
+  heightCm: string;
+  error: string;
+};
 
 const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = {
   age: {
@@ -132,6 +137,12 @@ const initialBmiCalculatorState: BmiCalculatorState = {
 const initialCkdEpiCalculatorState: CkdEpiCalculatorState = {
   isOpen: false,
   creatinine: "",
+  error: "",
+};
+
+const initialPublicBmiInputState: PublicBmiInputState = {
+  weightKg: "",
+  heightCm: "",
   error: "",
 };
 
@@ -519,6 +530,9 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
   const [ckdEpiCalculator, setCkdEpiCalculator] = useState<CkdEpiCalculatorState>(
     initialCkdEpiCalculatorState,
   );
+  const [publicBmiInput, setPublicBmiInput] = useState<PublicBmiInputState>(
+    initialPublicBmiInputState,
+  );
   const [usesCustomSpecialty, setUsesCustomSpecialty] = useState(false);
   const [patientId, setPatientId] = useState("");
   const [followUpActive, setFollowUpActive] = useState(false);
@@ -547,6 +561,7 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
   const clinicalHomeLabel =
     currentUser?.role === "global_admin" ? "Panel administrador" : "Mis evaluaciones";
   const isDoctorMode = mode === "doctor";
+  const isPublicMode = mode === "public";
   const isDoctorSession = isDoctorMode && currentUser?.role === "doctor";
   const shouldShowPendingDoctorProfileCard =
     isDoctorMode && hasPendingDoctorProfile(currentUser);
@@ -752,6 +767,40 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
     }
   };
 
+  const handlePublicBmiInputChange = (
+    field: "weightKg" | "heightCm",
+    value: string,
+  ) => {
+    const nextInput = {
+      ...publicBmiInput,
+      [field]: value,
+      error: "",
+    };
+    const hasWeight = nextInput.weightKg.trim().length > 0;
+    const hasHeight = nextInput.heightCm.trim().length > 0;
+
+    if (!hasWeight || !hasHeight) {
+      setPublicBmiInput(nextInput);
+      updateFormValue("bmi", "");
+      return;
+    }
+
+    try {
+      const nextBmi = calculateBmiFromWeightAndHeight(
+        nextInput.weightKg,
+        nextInput.heightCm,
+      );
+      setPublicBmiInput(nextInput);
+      updateFormValue("bmi", nextBmi);
+    } catch {
+      setPublicBmiInput({
+        ...nextInput,
+        error: "Ingrese peso y talla válidos para calcular IMC.",
+      });
+      updateFormValue("bmi", "");
+    }
+  };
+
   const updateEgfrValue = (nextEgfr: string) => {
     const nextFormState = {
       ...form,
@@ -832,6 +881,7 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
     setSubmitFeedback("");
     setHasUncalculatedChanges(false);
     setBmiCalculator(initialBmiCalculatorState);
+    setPublicBmiInput(initialPublicBmiInputState);
     setCkdEpiCalculator(initialCkdEpiCalculatorState);
     setUsesCustomSpecialty(false);
     setPatientId("");
@@ -951,31 +1001,46 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
     setRiskType("cvd");
     setHasUncalculatedChanges(false);
 
-    const payload: Record<string, unknown> = {
-      age: parseClinicalNumber(form.age),
-      sex: form.sex,
-      total_cholesterol: parseClinicalNumber(form.total_cholesterol),
-      hdl: parseClinicalNumber(form.hdl),
-      sbp: parseClinicalNumber(form.sbp),
-      egfr: parseClinicalNumber(form.egfr),
-      bmi: parseOptionalClinicalNumber(form.bmi),
-      uacr: parseOptionalClinicalNumber(form.uacr),
-      hba1c: parseOptionalClinicalNumber(form.hba1c),
-      sdi: parseOptionalClinicalNumber(form.sdi),
-      diabetes: form.diabetes,
-      smoker: form.smoker,
-      antihypertensive_use: form.antihypertensive_use,
-      statin_use: form.statin_use,
-      physician_name: form.physician_name.trim(),
-      physician_specialty: form.physician_specialty.trim(),
-      patient_area_type: form.patient_area_type,
-      patient_geo_source: form.patient_geo_source,
-      patient_health_coverage: form.patient_health_coverage,
-      patient_education_level: form.patient_education_level,
-      patient_employment_status: form.patient_employment_status,
-      patient_ethnicity: form.patient_ethnicity,
-      patient_socioeconomic_level: form.patient_socioeconomic_level,
-    };
+    const payload: Record<string, unknown> = isPublicMode
+      ? {
+          age: parseClinicalNumber(form.age),
+          sex: form.sex,
+          total_cholesterol: parseClinicalNumber(form.total_cholesterol),
+          hdl: parseClinicalNumber(form.hdl),
+          sbp: parseClinicalNumber(form.sbp),
+          egfr: parseClinicalNumber(form.egfr),
+          diabetes: form.diabetes,
+          smoker: form.smoker,
+          model_variant: "base",
+        }
+      : {
+          age: parseClinicalNumber(form.age),
+          sex: form.sex,
+          total_cholesterol: parseClinicalNumber(form.total_cholesterol),
+          hdl: parseClinicalNumber(form.hdl),
+          sbp: parseClinicalNumber(form.sbp),
+          egfr: parseClinicalNumber(form.egfr),
+          bmi: parseOptionalClinicalNumber(form.bmi),
+          uacr: parseOptionalClinicalNumber(form.uacr),
+          hba1c: parseOptionalClinicalNumber(form.hba1c),
+          sdi: parseOptionalClinicalNumber(form.sdi),
+          diabetes: form.diabetes,
+          smoker: form.smoker,
+          antihypertensive_use: form.antihypertensive_use,
+          statin_use: form.statin_use,
+          physician_name: form.physician_name.trim(),
+          physician_specialty: form.physician_specialty.trim(),
+          patient_area_type: form.patient_area_type,
+          patient_geo_source: form.patient_geo_source,
+          patient_health_coverage: form.patient_health_coverage,
+          patient_education_level: form.patient_education_level,
+          patient_employment_status: form.patient_employment_status,
+          patient_ethnicity: form.patient_ethnicity,
+          patient_socioeconomic_level: form.patient_socioeconomic_level,
+        };
+    if (isPublicMode && form.bmi.trim()) {
+      payload.bmi = parseClinicalNumber(form.bmi);
+    }
     if (isDoctorSession) {
       if (patientId.trim()) {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -991,15 +1056,15 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
         payload.notes = combinedNotes.trim();
       }
     }
-    if (selectedProvince) {
+    if (!isPublicMode && selectedProvince) {
       payload.patient_province_code = selectedProvince.code;
       payload.patient_province_name = selectedProvince.name;
     }
-    if (selectedCanton) {
+    if (!isPublicMode && selectedCanton) {
       payload.patient_canton_code = selectedCanton.code;
       payload.patient_canton_name = selectedCanton.name;
     }
-    if (manualVariantSelection && form.model_variant !== "auto") {
+    if (!isPublicMode && manualVariantSelection && form.model_variant !== "auto") {
       payload.model_variant = form.model_variant;
     }
 
@@ -1149,37 +1214,39 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
 
             <div className="desktop-split-layout">
               <div className="desktop-form-column">
-                <section className="prevent-mode-panel" aria-label="Selector de modo del modelo">
-                  <span className="prevent-mode-icon" aria-hidden="true">⚙</span>
-                  <label className="prevent-mode-field">
-                    <span className="prevent-mode-label">Modo de cálculo</span>
-                    <select
-                      className="prevent-mode-select"
-                      value={manualVariantSelection ? "manual" : "auto"}
-                      onChange={handleCalculationModeChange}
-                    >
-                      <option value="auto">Automático</option>
-                      <option value="manual">Manual</option>
-                    </select>
-                  </label>
-                  {manualVariantSelection ? (
+                {isDoctorMode ? (
+                  <section className="prevent-mode-panel" aria-label="Selector de modo del modelo">
+                    <span className="prevent-mode-icon" aria-hidden="true">⚙</span>
                     <label className="prevent-mode-field">
-                      <span className="prevent-mode-label">Variante</span>
+                      <span className="prevent-mode-label">Modo de cálculo</span>
                       <select
                         className="prevent-mode-select"
-                        name="model_variant"
-                        value={form.model_variant}
-                        onChange={handleInputChange}
+                        value={manualVariantSelection ? "manual" : "auto"}
+                        onChange={handleCalculationModeChange}
                       >
-                        <option value="base">Base</option>
-                        <option value="uacr">UACR</option>
-                        <option value="hba1c">HbA1c</option>
-                        <option value="sdi">SDI</option>
-                        <option value="full">Full</option>
+                        <option value="auto">Automático</option>
+                        <option value="manual">Manual</option>
                       </select>
                     </label>
-                  ) : null}
-                </section>
+                    {manualVariantSelection ? (
+                      <label className="prevent-mode-field">
+                        <span className="prevent-mode-label">Variante</span>
+                        <select
+                          className="prevent-mode-select"
+                          name="model_variant"
+                          value={form.model_variant}
+                          onChange={handleInputChange}
+                        >
+                          <option value="base">Base</option>
+                          <option value="uacr">UACR</option>
+                          <option value="hba1c">HbA1c</option>
+                          <option value="sdi">SDI</option>
+                          <option value="full">Full</option>
+                        </select>
+                      </label>
+                    ) : null}
+                  </section>
+                ) : null}
 
                 <form className="prevent-form" onSubmit={handleSubmit} noValidate style={{ marginTop: "16px" }}>
                   {isDoctorSession ? (
@@ -1297,22 +1364,31 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
                         validationRule={FIELD_VALIDATION_RULES.egfr}
                         warning={getFieldWarning(form, "egfr")}
                       />
-                      <BmiField
-                        value={form.bmi}
-                        onChange={handleInputChange}
-                        calculator={bmiCalculator}
-                        onToggleCalculator={() =>
-                          setBmiCalculator((current) => ({
-                            ...current,
-                            isOpen: !current.isOpen,
-                            error: "",
-                          }))
-                        }
-                        onCalculatorChange={handleBmiCalculatorChange}
-                        onCalculate={handleCalculateBmi}
-                        validationRule={FIELD_VALIDATION_RULES.bmi}
-                        warning={bmiWarning}
-                      />
+                      {isDoctorMode ? (
+                        <BmiField
+                          value={form.bmi}
+                          onChange={handleInputChange}
+                          calculator={bmiCalculator}
+                          onToggleCalculator={() =>
+                            setBmiCalculator((current) => ({
+                              ...current,
+                              isOpen: !current.isOpen,
+                              error: "",
+                            }))
+                          }
+                          onCalculatorChange={handleBmiCalculatorChange}
+                          onCalculate={handleCalculateBmi}
+                          validationRule={FIELD_VALIDATION_RULES.bmi}
+                          warning={bmiWarning}
+                        />
+                      ) : null}
+                      {isPublicMode ? (
+                        <PublicBmiFields
+                          input={publicBmiInput}
+                          calculatedBmi={form.bmi}
+                          onChange={handlePublicBmiInputChange}
+                        />
+                      ) : null}
                     </div>
                   </FormSection>
 
@@ -1334,192 +1410,200 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
                         checked={form.smoker}
                         onChange={handleInputChange}
                       />
-                      <CheckboxField
-                        label="Antihipertensivos"
-                        name="antihypertensive_use"
-                        checked={form.antihypertensive_use}
-                        onChange={handleInputChange}
-                      />
-                      <CheckboxField
-                        label="Uso de estatinas"
-                        name="statin_use"
-                        checked={form.statin_use}
-                        onChange={handleInputChange}
-                      />
+                      {isDoctorMode ? (
+                        <>
+                          <CheckboxField
+                            label="Antihipertensivos"
+                            name="antihypertensive_use"
+                            checked={form.antihypertensive_use}
+                            onChange={handleInputChange}
+                          />
+                          <CheckboxField
+                            label="Uso de estatinas"
+                            name="statin_use"
+                            checked={form.statin_use}
+                            onChange={handleInputChange}
+                          />
+                        </>
+                      ) : null}
                     </div>
                   </FormSection>
 
-                  <FormSection
-                    title="Datos geográficos para análisis poblacional"
-                    description="Estos datos permiten analizar la distribución territorial del riesgo cardio-reno-metabólico. No reemplazan la evaluación clínica individual."
-                    icon="geo"
-                  >
-                    <div className="prevent-form-grid">
-                      <SelectField
-                        label="Provincia del paciente"
-                        name="patient_province_code"
-                        value={form.patient_province_code}
-                        onChange={handleProvinceChange}
-                        options={[
-                          { label: "No especificada", value: "" },
-                          ...ECUADOR_PROVINCES.map((province) => ({
-                            label: province.name,
-                            value: province.code,
-                          })),
-                        ]}
-                      />
-                      <SelectField
-                        label="Cantón del paciente"
-                        name="patient_canton_code"
-                        value={form.patient_canton_code}
-                        onChange={handleInputChange}
-                        disabled={!form.patient_province_code}
-                        options={[
-                          {
-                            label: form.patient_province_code
-                              ? "No especificado"
-                              : "Seleccione provincia primero",
-                            value: "",
-                          },
-                          ...cantonOptions.map((canton) => ({
-                            label: canton.name,
-                            value: canton.code,
-                          })),
-                        ]}
-                      />
-                      <SelectField
-                        label="Zona de residencia"
-                        name="patient_area_type"
-                        value={form.patient_area_type}
-                        onChange={handleInputChange}
-                        options={[
-                          { label: "No especificado", value: "unknown" },
-                          { label: "Urbana", value: "urban" },
-                          { label: "Rural", value: "rural" },
-                        ]}
-                      />
-                      <SelectField
-                        label="Fuente del dato geográfico"
-                        name="patient_geo_source"
-                        value={form.patient_geo_source}
-                        onChange={handleInputChange}
-                        options={[
-                          { label: "Reportado por paciente", value: "self_reported" },
-                          { label: "Asignado por clínica", value: "clinic_assigned" },
-                          { label: "Importado", value: "imported" },
-                          { label: "No especificado", value: "unknown" },
-                        ]}
-                      />
-                    </div>
-                  </FormSection>
+                  {isDoctorMode ? (
+                    <>
+                      <FormSection
+                        title="Datos geográficos para análisis poblacional"
+                        description="Estos datos permiten analizar la distribución territorial del riesgo cardio-reno-metabólico. No reemplazan la evaluación clínica individual."
+                        icon="geo"
+                      >
+                        <div className="prevent-form-grid">
+                          <SelectField
+                            label="Provincia del paciente"
+                            name="patient_province_code"
+                            value={form.patient_province_code}
+                            onChange={handleProvinceChange}
+                            options={[
+                              { label: "No especificada", value: "" },
+                              ...ECUADOR_PROVINCES.map((province) => ({
+                                label: province.name,
+                                value: province.code,
+                              })),
+                            ]}
+                          />
+                          <SelectField
+                            label="Cantón del paciente"
+                            name="patient_canton_code"
+                            value={form.patient_canton_code}
+                            onChange={handleInputChange}
+                            disabled={!form.patient_province_code}
+                            options={[
+                              {
+                                label: form.patient_province_code
+                                  ? "No especificado"
+                                  : "Seleccione provincia primero",
+                                value: "",
+                              },
+                              ...cantonOptions.map((canton) => ({
+                                label: canton.name,
+                                value: canton.code,
+                              })),
+                            ]}
+                          />
+                          <SelectField
+                            label="Zona de residencia"
+                            name="patient_area_type"
+                            value={form.patient_area_type}
+                            onChange={handleInputChange}
+                            options={[
+                              { label: "No especificado", value: "unknown" },
+                              { label: "Urbana", value: "urban" },
+                              { label: "Rural", value: "rural" },
+                            ]}
+                          />
+                          <SelectField
+                            label="Fuente del dato geográfico"
+                            name="patient_geo_source"
+                            value={form.patient_geo_source}
+                            onChange={handleInputChange}
+                            options={[
+                              { label: "Reportado por paciente", value: "self_reported" },
+                              { label: "Asignado por clínica", value: "clinic_assigned" },
+                              { label: "Importado", value: "imported" },
+                              { label: "No especificado", value: "unknown" },
+                            ]}
+                          />
+                        </div>
+                      </FormSection>
 
-                  <FormSection
-                    title="Determinantes sociales de salud (Opcional)"
-                    description="Variables para análisis epidemiológico y métricas poblacionales futuras. No modifican el cálculo PREVENT individual."
-                    icon="social"
-                  >
-                    <div className="prevent-form-grid">
-                      <SelectField
-                        label="Cobertura sanitaria habitual"
-                        name="patient_health_coverage"
-                        value={form.patient_health_coverage}
-                        onChange={handleInputChange}
-                        options={HEALTH_COVERAGE_OPTIONS}
-                      />
-                      <SelectField
-                        label="Nivel educativo"
-                        name="patient_education_level"
-                        value={form.patient_education_level}
-                        onChange={handleInputChange}
-                        options={EDUCATION_LEVEL_OPTIONS}
-                      />
-                      <SelectField
-                        label="Situación laboral"
-                        name="patient_employment_status"
-                        value={form.patient_employment_status}
-                        onChange={handleInputChange}
-                        options={EMPLOYMENT_STATUS_OPTIONS}
-                      />
-                      <SelectField
-                        label="Autoidentificación étnica"
-                        name="patient_ethnicity"
-                        value={form.patient_ethnicity}
-                        onChange={handleInputChange}
-                        options={ETHNICITY_OPTIONS}
-                      />
-                      <SelectField
-                        label="Nivel socioeconómico percibido"
-                        name="patient_socioeconomic_level"
-                        value={form.patient_socioeconomic_level}
-                        onChange={handleInputChange}
-                        options={SOCIOECONOMIC_LEVEL_OPTIONS}
-                      />
-                    </div>
-                  </FormSection>
+                      <FormSection
+                        title="Determinantes sociales de salud (Opcional)"
+                        description="Variables para análisis epidemiológico y métricas poblacionales futuras. No modifican el cálculo PREVENT individual."
+                        icon="social"
+                      >
+                        <div className="prevent-form-grid">
+                          <SelectField
+                            label="Cobertura sanitaria habitual"
+                            name="patient_health_coverage"
+                            value={form.patient_health_coverage}
+                            onChange={handleInputChange}
+                            options={HEALTH_COVERAGE_OPTIONS}
+                          />
+                          <SelectField
+                            label="Nivel educativo"
+                            name="patient_education_level"
+                            value={form.patient_education_level}
+                            onChange={handleInputChange}
+                            options={EDUCATION_LEVEL_OPTIONS}
+                          />
+                          <SelectField
+                            label="Situación laboral"
+                            name="patient_employment_status"
+                            value={form.patient_employment_status}
+                            onChange={handleInputChange}
+                            options={EMPLOYMENT_STATUS_OPTIONS}
+                          />
+                          <SelectField
+                            label="Autoidentificación étnica"
+                            name="patient_ethnicity"
+                            value={form.patient_ethnicity}
+                            onChange={handleInputChange}
+                            options={ETHNICITY_OPTIONS}
+                          />
+                          <SelectField
+                            label="Nivel socioeconómico percibido"
+                            name="patient_socioeconomic_level"
+                            value={form.patient_socioeconomic_level}
+                            onChange={handleInputChange}
+                            options={SOCIOECONOMIC_LEVEL_OPTIONS}
+                          />
+                        </div>
+                      </FormSection>
 
-                  <FormSection
-                    title="BIOMARCADORES OPCIONALES"
-                    description="Variables adicionales para variantes extendidas del modelo."
-                    icon="biomarker"
-                  >
-                    <div className="prevent-form-grid">
-                      <Field
-                        label="Relación albúmina/creatinina urinaria (UACR)"
-                        name="uacr"
-                        type="number"
-                        value={form.uacr}
-                        onChange={handleInputChange}
-                        step="0.1"
-                        help="Útil para las variantes UACR y FULL."
-                        guidance="Opcional para variantes UACR/FULL; interprete según contexto clínico."
-                      />
-                      <Field
-                        label="Hemoglobina glicosilada (HbA1c)"
-                        name="hba1c"
-                        type="text"
-                        value={form.hba1c}
-                        onChange={handleInputChange}
-                        inputMode="decimal"
-                        step="0.1"
-                        help="Útil para las variantes HbA1c y FULL."
-                        guidance="Acepta coma o punto decimal. Opcional para variantes HbA1c/FULL."
-                      />
-                      <Field
-                        label="Índice social (SDI, opcional)"
-                        name="sdi"
-                        type="number"
-                        value={form.sdi}
-                        onChange={handleInputChange}
-                        min="1"
-                        step="1"
-                        help="Decil 1 a 10; útil para las variantes SDI y FULL."
-                      />
-                    </div>
-                  </FormSection>
+                      <FormSection
+                        title="BIOMARCADORES OPCIONALES"
+                        description="Variables adicionales para variantes extendidas del modelo."
+                        icon="biomarker"
+                      >
+                        <div className="prevent-form-grid">
+                          <Field
+                            label="Relación albúmina/creatinina urinaria (UACR)"
+                            name="uacr"
+                            type="number"
+                            value={form.uacr}
+                            onChange={handleInputChange}
+                            step="0.1"
+                            help="Útil para las variantes UACR y FULL."
+                            guidance="Opcional para variantes UACR/FULL; interprete según contexto clínico."
+                          />
+                          <Field
+                            label="Hemoglobina glicosilada (HbA1c)"
+                            name="hba1c"
+                            type="text"
+                            value={form.hba1c}
+                            onChange={handleInputChange}
+                            inputMode="decimal"
+                            step="0.1"
+                            help="Útil para las variantes HbA1c y FULL."
+                            guidance="Acepta coma o punto decimal. Opcional para variantes HbA1c/FULL."
+                          />
+                          <Field
+                            label="Índice social (SDI, opcional)"
+                            name="sdi"
+                            type="number"
+                            value={form.sdi}
+                            onChange={handleInputChange}
+                            min="1"
+                            step="1"
+                            help="Decil 1 a 10; útil para las variantes SDI y FULL."
+                          />
+                        </div>
+                      </FormSection>
 
-                  <FormSection
-                    title="PROFESIONAL RESPONSABLE"
-                    description="Datos para trazabilidad del informe clínico."
-                    icon="physician"
-                    defaultOpen
-                  >
-                    <div className="prevent-form-grid">
-                      <Field
-                        label="Nombre del médico"
-                        name="physician_name"
-                        type="text"
-                        value={form.physician_name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                      <PhysicianSpecialtyField
-                        value={form.physician_specialty}
-                        usesCustomSpecialty={usesCustomSpecialty}
-                        onSelectChange={handleSpecialtySelectionChange}
-                        onCustomChange={handleInputChange}
-                      />
-                    </div>
-                  </FormSection>
+                      <FormSection
+                        title="PROFESIONAL RESPONSABLE"
+                        description="Datos para trazabilidad del informe clínico."
+                        icon="physician"
+                        defaultOpen
+                      >
+                        <div className="prevent-form-grid">
+                          <Field
+                            label="Nombre del médico"
+                            name="physician_name"
+                            type="text"
+                            value={form.physician_name}
+                            onChange={handleInputChange}
+                            required
+                          />
+                          <PhysicianSpecialtyField
+                            value={form.physician_specialty}
+                            usesCustomSpecialty={usesCustomSpecialty}
+                            onSelectChange={handleSpecialtySelectionChange}
+                            onCustomChange={handleInputChange}
+                          />
+                        </div>
+                      </FormSection>
+                    </>
+                  ) : null}
 
                   {variantHelperMessage ? (
                     <p className="prevent-helper-note prevent-helper-note-card">{variantHelperMessage}</p>
@@ -1554,17 +1638,25 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
 
               <div className="desktop-sticky-results">
                 {result ? (
-                  <DesktopResultsPanel
-                    result={result}
-                    riskType={riskType}
-                    horizon={riskHorizon}
-                    hasUncalculatedChanges={hasUncalculatedChanges}
-                    canPrint={Boolean(recordId)}
-                    onRiskTypeChange={setRiskType}
-                    onHorizonChange={setRiskHorizon}
-                    onNewCalculation={handleResetCalculation}
-                    onPrint={handlePrintReport}
-                  />
+                  isPublicMode ? (
+                    <PublicResultsPanel
+                      result={result}
+                      hasUncalculatedChanges={hasUncalculatedChanges}
+                      onNewCalculation={handleResetCalculation}
+                    />
+                  ) : (
+                    <DesktopResultsPanel
+                      result={result}
+                      riskType={riskType}
+                      horizon={riskHorizon}
+                      hasUncalculatedChanges={hasUncalculatedChanges}
+                      canPrint={Boolean(recordId)}
+                      onRiskTypeChange={setRiskType}
+                      onHorizonChange={setRiskHorizon}
+                      onNewCalculation={handleResetCalculation}
+                      onPrint={handlePrintReport}
+                    />
+                  )
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "340px", textAlign: "center", color: "var(--muted)", padding: "20px" }}>
                     <span style={{ fontSize: "3.2rem", marginBottom: "16px" }}>🩺</span>
@@ -1633,21 +1725,31 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
           </div>
         ) : null}
         {result && isResultsModalOpen ? (
-          <ResultsModal
-            result={result}
-            riskType={riskType}
-            horizon={riskHorizon}
-            hasUncalculatedChanges={hasUncalculatedChanges}
-            canPrint={Boolean(recordId)}
-            onRiskTypeChange={setRiskType}
-            onHorizonChange={setRiskHorizon}
-            onClose={() => setIsResultsModalOpen(false)}
-            onEditData={handleEditResultData}
-            onNewCalculation={handleResetCalculation}
-            onPrint={handlePrintReport}
-          />
+          isPublicMode ? (
+            <PublicResultsModal
+              result={result}
+              hasUncalculatedChanges={hasUncalculatedChanges}
+              onClose={() => setIsResultsModalOpen(false)}
+              onEditData={handleEditResultData}
+              onNewCalculation={handleResetCalculation}
+            />
+          ) : (
+            <ResultsModal
+              result={result}
+              riskType={riskType}
+              horizon={riskHorizon}
+              hasUncalculatedChanges={hasUncalculatedChanges}
+              canPrint={Boolean(recordId)}
+              onRiskTypeChange={setRiskType}
+              onHorizonChange={setRiskHorizon}
+              onClose={() => setIsResultsModalOpen(false)}
+              onEditData={handleEditResultData}
+              onNewCalculation={handleResetCalculation}
+              onPrint={handlePrintReport}
+            />
+          )
         ) : null}
-        {result ? (
+        {result && isDoctorMode ? (
           <div id="prevent-print-report" aria-label="Reporte imprimible PREVENT">
             <header className="print-report-header">
               <div className="print-report-heading">
@@ -1735,6 +1837,190 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
       ) : null}
         <SiteFooter />
       </main>
+    </div>
+  );
+}
+
+function getPublicRiskRows(result: PreventResult) {
+  return [
+    {
+      label: "CVD 10 years",
+      value: formatRiskValue(result.cvd_risk, "cvd"),
+    },
+    {
+      label: "CVD 30 years",
+      value: formatThirtyYearRiskValue(getThirtyYearRisk(result, "cvd")),
+    },
+    {
+      label: "ASCVD 10 years",
+      value: formatRiskValue(result.ascvd_risk, "ascvd"),
+    },
+    {
+      label: "ASCVD 30 years",
+      value: formatThirtyYearRiskValue(getThirtyYearRisk(result, "ascvd")),
+    },
+    {
+      label: "HF 10 years",
+      value: formatRiskValue(result.hf_risk, "hf"),
+    },
+    {
+      label: "HF 30 years",
+      value: formatThirtyYearRiskValue(getThirtyYearRisk(result, "hf")),
+    },
+  ];
+}
+
+function PublicResultsPanel({
+  result,
+  hasUncalculatedChanges,
+  onNewCalculation,
+}: {
+  result: PreventResult;
+  hasUncalculatedChanges: boolean;
+  onNewCalculation: () => void;
+}) {
+  const primaryRisk = result.cvd_risk;
+
+  return (
+    <section aria-label="Resultados públicos PREVENT" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      <header className="prevent-panel-header" style={{ borderBottom: "1px solid var(--line)", paddingBottom: "12px" }}>
+        <span className="prevent-panel-badge">Resultado PREVENT</span>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: "800", margin: "8px 0 4px" }}>Resultado público</h2>
+        <p style={{ fontSize: "0.82rem", color: "var(--muted)" }}>
+          Estimación anónima con el modelo base PREVENT.
+        </p>
+      </header>
+
+      {hasUncalculatedChanges ? (
+        <div className="prevent-stale-notice" style={{ fontSize: "0.8rem", padding: "8px", borderRadius: "8px", background: "var(--warning-soft)", color: "var(--warning)" }}>
+          Cambios no recalculados. Presione “Calcular riesgo” para actualizar.
+        </div>
+      ) : null}
+
+      <section className="prevent-digital-risk prevent-digital-risk-pending">
+        <div className="prevent-digital-risk-copy">
+          <span>Global CVD 10 años</span>
+          <h3>Riesgo cardiovascular global</h3>
+          <p>Resultado principal de la calculadora pública.</p>
+        </div>
+        <div className="prevent-digital-risk-meter">
+          <svg viewBox="0 0 240 240" role="img" aria-label="Global CVD 10 años">
+            <circle className="prevent-digital-risk-track" cx="120" cy="120" r="94" pathLength="100" />
+            <circle
+              className="prevent-digital-risk-value"
+              cx="120"
+              cy="120"
+              r="94"
+              pathLength="100"
+              style={{ strokeDashoffset: 100 - (primaryRisk === null ? 0 : Math.min(Math.max(primaryRisk, 0), 100)) }}
+            />
+          </svg>
+          <div className="prevent-digital-risk-readout">
+            <strong>{formatClinicalRisk(primaryRisk)}</strong>
+            <span>10 años</span>
+          </div>
+        </div>
+      </section>
+
+      <PublicRiskDetails result={result} />
+
+      <button
+        type="button"
+        className="prevent-button prevent-button-secondary"
+        onClick={onNewCalculation}
+        style={{ width: "100%", height: "46px" }}
+      >
+        Nuevo cálculo
+      </button>
+    </section>
+  );
+}
+
+function PublicRiskDetails({ result }: { result: PreventResult }) {
+  const isHeartFailureUnavailable =
+    result.hf_risk === null || getThirtyYearRisk(result, "hf") === null;
+
+  return (
+    <details className="prevent-complement-card" aria-label="Tabla avanzada de riesgos PREVENT" style={{ padding: "16px" }}>
+      <summary style={{ cursor: "pointer", fontWeight: 800 }}>Resultados avanzados</summary>
+      {isHeartFailureUnavailable ? (
+        <p style={{ color: "var(--muted)", fontSize: "0.84rem", margin: "10px 0 0" }}>
+          Para calcular riesgo de insuficiencia cardíaca, agregue peso y talla.
+        </p>
+      ) : null}
+      <div style={{ overflowX: "auto", marginTop: "12px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.86rem" }}>
+          <tbody>
+            {getPublicRiskRows(result).map((row) => (
+              <tr key={row.label}>
+                <th scope="row" style={{ textAlign: "left", padding: "10px 8px", borderBottom: "1px solid var(--line)" }}>
+                  {row.label}
+                </th>
+                <td style={{ textAlign: "right", padding: "10px 8px", borderBottom: "1px solid var(--line)", fontWeight: 800 }}>
+                  {row.value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  );
+}
+
+function PublicResultsModal({
+  result,
+  hasUncalculatedChanges,
+  onClose,
+  onEditData,
+  onNewCalculation,
+}: {
+  result: PreventResult;
+  hasUncalculatedChanges: boolean;
+  onClose: () => void;
+  onEditData: () => void;
+  onNewCalculation: () => void;
+}) {
+  return (
+    <div className="prevent-results-modal-backdrop">
+      <section
+        className="prevent-results-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prevent-public-results-modal-title"
+      >
+        <header className="prevent-results-modal-header">
+          <div>
+            <span className="prevent-panel-badge">Resultado PREVENT</span>
+            <h2 id="prevent-public-results-modal-title">Resultado público</h2>
+            <p>Estimación anónima con el modelo base PREVENT.</p>
+          </div>
+          <button
+            type="button"
+            className="prevent-modal-close"
+            aria-label="Cerrar resultados"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+
+        <PublicResultsPanel
+          result={result}
+          hasUncalculatedChanges={hasUncalculatedChanges}
+          onNewCalculation={onNewCalculation}
+        />
+
+        <footer className="prevent-results-modal-actions">
+          <button
+            type="button"
+            className="prevent-button prevent-button-secondary"
+            onClick={onEditData}
+          >
+            Editar datos
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -2311,6 +2597,54 @@ function PrintRiskProfile({
         ))}
       </ul>
     </div>
+  );
+}
+
+function PublicBmiFields({
+  input,
+  calculatedBmi,
+  onChange,
+}: {
+  input: PublicBmiInputState;
+  calculatedBmi: string;
+  onChange: (field: "weightKg" | "heightCm", value: string) => void;
+}) {
+  return (
+    <>
+      <Field
+        label="Peso (kg)"
+        name="public_weight_kg"
+        type="number"
+        value={input.weightKg}
+        onChange={(event) => onChange("weightKg", event.target.value)}
+        min="1"
+        step="0.1"
+        placeholder="Ej. 70"
+        help="Opcional. Permite calcular riesgo de insuficiencia cardíaca."
+      />
+      <Field
+        label="Talla (cm)"
+        name="public_height_cm"
+        type="number"
+        value={input.heightCm}
+        onChange={(event) => onChange("heightCm", event.target.value)}
+        min="1"
+        step="0.1"
+        placeholder="Ej. 170"
+        help="Opcional. Se usa solo para calcular IMC."
+      />
+      <div
+        className="prevent-helper-note prevent-helper-note-card"
+        style={{ gridColumn: "1 / -1" }}
+      >
+        {calculatedBmi ? (
+          <span>IMC calculado: {calculatedBmi} kg/m².</span>
+        ) : (
+          <span>Para calcular riesgo de insuficiencia cardíaca, agregue peso y talla.</span>
+        )}
+        {input.error ? <span> {input.error}</span> : null}
+      </div>
+    </>
   );
 }
 
