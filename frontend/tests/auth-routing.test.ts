@@ -119,6 +119,8 @@ test("public calculator submits an anonymous base PREVENT payload", () => {
     "smoker",
     "antihypertensive_use",
     "statin_use",
+    "physician_name",
+    "physician_specialty",
     'model_variant: "base"',
   ]) {
     assert.match(publicPayload, new RegExp(requiredField.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -126,8 +128,6 @@ test("public calculator submits an anonymous base PREVENT payload", () => {
 
   for (const privateField of [
     "patient_id",
-    "physician_name",
-    "physician_specialty",
     "patient_province_code",
     "patient_health_coverage",
     "uacr",

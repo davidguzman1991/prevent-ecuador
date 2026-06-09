@@ -1013,6 +1013,8 @@ function PreventCalculatorCore({ mode }: PreventCalculatorCoreProps) {
           smoker: form.smoker,
           antihypertensive_use: form.antihypertensive_use,
           statin_use: form.statin_use,
+          physician_name: "",
+          physician_specialty: "",
           model_variant: "base",
         }
       : {
