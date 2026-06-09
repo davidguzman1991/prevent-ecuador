@@ -6,26 +6,32 @@ import { PublicPreventCalculator } from "@/components/calculator/PreventCalculat
 import MobilePreventCalculator from "@/components/mobile/MobilePreventCalculator";
 
 const MOBILE_BREAKPOINT_PX = 768;
+type ViewportMode = "mobile" | "desktop";
 
 function isMobileViewport() {
-  return window.innerWidth < MOBILE_BREAKPOINT_PX;
+  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX - 1}px)`).matches;
 }
 
 export function HomeResponsiveCalculator() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [viewportMode, setViewportMode] = useState<ViewportMode | null>(null);
 
   useEffect(() => {
     const updateViewport = () => {
-      setIsMobile(isMobileViewport());
+      setViewportMode(isMobileViewport() ? "mobile" : "desktop");
     };
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX - 1}px)`);
 
     updateViewport();
-    window.addEventListener("resize", updateViewport);
+    mediaQuery.addEventListener("change", updateViewport);
 
     return () => {
-      window.removeEventListener("resize", updateViewport);
+      mediaQuery.removeEventListener("change", updateViewport);
     };
   }, []);
 
-  return isMobile ? <MobilePreventCalculator /> : <PublicPreventCalculator />;
+  if (viewportMode === null) {
+    return null;
+  }
+
+  return viewportMode === "mobile" ? <MobilePreventCalculator /> : <PublicPreventCalculator />;
 }

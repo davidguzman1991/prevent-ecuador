@@ -13,6 +13,14 @@ const responsiveCalculatorSource = readFileSync(
   new URL("../src/components/HomeResponsiveCalculator.tsx", import.meta.url),
   "utf8",
 );
+const mobileCalculatorSource = readFileSync(
+  new URL("../src/components/mobile/MobilePreventCalculator.tsx", import.meta.url),
+  "utf8",
+);
+const mobilePayloadSource = readFileSync(
+  new URL("../src/lib/prevent-calculation.ts", import.meta.url),
+  "utf8",
+);
 const homePageSource = readFileSync(
   new URL("../src/app/page.tsx", import.meta.url),
   "utf8",
@@ -88,6 +96,10 @@ test("public and doctor calculator wrappers are explicitly separated", () => {
   assert.match(calculatorSource, /export function DoctorPreventCalculator/);
   assert.match(calculatorSource, /function PreventCalculatorCore/);
   assert.match(responsiveCalculatorSource, /PublicPreventCalculator/);
+  assert.match(responsiveCalculatorSource, /MobilePreventCalculator/);
+  assert.match(responsiveCalculatorSource, /viewportMode, setViewportMode/);
+  assert.match(responsiveCalculatorSource, /matchMedia/);
+  assert.match(responsiveCalculatorSource, /viewportMode === null/);
   assert.doesNotMatch(responsiveCalculatorSource, /DoctorPreventCalculator/);
   assert.match(doctorCalculatorPageSource, /DoctorPreventCalculator/);
 });
@@ -158,6 +170,25 @@ test("public calculator supports optional weight and height BMI without doctor m
   assert.match(calculatorSource, /IMC calculado/);
   assert.match(calculatorSource, /Para calcular riesgo de insuficiencia cardíaca, agregue peso y talla\./);
   assert.doesNotMatch(responsiveCalculatorSource, /DoctorPreventCalculator/);
+});
+
+test("public mobile calculator remains base-only and anonymous", () => {
+  assert.match(mobilePayloadSource, /model_variant: "base"/);
+  assert.match(mobilePayloadSource, /physician_name: ""/);
+  assert.match(mobilePayloadSource, /physician_specialty: ""/);
+  for (const excludedField of [
+    "UACR",
+    "HbA1c",
+    "SDI",
+    "Datos epidemiológicos",
+    "Provincia",
+    "Cantón",
+    "patient_province_code",
+    "patient_health_coverage",
+    "patient_socioeconomic_level",
+  ]) {
+    assert.doesNotMatch(mobileCalculatorSource, new RegExp(excludedField));
+  }
 });
 
 test("doctor calculator can include private metadata", () => {
