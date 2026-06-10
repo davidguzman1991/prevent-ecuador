@@ -24,14 +24,15 @@ import {
 } from "./PreventCalculator";
 
 import type {
-  CkdEpiCalculatorState,
   FormState,
   PreventResult,
-  PublicBmiInputState,
   FieldValidationRule,
 } from "@/types/prevent";
 
 // Local Sub-components for public calculator UI
+
+type CkdEpiCalculatorState = typeof initialCkdEpiCalculatorState;
+type PublicBmiInputState = typeof initialPublicBmiInputState;
 
 type FieldProps = {
   label: string;
