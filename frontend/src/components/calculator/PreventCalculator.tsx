@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PublicDesktopCalculator } from "./PublicDesktopCalculator";
 import { PrivacyConsentModal } from "@/components/PrivacyConsentModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { FormSection } from "@/components/calculator/FormSection";
@@ -53,7 +54,7 @@ type PublicBmiInputState = {
   error: string;
 };
 
-const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = {
+export const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = {
   age: {
     label: "Edad",
     min: 30,
@@ -98,7 +99,7 @@ const FIELD_VALIDATION_RULES: Record<ValidatedFieldName, FieldValidationRule> = 
   },
 };
 
-const initialFormState: FormState = {
+export const initialFormState: FormState = {
   age: "",
   sex: "",
   total_cholesterol: "",
@@ -134,19 +135,19 @@ const initialBmiCalculatorState: BmiCalculatorState = {
   error: "",
 };
 
-const initialCkdEpiCalculatorState: CkdEpiCalculatorState = {
+export const initialCkdEpiCalculatorState: CkdEpiCalculatorState = {
   isOpen: false,
   creatinine: "",
   error: "",
 };
 
-const initialPublicBmiInputState: PublicBmiInputState = {
+export const initialPublicBmiInputState: PublicBmiInputState = {
   weightKg: "",
   heightCm: "",
   error: "",
 };
 
-function extractErrorMessage(errorBody: unknown): string {
+export function extractErrorMessage(errorBody: unknown): string {
   if (
     errorBody &&
     typeof errorBody === "object" &&
@@ -159,7 +160,7 @@ function extractErrorMessage(errorBody: unknown): string {
   return "No se pudo calcular el riesgo PREVENT. Verifica los datos e intenta nuevamente.";
 }
 
-function parseClinicalNumber(value: string): number {
+export function parseClinicalNumber(value: string): number {
   return Number(value.trim().replace(",", "."));
 }
 
@@ -170,7 +171,7 @@ function parseOptionalClinicalNumber(value: string): number | null {
   return parseClinicalNumber(value);
 }
 
-function calculateBmiFromWeightAndHeight(weightKg: string, heightCm: string): string {
+export function calculateBmiFromWeightAndHeight(weightKg: string, heightCm: string): string {
   const weight = parseClinicalNumber(weightKg);
   const height = parseClinicalNumber(heightCm);
 
@@ -185,7 +186,7 @@ function calculateBmiFromWeightAndHeight(weightKg: string, heightCm: string): st
   return (weight / (heightMeters * heightMeters)).toFixed(1);
 }
 
-function calculateCkdEpi2021Egfr(
+export function calculateCkdEpi2021Egfr(
   creatinineMgDl: string,
   ageValue: string,
   sex: FormState["sex"],
@@ -217,11 +218,11 @@ function calculateCkdEpi2021Egfr(
   return egfr.toFixed(1);
 }
 
-function getFieldRangeText(rule: FieldValidationRule): string {
+export function getFieldRangeText(rule: FieldValidationRule): string {
   return `${rule.min}-${rule.max} ${rule.unit}`;
 }
 
-function getFieldWarning(form: FormState, field: ValidatedFieldName): string | null {
+export function getFieldWarning(form: FormState, field: ValidatedFieldName): string | null {
   const rawValue = form[field];
   if (!rawValue.trim()) {
     return null;
@@ -373,7 +374,7 @@ function formatWarningDetail(warning: PreventWarning | string): string {
   return `${label}: ${value}.${range}`;
 }
 
-function formatRiskValue(risk: number | null, riskType: RiskType): string {
+export function formatRiskValue(risk: number | null, riskType: RiskType): string {
   if (risk === null) {
     return riskType === "hf"
       ? "No disponible (requiere IMC)"
@@ -383,7 +384,7 @@ function formatRiskValue(risk: number | null, riskType: RiskType): string {
   return formatClinicalRisk(risk);
 }
 
-function formatThirtyYearRiskValue(risk: number | null): string {
+export function formatThirtyYearRiskValue(risk: number | null): string {
   return risk !== null
     ? formatClinicalRisk(risk)
     : "No aplicable por rango de edad oficial PREVENT";
@@ -465,7 +466,7 @@ function getVariantHelperMessage(form: FormState): string | null {
   return null;
 }
 
-function getThirtyYearRisk(result: PreventResult, riskType: RiskType): number | null {
+export function getThirtyYearRisk(result: PreventResult, riskType: RiskType): number | null {
   if (riskType === "cvd") {
     return result.cvd_risk_30y ?? result.cvd_30y ?? null;
   }
@@ -496,7 +497,7 @@ type PreventCalculatorCoreProps = {
 };
 
 export function PublicPreventCalculator() {
-  return <PreventCalculatorCore mode="public" />;
+  return <PublicDesktopCalculator />;
 }
 
 export function DoctorPreventCalculator() {

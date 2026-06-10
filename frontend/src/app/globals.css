@@ -6569,5 +6569,346 @@ button {
   }
 }
 
+/* ==========================================
+   PUBLIC DESKTOP CALCULATOR (CONCEPT A)
+   ========================================== */
+
+.integra-calculator-shell {
+  background-color: var(--bg);
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+.integra-calculator-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.integra-calculator-header {
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+.integra-calculator-header h2 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0.75rem 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.integra-calculator-header p {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+  max-width: 800px;
+}
+
+.integra-calculator-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.integra-calculator-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.integra-calculator-results-col {
+  position: sticky;
+  top: 100px; /* offset for nav bar */
+}
+
+/* Placeholder for Results when no data is calculated */
+.integra-results-placeholder {
+  background: var(--bg-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--muted);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.integra-results-placeholder .placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.integra-results-placeholder h4 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 0.75rem 0;
+}
+
+.integra-results-placeholder p {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 320px;
+}
+
+/* Persistent Results Panel styling */
+.integra-results-panel {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.integra-results-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1rem;
+}
+
+.integra-results-header h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0.5rem 0 0.25rem 0;
+  letter-spacing: -0.01em;
+}
+
+.integra-results-header p {
+  font-size: 0.85rem;
+  color: var(--muted-2);
+  margin: 0;
+}
+
+.integra-stale-notice {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  border: 1px solid rgba(217, 119, 6, 0.15);
+}
+
+.integra-results-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Main Result Card */
+.integra-main-result-card {
+  background: linear-gradient(135deg, var(--bg), var(--bg-soft));
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.integra-main-result-card .card-kicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.integra-main-result-card h4 {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--text);
+  margin: 0 0 0.75rem 0;
+}
+
+.main-result-value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.main-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1;
+}
+
+.main-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+
+.card-desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted-2);
+  margin: 0;
+}
+
+/* Secondary Results Grid */
+.integra-secondary-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.integra-sub-result-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.integra-sub-result-card h5,
+.integra-longterm-result-card h5 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0 0 0.5rem 0;
+}
+
+.sub-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sub-value {
+  font-size: 1.25rem;
+  font-weight: 850;
+  color: var(--text);
+}
+
+.sub-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+/* Longterm Card */
+.integra-longterm-result-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.integra-longterm-result-card .sub-value-row {
+  margin-bottom: 0.5rem;
+}
+
+/* Risk Badges Colors mapping Concept A */
+.badge-low {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-moderate {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-high {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-very-high {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.badge-null {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* Expandable Risk Table */
+.integra-results-details {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.integra-results-details summary {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.integra-results-details summary:hover {
+  text-decoration: underline;
+}
+
+.integra-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+}
+
+.integra-results-table th,
+.integra-results-table td {
+  padding: 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.integra-results-table th {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.integra-results-table td {
+  color: var(--text);
+}
+
+.integra-results-table tr:last-child td {
+  border-bottom: none;
+}
+
+.integra-results-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 968px) {
+  .integra-calculator-grid {
+    grid-template-columns: 1fr;
+  }
+  .integra-calculator-results-col {
+    position: static;
+  }
+}
+
 
 
